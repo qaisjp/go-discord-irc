@@ -1,21 +1,29 @@
 package bridge
 
 import (
+	"crypto/tls"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/thoj/go-ircevent"
 )
 
 type Options struct {
 	DiscordBotToken string
 	ChannelMappings map[string]string
 
-	PrimaryIRCName string // i.e, "DiscordBot", required to listen for messages in all cases
+	IRCServer      string
+	IRCUseTLS      bool
+	IRCPrimaryName string // i.e, "DiscordBot", required to listen for messages in all cases
 	UsePrimaryOnly bool   // set to "true" to only echo messages, instead of creating a new connection per user
 }
 
 type Bridge struct {
-	dg *discordgo.Session
+	opts       Options
+	dg         *discordgo.Session
+	ircPrimary *irc.Connection
 
 	chanMappings map[string]string
 	chanIRC      []string
@@ -26,7 +34,13 @@ func (b *Bridge) Close() {
 	b.dg.Close()
 }
 
-func (b *Bridge) load(opts Options) {
+// TODO: Use errors package
+func (b *Bridge) load(opts Options) bool {
+	if opts.IRCServer == "" {
+		fmt.Println("Missing server name.")
+		return false
+	}
+
 	b.chanMappings = opts.ChannelMappings
 
 	ircChannels := make([]string, len(b.chanMappings))
@@ -38,11 +52,18 @@ func (b *Bridge) load(opts Options) {
 		discordChannels[i] = discord
 		i += 1
 	}
+
+	b.chanIRC = ircChannels
+	b.chanDiscord = discordChannels
+
+	return true
 }
 
 func New(opts Options) (*Bridge, error) {
-	dib := &Bridge{}
-	dib.load(opts)
+	dib := &Bridge{opts: opts}
+	if !dib.load(opts) {
+		return nil, errors.New("Options error. TODO: More info here!")
+	}
 
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + opts.DiscordBotToken)
@@ -57,6 +78,24 @@ func New(opts Options) (*Bridge, error) {
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
 
+	ircnick := opts.IRCPrimaryName
+	irccon := irc.IRC(ircnick, "BetterDiscordBot")
+	// irccon.VerboseCallbackHandler = true
+	irccon.Debug = true
+	irccon.UseTLS = true
+	irccon.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: Insecure TLS!
+
+	// Welcome event
+	irccon.AddCallback("001", func(e *irc.Event) {
+		// Join all channels
+		e.Connection.SendRaw("JOIN " + strings.Join(dib.chanIRC, ","))
+	})
+
+	// Called when received channel names... essentially OnJoinChannel
+	irccon.AddCallback("366", func(e *irc.Event) { fmt.Printf("Joined IRC channel %s.", e.Arguments[1]) })
+
+	dib.ircPrimary = irccon
+
 	return dib, nil
 }
 
@@ -64,9 +103,17 @@ func (b *Bridge) Open() (err error) {
 	// Open a websocket connection to Discord and begin listening.
 	err = b.dg.Open()
 	if err != nil {
-		fmt.Println("error opening connection,", err)
+		fmt.Println("error opening discord connection,", err)
 		return err
 	}
+
+	err = b.ircPrimary.Connect(b.opts.IRCServer)
+	if err != nil {
+		fmt.Println("error opening irc connection,", err)
+		return err
+	}
+
+	go b.ircPrimary.Loop()
 
 	return
 }
