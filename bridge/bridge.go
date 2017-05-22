@@ -23,9 +23,12 @@ type Bridge struct {
 	dg         *discordgo.Session
 	ircPrimary *irc.Connection
 
-	chanMappings map[string]string
-	chanIRC      []string
-	chanDiscord  []string
+	chanMapToIRC     map[string]string
+	chanMapToDiscord map[string]string
+	chanIRC          []string
+	chanDiscord      []string
+
+	h *home
 }
 
 func (b *Bridge) Close() {
@@ -39,10 +42,10 @@ func (b *Bridge) load(opts Options) bool {
 		return false
 	}
 
-	b.chanMappings = opts.ChannelMappings
+	b.chanMapToIRC = opts.ChannelMappings
 
-	ircChannels := make([]string, len(b.chanMappings))
-	discordChannels := make([]string, len(b.chanMappings))
+	ircChannels := make([]string, len(b.chanMapToIRC))
+	discordChannels := make([]string, len(b.chanMapToIRC))
 
 	i := 0
 	for discord, irc := range opts.ChannelMappings {
@@ -50,6 +53,12 @@ func (b *Bridge) load(opts Options) bool {
 		discordChannels[i] = discord
 		i += 1
 	}
+
+	chanMapToDiscord := make(map[string]string)
+	for k, v := range b.chanMapToIRC {
+		chanMapToDiscord[v] = k
+	}
+	b.chanMapToDiscord = chanMapToDiscord
 
 	b.chanIRC = ircChannels
 	b.chanDiscord = discordChannels
@@ -76,6 +85,7 @@ func New(opts Options) (*Bridge, error) {
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
 
+	prepareHome(dib)
 	prepareIRC(dib)
 
 	return dib, nil
