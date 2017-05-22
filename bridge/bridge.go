@@ -1,10 +1,8 @@
 package bridge
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/thoj/go-ircevent"
@@ -78,23 +76,7 @@ func New(opts Options) (*Bridge, error) {
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(typingStart)
 
-	ircnick := opts.IRCPrimaryName
-	irccon := irc.IRC(ircnick, "BetterDiscordBot")
-	// irccon.VerboseCallbackHandler = true
-	irccon.Debug = true
-	irccon.UseTLS = true
-	irccon.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: Insecure TLS!
-
-	// Welcome event
-	irccon.AddCallback("001", func(e *irc.Event) {
-		// Join all channels
-		e.Connection.SendRaw("JOIN " + strings.Join(dib.chanIRC, ","))
-	})
-
-	// Called when received channel names... essentially OnJoinChannel
-	irccon.AddCallback("366", func(e *irc.Event) { fmt.Printf("Joined IRC channel %s.", e.Arguments[1]) })
-
-	dib.ircPrimary = irccon
+	prepareIRC(dib)
 
 	return dib, nil
 }
