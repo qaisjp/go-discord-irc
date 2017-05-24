@@ -3,9 +3,6 @@ package bridge
 import (
 	"errors"
 	"fmt"
-
-	"github.com/bwmarrin/discordgo"
-	"github.com/thoj/go-ircevent"
 )
 
 type Options struct {
@@ -19,9 +16,8 @@ type Options struct {
 }
 
 type Bridge struct {
-	opts       Options
-	dg         *discordgo.Session
-	ircPrimary *irc.Connection
+	ircServerAddress string
+	ircPrimaryName   string
 
 	chanMapToIRC     map[string]string
 	chanMapToDiscord map[string]string
@@ -32,7 +28,7 @@ type Bridge struct {
 }
 
 func (b *Bridge) Close() {
-	b.dg.Close()
+	close(b.h.done)
 }
 
 // TODO: Use errors package
@@ -41,6 +37,9 @@ func (b *Bridge) load(opts Options) bool {
 		fmt.Println("Missing server name.")
 		return false
 	}
+
+	b.ircServerAddress = opts.IRCServer
+	b.ircPrimaryName = opts.IRCPrimaryName
 
 	b.chanMapToIRC = opts.ChannelMappings
 
@@ -67,91 +66,43 @@ func (b *Bridge) load(opts Options) bool {
 }
 
 func New(opts Options) (*Bridge, error) {
-	dib := &Bridge{opts: opts}
+	dib := &Bridge{}
 	if !dib.load(opts) {
 		return nil, errors.New("Options error. TODO: More info here!")
 	}
 
-	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + opts.DiscordBotToken)
+	ircPrimary := prepareIRC(dib)
+	discord, err := prepareDiscord(dib, opts.DiscordBotToken)
+
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
 		return nil, err
 	}
 
-	dib.dg = dg
+	prepareHome(dib, discord, ircPrimary)
 
-	// Register the messageCreate func as a callback for MessageCreate events.
-	dg.AddHandler(messageCreate)
-	dg.AddHandler(typingStart)
-
-	prepareHome(dib)
-	prepareIRC(dib)
+	ircPrimary.h = dib.h
+	discord.h = dib.h
 
 	return dib, nil
 }
 
 func (b *Bridge) Open() (err error) {
 	// Open a websocket connection to Discord and begin listening.
-	err = b.dg.Open()
+	err = b.h.discord.Open()
 	if err != nil {
 		fmt.Println("error opening discord connection,", err)
 		return err
 	}
 
-	err = b.ircPrimary.Connect(b.opts.IRCServer)
+	err = b.h.ircPrimary.Connect(b.ircServerAddress)
 	if err != nil {
 		fmt.Println("error opening irc connection,", err)
 		return err
 	}
 
-	go b.ircPrimary.Loop()
+	go b.h.ircPrimary.Loop()
 
 	return
-}
-
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the autenticated bot has access to.
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-	}
-
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
-	}
-}
-
-// This function will be called (due to AddHandler above) every time a discord user
-// starts typing
-func typingStart(s *discordgo.Session, m *discordgo.TypingStart) {
-
-	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
-	if m.UserID == s.State.User.ID {
-		return
-	}
-
-	if !testingChannels(m.ChannelID) {
-		return
-	}
-
-	// TODO: Catch username changes, and cache UserID:Username mappings somewhere
-	u, err := s.User(m.UserID)
-	if err != nil {
-		return
-	}
-
-	s.ChannelMessageSend(m.ChannelID, "Send global pulse for IRC user `["+u.Username+"]`")
-
 }
 
 func testingChannels(id string) bool {
