@@ -96,6 +96,8 @@ func (h *home) loop() {
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
+			h.ircPrimary.Disconnect()
+			h.ircManager.DisconnectAll()
 		default:
 		}
 

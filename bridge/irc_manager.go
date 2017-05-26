@@ -33,6 +33,15 @@ func prepareIRCManager(ircServerAddress string) *ircManager {
 	}
 }
 
+func (m *ircManager) DisconnectAll() {
+	for key, con := range m.ircConnections {
+		close(con.messages)
+		con.Close()
+
+		m.ircConnections[key] = nil
+	}
+}
+
 func (m *ircManager) CreateConnection(userID string) (*ircConnection, error) {
 	if con, ok := m.ircConnections[userID]; ok {
 		fmt.Println("Returning cached IRC connection")
