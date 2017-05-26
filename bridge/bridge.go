@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 )
 
+// Options to be passed to New
 type Options struct {
 	DiscordBotToken string
 	ChannelMappings map[string]string
@@ -16,6 +17,7 @@ type Options struct {
 	UsePrimaryOnly bool   // set to "true" to only echo messages, instead of creating a new connection per user
 }
 
+// A Bridge represents a bridging between an IRC server and channels in a Discord server
 type Bridge struct {
 	ircServerAddress string
 	ircPrimaryName   string
@@ -28,6 +30,7 @@ type Bridge struct {
 	h *home
 }
 
+// Close the Bridge
 func (b *Bridge) Close() {
 	close(b.h.done)
 }
@@ -51,7 +54,7 @@ func (b *Bridge) load(opts Options) bool {
 	for discord, irc := range opts.ChannelMappings {
 		ircChannels[i] = irc
 		discordChannels[i] = discord
-		i += 1
+		i++
 	}
 
 	chanMapToDiscord := make(map[string]string)
@@ -66,6 +69,7 @@ func (b *Bridge) load(opts Options) bool {
 	return true
 }
 
+// New Bridge
 func New(opts Options) (*Bridge, error) {
 	dib := &Bridge{}
 	if !dib.load(opts) {
@@ -73,7 +77,7 @@ func New(opts Options) (*Bridge, error) {
 	}
 
 	discord, err := prepareDiscord(dib, opts.DiscordBotToken)
-	ircPrimary := prepareIRCPrimary(dib)
+	ircPrimary := prepareIRCListener(dib)
 	ircManager := prepareIRCManager(opts.IRCServer)
 
 	if err != nil {
@@ -89,6 +93,7 @@ func New(opts Options) (*Bridge, error) {
 	return dib, nil
 }
 
+// Open all the connections required to run the bridge
 func (b *Bridge) Open() (err error) {
 
 	debug.PrintStack()

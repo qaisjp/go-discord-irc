@@ -7,14 +7,14 @@ import (
 	"github.com/thoj/go-ircevent"
 )
 
-type ircPrimary struct {
+type ircListener struct {
 	*irc.Connection
 	h *home
 }
 
-func prepareIRCPrimary(dib *Bridge) *ircPrimary {
+func prepareIRCListener(dib *Bridge) *ircListener {
 	irccon := irc.IRC(dib.ircPrimaryName, "BetterDiscordBot")
-	irc := &ircPrimary{irccon, nil}
+	irc := &ircListener{irccon, nil}
 
 	setupIRCConnection(irccon)
 
@@ -28,16 +28,16 @@ func prepareIRCPrimary(dib *Bridge) *ircPrimary {
 	return irc
 }
 
-func (i *ircPrimary) OnWelcome(e *irc.Event) {
+func (i *ircListener) OnWelcome(e *irc.Event) {
 	// Join all channels
 	e.Connection.SendRaw("JOIN " + strings.Join(i.h.GetIRCChannels(), ","))
 }
 
-func (i *ircPrimary) OnJoinChannel(e *irc.Event) {
+func (i *ircListener) OnJoinChannel(e *irc.Event) {
 	fmt.Printf("Joined IRC channel %s.\n", e.Arguments[1])
 }
 
-func (i *ircPrimary) OnPrivateMessage(e *irc.Event) {
+func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	go func(e *irc.Event) {
 		i.h.SendDiscordMessage(DiscordNewMessage{
 			ircChannel: e.Arguments[0],

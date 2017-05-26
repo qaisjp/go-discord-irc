@@ -35,7 +35,8 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 }
 
 func (i *ircConnection) JoinChannels() {
-	i.SendRaw("JOIN " + strings.Join(i.manager.h.GetIRCChannels(), ","))
+	channels := i.manager.RequestChannels(i.userID)
+	i.SendRaw("JOIN " + strings.Join(channels, ","))
 }
 
 func (i *ircConnection) RefreshUsername() (err error) {

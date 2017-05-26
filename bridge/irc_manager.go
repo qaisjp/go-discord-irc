@@ -97,3 +97,11 @@ func (m *ircManager) SendMessage(userID, channel, message string) {
 		str:        message,
 	}
 }
+
+// TODO
+// Find all the Discord channels this user belongs to,
+// and then find pairings in the global pairings list
+// Currently just returns all participating IRC channels
+func (m *ircManager) RequestChannels(userID string) []string {
+	return m.h.GetIRCChannels()
+}

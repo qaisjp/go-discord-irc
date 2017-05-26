@@ -9,10 +9,10 @@ import (
 // I also write a GUI interface in Visual Basic to track your IP address.
 // TODO: Rename to something less comfortable
 type home struct {
-	dib        *Bridge
-	discord    *discordBot
-	ircPrimary *ircPrimary
-	ircManager *ircManager
+	dib         *Bridge
+	discord     *discordBot
+	ircListener *ircListener
+	ircManager  *ircManager
 
 	done chan interface{}
 
@@ -21,12 +21,12 @@ type home struct {
 	discordUserPulseChan     chan DiscordUserPulse
 }
 
-func prepareHome(dib *Bridge, discord *discordBot, ircPrimary *ircPrimary, ircManager *ircManager) {
+func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, ircManager *ircManager) {
 	dib.h = &home{
-		dib:        dib,
-		discord:    discord,
-		ircPrimary: ircPrimary,
-		ircManager: ircManager,
+		dib:         dib,
+		discord:     discord,
+		ircListener: ircListener,
+		ircManager:  ircManager,
 
 		done: make(chan interface{}),
 
@@ -100,7 +100,7 @@ func (h *home) loop() {
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
-			h.ircPrimary.Disconnect()
+			h.ircListener.Disconnect()
 			h.ircManager.DisconnectAll()
 		default:
 		}
@@ -108,17 +108,20 @@ func (h *home) loop() {
 	}
 }
 
+// DiscordUserPulse is a pulse from Discord to IRCManager
 type DiscordUserPulse struct {
 	channelID string
 	userID    string
 }
 
+// DiscordMessageEvent is a chat message from Discord to IRCManager
 type DiscordMessageEvent struct {
 	channelID string
 	userID    string
 	message   string
 }
 
+// DiscordNewMessage is a chat message from IRCListener to Discord
 type DiscordNewMessage struct {
 	ircChannel string
 	str        string
