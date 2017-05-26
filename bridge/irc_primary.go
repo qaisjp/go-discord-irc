@@ -1,7 +1,6 @@
 package bridge
 
 import (
-	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -13,14 +12,11 @@ type ircPrimary struct {
 	h *home
 }
 
-func prepareIRC(dib *Bridge) *ircPrimary {
+func prepareIRCPrimary(dib *Bridge) *ircPrimary {
 	irccon := irc.IRC(dib.ircPrimaryName, "BetterDiscordBot")
 	irc := &ircPrimary{irccon, nil}
 
-	// irccon.VerboseCallbackHandler = true
-	irccon.Debug = true
-	irccon.UseTLS = true
-	irccon.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: Insecure TLS!
+	setupIRCConnection(irccon)
 
 	// Welcome event
 	irccon.AddCallback("001", irc.OnWelcome)

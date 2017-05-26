@@ -71,17 +71,19 @@ func New(opts Options) (*Bridge, error) {
 		return nil, errors.New("Options error. TODO: More info here!")
 	}
 
-	ircPrimary := prepareIRC(dib)
 	discord, err := prepareDiscord(dib, opts.DiscordBotToken)
+	ircPrimary := prepareIRCPrimary(dib)
+	ircManager := prepareIRCManager(opts.IRCServer)
 
 	if err != nil {
 		return nil, err
 	}
 
-	prepareHome(dib, discord, ircPrimary)
+	prepareHome(dib, discord, ircPrimary, ircManager)
 
-	ircPrimary.h = dib.h
 	discord.h = dib.h
+	ircPrimary.h = dib.h
+	ircManager.h = dib.h
 
 	return dib, nil
 }

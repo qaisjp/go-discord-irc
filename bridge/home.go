@@ -12,6 +12,7 @@ type home struct {
 	dib        *Bridge
 	discord    *discordBot
 	ircPrimary *ircPrimary
+	ircManager *ircManager
 
 	done chan interface{}
 
@@ -20,11 +21,12 @@ type home struct {
 	discordUserPulseChan     chan DiscordUserPulse
 }
 
-func prepareHome(dib *Bridge, discord *discordBot, ircPrimary *ircPrimary) {
+func prepareHome(dib *Bridge, discord *discordBot, ircPrimary *ircPrimary, ircManager *ircManager) {
 	dib.h = &home{
 		dib:        dib,
 		discord:    discord,
 		ircPrimary: ircPrimary,
+		ircManager: ircManager,
 
 		done: make(chan interface{}),
 
@@ -40,6 +42,20 @@ func (h *home) GetIRCChannels() []string {
 	return h.dib.chanIRC
 }
 
+func (h *home) GetDiscordUserInfo(userID string) (discriminator, username string, err error) {
+	// TODO: Catch username changes, and cache UserID:Username mappings somewhere
+	u, err := h.discord.User(userID)
+	if err != nil {
+		fmt.Printf("Could not find user", err)
+		return "", "", err
+	}
+
+	discriminator = u.Discriminator
+	username = u.Username
+
+	return
+}
+
 func (h *home) SendDiscordMessage(msg DiscordNewMessage) {
 	h.discordMessagesChan <- msg
 }
@@ -53,23 +69,13 @@ func (h *home) OnDiscordMessage(msg DiscordMessageEvent) {
 }
 
 func (h *home) pulseIRC(ircChannel, discordUserID string) {
-	username := h.discordUserToIRC(discordUserID)
+	username := /*h.discordUserToIRC(*/ discordUserID //)
 	if username == "" {
 		return
 	}
 
+	h.ircManager.PulseID(discordUserID)
 	fmt.Println("Send global pulse for IRC user `" + username + "` on channel " + ircChannel)
-}
-
-func (h *home) discordUserToIRC(userID string) string {
-	// TODO: Catch username changes, and cache UserID:Username mappings somewhere
-	u, err := h.discord.User(userID)
-	if err != nil {
-		fmt.Printf("Could not find user", err)
-		return ""
-	}
-
-	return fmt.Sprintf("%s[discord-%s]", u.Username, u.Discriminator)
 }
 
 func (h *home) loop() {
@@ -86,7 +92,7 @@ func (h *home) loop() {
 		case msg := <-h.discordMessageEventsChan:
 			ircChan := h.dib.chanMapToIRC[msg.channelID]
 			h.pulseIRC(ircChan, msg.userID)
-			// h.ircManager
+			h.ircManager.SendMessage(msg.userID, ircChan, msg.message)
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
