@@ -98,7 +98,7 @@ func (m *ircManager) PulseID(userID string) {
 }
 
 func (m *ircManager) SendMessage(userID, channel, message string) {
-	con, err := i.CreateConnection(userID)
+	con, err := m.CreateConnection(userID)
 	if err != nil {
 		panic(err)
 	}
@@ -108,4 +108,3 @@ func (m *ircManager) SendMessage(userID, channel, message string) {
 		str:        message,
 	}
 }
-
