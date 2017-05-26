@@ -3,6 +3,7 @@ package bridge
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
 )
 
 type Options struct {
@@ -68,7 +69,7 @@ func (b *Bridge) load(opts Options) bool {
 func New(opts Options) (*Bridge, error) {
 	dib := &Bridge{}
 	if !dib.load(opts) {
-		return nil, errors.New("Options error. TODO: More info here!")
+		return nil, errors.New("error with Options. TODO: More info here")
 	}
 
 	discord, err := prepareDiscord(dib, opts.DiscordBotToken)
@@ -89,6 +90,9 @@ func New(opts Options) (*Bridge, error) {
 }
 
 func (b *Bridge) Open() (err error) {
+
+	debug.PrintStack()
+
 	// Open a websocket connection to Discord and begin listening.
 	err = b.h.discord.Open()
 	if err != nil {
@@ -96,18 +100,18 @@ func (b *Bridge) Open() (err error) {
 		return err
 	}
 
-	err = b.h.ircPrimary.Connect(b.ircServerAddress)
-	if err != nil {
-		fmt.Println("error opening irc connection,", err)
-		return err
-	}
+	// err = b.h.ircPrimary.Connect(b.ircServerAddress)
+	// if err != nil {
+	// 	fmt.Println("error opening irc connection,", err)
+	// 	return err
+	// }
 
-	go b.h.ircPrimary.Loop()
+	// go b.h.ircPrimary.Loop()
 
 	return
 }
 
-func testingChannels(id string) bool {
-	// inf1, bottest
-	return /*(id == "315278744572919809") ||*/ (id == "316038111811600387")
-}
+// func testingChannels(id string) bool {
+// 	// inf1, bottest
+// 	return /*(id == "315278744572919809") ||*/ (id == "316038111811600387")
+// }

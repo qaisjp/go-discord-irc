@@ -64,8 +64,12 @@ func (h *home) SendDiscordUserPulse(pulse DiscordUserPulse) {
 	h.discordUserPulseChan <- pulse
 }
 
-func (h *home) OnDiscordMessage(msg DiscordMessageEvent) {
-	h.discordMessageEventsChan <- msg
+func (h *home) OnDiscordMessage(authorID, channelID, content string) {
+	h.discordMessageEventsChan <- DiscordMessageEvent{
+		userID:    authorID,
+		channelID: channelID,
+		message:   content,
+	}
 }
 
 func (h *home) pulseIRC(ircChannel, discordUserID string) {

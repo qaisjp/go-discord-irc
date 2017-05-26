@@ -6,19 +6,36 @@ import (
 	irc "github.com/thoj/go-ircevent"
 )
 
-func (i *ircConnection) Close() {
+// An ircConnection should only ever communicate with its manager
+// Refer to `(m *ircManager) CreateConnection` to see how these are spawned
+type ircConnection struct {
+	*irc.Connection
 
+	userID   string
+	username string
+
+	messages chan DiscordNewMessage
+
+	manager *ircManager
+}
+
+func (i *ircConnection) Close() {
+	i.Quit()
+	i.Disconnect()
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
-	// Join all channels
-	e.Connection.SendRaw("JOIN " + strings.Join(i.manager.h.GetIRCChannels(), ","))
+	i.JoinChannels()
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
 			i.Privmsg(m.ircChannel, m.str)
 		}
 	}(i)
+}
+
+func (i *ircConnection) JoinChannels() {
+	i.SendRaw("JOIN " + strings.Join(i.manager.h.GetIRCChannels(), ","))
 }
 
 func (i *ircConnection) RefreshUsername() (err error) {

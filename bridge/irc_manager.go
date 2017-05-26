@@ -6,17 +6,6 @@ import (
 	irc "github.com/thoj/go-ircevent"
 )
 
-type ircConnection struct {
-	*irc.Connection
-
-	userID   string
-	username string
-
-	messages chan DiscordNewMessage
-
-	manager *ircManager
-}
-
 // Should only be used from one thread.
 type ircManager struct {
 	ircConnections   map[string]*ircConnection

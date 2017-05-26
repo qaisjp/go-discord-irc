@@ -3,6 +3,8 @@ package bridge
 import (
 	"fmt"
 
+	"runtime/debug"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -22,24 +24,16 @@ func prepareDiscord(dib *Bridge, botToken string) (*discordBot, error) {
 
 	discord := &discordBot{session, nil}
 
-	// Register the messageCreate func as a callback for MessageCreate events.
-	discord.AddHandler(discord.messageCreate)
-	discord.AddHandler(discord.typingStart)
+	// These events are all fired in separate goroutines
+	discord.AddHandler(discord.onMessageCreate)
+	// discord.AddHandler(discord.onTypingStart)
 
 	return discord, nil
 }
 
-// func (d *discordBot) AddHandler(handler interface{}) {
-// 	d.Session.AddHandler(func() {
-// 		go func() {
+func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
-// 		}()
-// 	})
-// }
-
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the autenticated bot has access to.
-func (d *discordBot) messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	debug.PrintStack()
 
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
@@ -47,30 +41,17 @@ func (d *discordBot) messageCreate(s *discordgo.Session, m *discordgo.MessageCre
 		return
 	}
 
-	if !testingChannels(m.ChannelID) {
-		return
-	}
+	// TOOD: Check valid channel
 
 	// If the message is "ping" reply with "Pong!"
 	if m.Content == "ping" {
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
-	}
-
-	d.h.OnDiscordMessage(DiscordMessageEvent{
-		channelID: m.ChannelID,
-		userID:    m.Author.ID,
-		message:   m.Content,
-	})
+	// d.h.OnDiscordMessage(m.Author.ID, m.ChannelID, m.Content)
 }
 
-// This function will be called (due to AddHandler above) every time a discord user
-// starts typing
-func (d *discordBot) typingStart(s *discordgo.Session, m *discordgo.TypingStart) {
+func (d *discordBot) onTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
 
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
@@ -78,9 +59,7 @@ func (d *discordBot) typingStart(s *discordgo.Session, m *discordgo.TypingStart)
 		return
 	}
 
-	if !testingChannels(m.ChannelID) {
-		return
-	}
+	// TODO: Check valid channel
 
 	d.h.SendDiscordUserPulse(DiscordUserPulse{
 		channelID: m.ChannelID,
