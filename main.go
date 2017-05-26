@@ -81,7 +81,7 @@ func validateChannelMappings(rawMappings string) map[string]string {
 
 			mappings[discordChannel] = ircChannel
 		} else {
-			invalidMappings += 1
+			invalidMappings++
 		}
 	}
 
