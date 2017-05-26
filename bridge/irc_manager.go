@@ -2,9 +2,8 @@ package bridge
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/thoj/go-ircevent"
+	irc "github.com/thoj/go-ircevent"
 )
 
 type ircConnection struct {
@@ -95,11 +94,10 @@ func (m *ircManager) PulseID(userID string) {
 
 	if err != nil {
 		panic(err)
-		return
 	}
 }
 
-func (i *ircManager) SendMessage(userID, channel, message string) {
+func (m *ircManager) SendMessage(userID, channel, message string) {
 	con, err := i.CreateConnection(userID)
 	if err != nil {
 		panic(err)
@@ -111,33 +109,3 @@ func (i *ircManager) SendMessage(userID, channel, message string) {
 	}
 }
 
-func (i *ircConnection) RefreshUsername() (err error) {
-	username, err := i.manager.generateUsername(i.userID)
-
-	if err != nil {
-		return
-	}
-
-	i.username = username
-
-	if i.Connected() {
-		i.SendRaw("NICK " + username)
-	}
-
-	return
-}
-
-func (i *ircConnection) Close() {
-
-}
-
-func (i *ircConnection) OnWelcome(e *irc.Event) {
-	// Join all channels
-	e.Connection.SendRaw("JOIN " + strings.Join(i.manager.h.GetIRCChannels(), ","))
-
-	go func(i *ircConnection) {
-		for m := range i.messages {
-			i.Privmsg(m.ircChannel, m.str)
-		}
-	}(i)
-}

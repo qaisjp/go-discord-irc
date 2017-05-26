@@ -46,7 +46,7 @@ func (h *home) GetDiscordUserInfo(userID string) (discriminator, username string
 	// TODO: Catch username changes, and cache UserID:Username mappings somewhere
 	u, err := h.discord.User(userID)
 	if err != nil {
-		fmt.Printf("Could not find user", err)
+		fmt.Println("Could not find user", err)
 		return "", "", err
 	}
 
