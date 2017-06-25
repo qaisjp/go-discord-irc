@@ -11,10 +11,10 @@ type Options struct {
 	DiscordBotToken string
 	ChannelMappings map[string]string
 
-	IRCServer      string
-	IRCUseTLS      bool
-	IRCPrimaryName string // i.e, "DiscordBot", required to listen for messages in all cases
-	UsePrimaryOnly bool   // set to "true" to only echo messages, instead of creating a new connection per user
+	IRCServer       string
+	IRCUseTLS       bool
+	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
+	UsePrimaryOnly  bool   // set to "true" to only echo messages, instead of creating a new connection per user
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -43,7 +43,7 @@ func (b *Bridge) load(opts Options) bool {
 	}
 
 	b.ircServerAddress = opts.IRCServer
-	b.ircPrimaryName = opts.IRCPrimaryName
+	b.ircPrimaryName = opts.IRCListenerName
 
 	b.chanMapToIRC = opts.ChannelMappings
 
@@ -105,13 +105,13 @@ func (b *Bridge) Open() (err error) {
 		return err
 	}
 
-	// err = b.h.ircPrimary.Connect(b.ircServerAddress)
-	// if err != nil {
-	// 	fmt.Println("error opening irc connection,", err)
-	// 	return err
-	// }
+	err = b.h.ircListener.Connect(b.ircServerAddress)
+	if err != nil {
+		fmt.Println("error opening irc connection,", err)
+		return err
+	}
 
-	// go b.h.ircPrimary.Loop()
+	go b.h.ircListener.Loop()
 
 	return
 }

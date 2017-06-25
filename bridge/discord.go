@@ -3,8 +3,6 @@ package bridge
 import (
 	"fmt"
 
-	"runtime/debug"
-
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -32,9 +30,6 @@ func prepareDiscord(dib *Bridge, botToken string) (*discordBot, error) {
 }
 
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	debug.PrintStack()
-
 	// Ignore all messages created by the bot itself
 	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
@@ -48,21 +43,21 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	// d.h.OnDiscordMessage(m.Author.ID, m.ChannelID, m.Content)
+	d.h.OnDiscordMessage(m.Author.ID, m.ChannelID, m.Content)
 }
 
-func (d *discordBot) onTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
+// func (d *discordBot) onTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
 
-	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
-	if m.UserID == s.State.User.ID {
-		return
-	}
+// 	// Ignore all messages created by the bot itself
+// 	// This isn't required in this specific example but it's a good practice.
+// 	if m.UserID == s.State.User.ID {
+// 		return
+// 	}
 
-	// TODO: Check valid channel
+// 	// TODO: Check valid channel
 
-	d.h.SendDiscordUserPulse(DiscordUserPulse{
-		channelID: m.ChannelID,
-		userID:    m.UserID,
-	})
-}
+// 	d.h.SendDiscordUserPulse(DiscordUserPulse{
+// 		channelID: m.ChannelID,
+// 		userID:    m.UserID,
+// 	})
+// }

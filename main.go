@@ -14,7 +14,7 @@ import (
 func main() {
 	discordBotToken := flag.String("discord_token", "", "Discord Bot User Token")
 	channelMappings := flag.String("channel_mappings", "", "Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'")
-	ircUsername := flag.String("irc_primary_name", "DiscordBot", "Name for IRC-side bot, for listening to messages.")
+	ircUsername := flag.String("irc_listener_name", "tilded", "Name for IRC-side bot, for listening to messages.")
 	ircServer := flag.String("irc_server", "", "Server address to use, example `irc.freenode.net:7000`.")
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 
@@ -28,7 +28,7 @@ func main() {
 	dib, err := bridge.New(bridge.Options{
 		DiscordBotToken: *discordBotToken,
 		ChannelMappings: mappingsMap,
-		IRCPrimaryName:  *ircUsername,
+		IRCListenerName: *ircUsername,
 		IRCServer:       *ircServer,
 		IRCUseTLS:       !*ircNoTLS,
 	})
