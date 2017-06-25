@@ -41,7 +41,7 @@ func (i *ircConnection) JoinChannels() {
 }
 
 func (i *ircConnection) UpdateDetails(discriminator string, nickname string) {
-	username := i.manager.generateUsername(discriminator, nickname)
+	username := i.manager.generateNickname(discriminator, nickname)
 
 	i.discriminator = discriminator
 	i.username = username

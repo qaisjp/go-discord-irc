@@ -15,8 +15,9 @@ type DiscordNewMessage struct {
 
 // DiscordUser is information that IRC needs to know about a user
 type DiscordUser struct {
-	Nick          string // non-unique nickname
-	Discriminator string // locally unique ID
 	ID            string // globally unique id
+	Discriminator string // locally unique ID
+	Username      string // non-unique nickname
+	Nick          string // still non-unique
 	Bot           bool   // are they a bot?
 }

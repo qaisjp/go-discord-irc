@@ -33,31 +33,29 @@ func (m *ircManager) DisconnectAll() {
 	}
 }
 
-func (m *ircManager) CreateConnection(userID string, discriminator string, nick string, isBot bool) (*ircConnection, error) {
-	if con, ok := m.ircConnections[userID]; ok {
-		con.UpdateDetails(discriminator, nick)
+func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) {
+	if con, ok := m.ircConnections[user.ID]; ok {
+		con.UpdateDetails(user.Discriminator, user.Nick)
 		return con, nil
-	} else if (discriminator == "") && (nick == "") {
-		panic("Expected nickname and discriminator")
 	}
 
-	username := m.generateUsername(discriminator, nick)
+	nick := m.generateNickname(user.Discriminator, user.Nick)
 
-	innerCon := irc.IRC(username, nick+"~"+discriminator)
+	innerCon := irc.IRC(nick, user.Username+"~"+user.Discriminator)
 	// innerCon.Debug = true
 
 	var ip string
 	{
 		baseip := "fd75:f5f5:226f:"
-		if isBot {
+		if user.Bot {
 			baseip += "2"
 		} else {
 			baseip += "1"
 		}
-		ip = SnowflakeToIP(baseip, userID)
+		ip = SnowflakeToIP(baseip, user.ID)
 	}
 
-	setupIRCConnection(innerCon, m.webIRCPass, userID+".discord", ip)
+	setupIRCConnection(innerCon, m.webIRCPass, user.ID+".discord", ip)
 
 	con := &ircConnection{
 		Connection: innerCon,
@@ -69,7 +67,7 @@ func (m *ircManager) CreateConnection(userID string, discriminator string, nick 
 
 	con.AddCallback("001", con.OnWelcome)
 
-	m.ircConnections[userID] = con
+	m.ircConnections[user.ID] = con
 
 	err := con.Connect(m.ircServerAddress)
 	if err != nil {
@@ -83,7 +81,7 @@ func (m *ircManager) CreateConnection(userID string, discriminator string, nick 
 }
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
-func (m *ircManager) generateUsername(_ string, nick string) string {
+func (m *ircManager) generateNickname(_ string, nick string) string {
 	return nick + "~d"
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
