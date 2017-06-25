@@ -40,6 +40,11 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 }
 
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {
+	// Ignore private messages
+	if string(e.Arguments[0][0]) != "#" {
+		return
+	}
+
 	go func(e *irc.Event) {
 		i.h.discordMessagesChan <- DiscordNewMessage{
 			ircChannel: e.Arguments[0],

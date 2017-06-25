@@ -48,6 +48,10 @@ func (h *home) loop() {
 
 		// Messages from IRC to Discord
 		case msg := <-h.discordMessagesChan:
+			if h.dib.chanMapToDiscord[msg.ircChannel] == "" {
+				fmt.Println("Ignoring message sent from an unhandled IRC channel.")
+				continue
+			}
 			_, err := h.discord.ChannelMessageSend(h.dib.chanMapToDiscord[msg.ircChannel], msg.str)
 			if err != nil {
 				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
@@ -57,7 +61,7 @@ func (h *home) loop() {
 		case msg := <-h.discordMessageEventsChan:
 			ircChan := h.dib.chanMapToIRC[msg.channelID]
 			if ircChan == "" {
-				fmt.Println("Ignoring message sent from an unhandled channel.")
+				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 

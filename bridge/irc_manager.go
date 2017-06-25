@@ -44,7 +44,7 @@ func (m *ircManager) CreateConnection(userID string, discriminator string, nick 
 	username := m.generateUsername(discriminator, nick)
 
 	innerCon := irc.IRC(username, nick+"~"+discriminator)
-	innerCon.Debug = true
+	// innerCon.Debug = true
 
 	var ip string
 	{
