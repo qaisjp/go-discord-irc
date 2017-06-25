@@ -1,5 +1,7 @@
 # go-discord-irc
 
+[![Preview](https://i.imgur.com/he1euVW.gif)](https://i.imgur.com/he1euVW.webm)
+
 This is an IRC to Discord bridge built just for [@compsoc-edinburgh](http://github.com/compsoc-edinburgh) and
 [ImaginaryNet](http://imaginarynet.uk/).
 
