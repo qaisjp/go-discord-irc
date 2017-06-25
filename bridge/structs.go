@@ -18,4 +18,5 @@ type DiscordUser struct {
 	Nick          string // non-unique nickname
 	Discriminator string // locally unique ID
 	ID            string // globally unique id
+	Bot           bool   // are they a bot?
 }

@@ -11,14 +11,16 @@ import (
 type ircManager struct {
 	ircConnections   map[string]*ircConnection
 	ircServerAddress string
+	webIRCPass       string
 
 	h *home
 }
 
-func prepareIRCManager(ircServerAddress string) *ircManager {
+func prepareIRCManager(ircServerAddress, webIRCPass string) *ircManager {
 	return &ircManager{
 		ircConnections:   make(map[string]*ircConnection),
 		ircServerAddress: ircServerAddress,
+		webIRCPass:       webIRCPass,
 	}
 }
 
@@ -31,7 +33,7 @@ func (m *ircManager) DisconnectAll() {
 	}
 }
 
-func (m *ircManager) CreateConnection(userID string, discriminator string, nick string) (*ircConnection, error) {
+func (m *ircManager) CreateConnection(userID string, discriminator string, nick string, isBot bool) (*ircConnection, error) {
 	if con, ok := m.ircConnections[userID]; ok {
 		con.UpdateDetails(discriminator, nick)
 		return con, nil
@@ -41,8 +43,21 @@ func (m *ircManager) CreateConnection(userID string, discriminator string, nick 
 
 	username := m.generateUsername(discriminator, nick)
 
-	innerCon := irc.IRC(username, "BetterDiscordBot")
-	setupIRCConnection(innerCon)
+	innerCon := irc.IRC(username, nick+"~"+discriminator)
+	innerCon.Debug = true
+
+	var ip string
+	{
+		baseip := "fd75:f5f5:226f:"
+		if isBot {
+			baseip += "2"
+		} else {
+			baseip += "1"
+		}
+		ip = SnowflakeToIP(baseip, userID)
+	}
+
+	setupIRCConnection(innerCon, m.webIRCPass, userID+".discord", ip)
 
 	con := &ircConnection{
 		Connection: innerCon,
@@ -69,7 +84,7 @@ func (m *ircManager) CreateConnection(userID string, discriminator string, nick 
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
 func (m *ircManager) generateUsername(_ string, nick string) string {
-	return nick + "^d"
+	return nick + "~d"
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 

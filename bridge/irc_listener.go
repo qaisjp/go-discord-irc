@@ -12,13 +12,13 @@ type ircListener struct {
 	h *home
 }
 
-func prepareIRCListener(dib *Bridge) *ircListener {
-	irccon := irc.IRC(dib.ircPrimaryName, "BetterDiscordBot")
+func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
+	irccon := irc.IRC(dib.ircPrimaryName, "github.com/qaisjp/go-discord-irc")
 	irc := &ircListener{irccon, nil}
 
-	setupIRCConnection(irccon)
-	// con.VerboseCallbackHandler = true
-	// con.Debug = true
+	setupIRCConnection(irccon, webIRCPass, "discord.", "fd75:f5f5:226f::")
+	// irccon.VerboseCallbackHandler = true
+	// irccon.Debug = true
 
 	// Welcome event
 	irccon.AddCallback("001", irc.OnWelcome)

@@ -14,6 +14,7 @@ type Options struct {
 	IRCServer       string
 	IRCUseTLS       bool
 	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
+	WebIRCPass      string
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -76,8 +77,8 @@ func New(opts Options) (*Bridge, error) {
 	}
 
 	discord, err := prepareDiscord(dib, opts.DiscordBotToken, opts.GuildID)
-	ircPrimary := prepareIRCListener(dib)
-	ircManager := prepareIRCManager(opts.IRCServer)
+	ircPrimary := prepareIRCListener(dib, opts.WebIRCPass)
+	ircManager := prepareIRCManager(opts.IRCServer, opts.WebIRCPass)
 
 	if err != nil {
 		return nil, err

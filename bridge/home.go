@@ -69,7 +69,7 @@ func (h *home) loop() {
 				continue
 			}
 
-			h.ircManager.CreateConnection(user.ID, user.Discriminator, user.Nick)
+			h.ircManager.CreateConnection(user.ID, user.Discriminator, user.Nick, user.Bot)
 		// Done!
 		case <-h.done:
 			fmt.Println("Closing all connections!")

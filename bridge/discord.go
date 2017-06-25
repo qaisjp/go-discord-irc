@@ -83,5 +83,6 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 		Nick:          nickname,
 		Discriminator: m.User.Discriminator,
 		ID:            m.User.ID,
+		Bot:           m.User.Bot, // this should never change, we can't handle it when this changes, but it's ok
 	}
 }

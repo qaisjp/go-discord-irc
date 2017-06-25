@@ -14,10 +14,11 @@ import (
 func main() {
 	discordBotToken := flag.String("discord_token", "", "Discord Bot User Token")
 	channelMappings := flag.String("channel_mappings", "", "Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'")
-	ircUsername := flag.String("irc_listener_name", "tilded", "Name for IRC-side bot, for listening to messages.")
+	ircUsername := flag.String("irc_listener_name", "~d", "Name for IRC-side bot, for listening to messages.")
 	ircServer := flag.String("irc_server", "", "Server address to use, example `irc.freenode.net:7000`.")
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	guildID := flag.String("guild_id", "", "Guild to use")
+	webIRCPass := flag.String("webirc_pass", "", "Password for WEBIRC")
 
 	flag.Parse()
 
@@ -26,13 +27,18 @@ func main() {
 		return
 	}
 
+	if *webIRCPass == "" {
+		fmt.Println("Warning: webirc_pass is empty")
+	}
+
 	dib, err := bridge.New(bridge.Options{
 		DiscordBotToken: *discordBotToken,
 		GuildID:         *guildID,
 		ChannelMappings: mappingsMap,
 		IRCListenerName: *ircUsername,
 		IRCServer:       *ircServer,
-		IRCUseTLS:       !*ircNoTLS,
+		IRCUseTLS:       !*ircNoTLS, // exclamation mark is NOT a typo
+		WebIRCPass:      *webIRCPass,
 	})
 
 	if err != nil {
