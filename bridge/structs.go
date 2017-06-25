@@ -17,7 +17,6 @@ type DiscordNewMessage struct {
 type DiscordUser struct {
 	ID            string // globally unique id
 	Discriminator string // locally unique ID
-	Username      string // non-unique nickname
 	Nick          string // still non-unique
 	Bot           bool   // are they a bot?
 }

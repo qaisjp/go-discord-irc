@@ -82,7 +82,6 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 	d.h.updateUserChan <- DiscordUser{
 		ID:            m.User.ID,
 		Discriminator: m.User.Discriminator,
-		Username:      m.User.Username,
 		Nick:          nickname,
 		Bot:           m.User.Bot, // this should never change, we can't handle it when this changes, but it's ok
 	}

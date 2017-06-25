@@ -41,7 +41,7 @@ func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) 
 
 	nick := m.generateNickname(user.Discriminator, user.Nick)
 
-	innerCon := irc.IRC(nick, user.Username+"~"+user.Discriminator)
+	innerCon := irc.IRC(nick, "discord")
 	// innerCon.Debug = true
 
 	var ip string
