@@ -13,7 +13,7 @@ type ircListener struct {
 }
 
 func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
-	irccon := irc.IRC(dib.ircPrimaryName, "github.com/qaisjp/go-discord-irc")
+	irccon := irc.IRC(dib.ircPrimaryName, "discord")
 	irc := &ircListener{irccon, nil}
 
 	setupIRCConnection(irccon, webIRCPass, "discord.", "fd75:f5f5:226f::")
