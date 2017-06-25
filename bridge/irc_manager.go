@@ -70,12 +70,13 @@ func (m *ircManager) CreateConnection(userID string) (*ircConnection, error) {
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
 func (m *ircManager) generateUsername(userID string) (string, error) {
-	discriminator, username, err := m.h.GetDiscordUserInfo(userID)
+	_, username, err := m.h.GetDiscordUserInfo(userID)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("[%s-%s]", username, discriminator), nil
+	return username + "^d", nil
+	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
 func (m *ircManager) PulseID(userID string) {

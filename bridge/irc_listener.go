@@ -17,6 +17,8 @@ func prepareIRCListener(dib *Bridge) *ircListener {
 	irc := &ircListener{irccon, nil}
 
 	setupIRCConnection(irccon)
+	// con.VerboseCallbackHandler = true
+	// con.Debug = true
 
 	// Welcome event
 	irccon.AddCallback("001", irc.OnWelcome)
