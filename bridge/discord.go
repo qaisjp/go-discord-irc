@@ -24,7 +24,6 @@ func prepareDiscord(dib *Bridge, botToken string) (*discordBot, error) {
 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.onMessageCreate)
-	// discord.AddHandler(discord.onTypingStart)
 
 	return discord, nil
 }
@@ -45,19 +44,3 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 
 	d.h.OnDiscordMessage(m.Author.ID, m.ChannelID, m.Content)
 }
-
-// func (d *discordBot) onTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
-
-// 	// Ignore all messages created by the bot itself
-// 	// This isn't required in this specific example but it's a good practice.
-// 	if m.UserID == s.State.User.ID {
-// 		return
-// 	}
-
-// 	// TODO: Check valid channel
-
-// 	d.h.SendDiscordUserPulse(DiscordUserPulse{
-// 		channelID: m.ChannelID,
-// 		userID:    m.UserID,
-// 	})
-// }

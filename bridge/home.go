@@ -18,7 +18,6 @@ type home struct {
 
 	discordMessagesChan      chan DiscordNewMessage
 	discordMessageEventsChan chan DiscordMessageEvent
-	discordUserPulseChan     chan DiscordUserPulse
 }
 
 func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, ircManager *ircManager) {
@@ -32,7 +31,6 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 
 		discordMessagesChan:      make(chan DiscordNewMessage),
 		discordMessageEventsChan: make(chan DiscordMessageEvent),
-		discordUserPulseChan:     make(chan DiscordUserPulse),
 	}
 
 	go dib.h.loop()
@@ -60,26 +58,12 @@ func (h *home) SendDiscordMessage(msg DiscordNewMessage) {
 	h.discordMessagesChan <- msg
 }
 
-func (h *home) SendDiscordUserPulse(pulse DiscordUserPulse) {
-	h.discordUserPulseChan <- pulse
-}
-
 func (h *home) OnDiscordMessage(authorID, channelID, content string) {
 	h.discordMessageEventsChan <- DiscordMessageEvent{
 		userID:    authorID,
 		channelID: channelID,
 		message:   content,
 	}
-}
-
-func (h *home) pulseIRC(ircChannel, discordUserID string) {
-	username := /*h.discordUserToIRC(*/ discordUserID //)
-	if username == "" {
-		return
-	}
-
-	h.ircManager.PulseID(discordUserID)
-	fmt.Println("Send global pulse for IRC user `" + username + "` on channel " + ircChannel)
 }
 
 func (h *home) loop() {
@@ -91,11 +75,10 @@ func (h *home) loop() {
 			if err != nil {
 				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
 			}
-		case pulse := <-h.discordUserPulseChan:
-			h.pulseIRC(h.dib.chanMapToIRC[pulse.channelID], pulse.userID)
 		case msg := <-h.discordMessageEventsChan:
 			ircChan := h.dib.chanMapToIRC[msg.channelID]
-			h.pulseIRC(ircChan, msg.userID)
+
+			h.ircManager.PulseID(msg.userID)
 			h.ircManager.SendMessage(msg.userID, ircChan, msg.message)
 		case <-h.done:
 			fmt.Println("Closing all connections!")
@@ -106,12 +89,6 @@ func (h *home) loop() {
 		}
 
 	}
-}
-
-// DiscordUserPulse is a pulse from Discord to IRCManager
-type DiscordUserPulse struct {
-	channelID string
-	userID    string
 }
 
 // DiscordMessageEvent is a chat message from Discord to IRCManager
