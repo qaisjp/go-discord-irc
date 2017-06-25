@@ -27,6 +27,7 @@ func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.onMessageCreate)
 	discord.AddHandler(discord.onMemberListChunk)
+	discord.AddHandler(discord.onMemberUpdate)
 
 	return discord, nil
 }
@@ -61,8 +62,26 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {
 	fmt.Println("Chunk received.")
-	for _, m := range m.Members {
-		fmt.Println(m.Nick, m.User.Discriminator, m.User.ID, m.User.Mention(), m.User.String())
 
+	for _, m := range m.Members {
+		d.handleMemberUpdate(m)
+	}
+}
+
+func (d *discordBot) onMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
+	fmt.Println("Member updated", m.User.Username, m.Nick)
+	d.handleMemberUpdate(m.Member)
+}
+
+func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
+	nickname := m.Nick
+	if nickname == "" {
+		nickname = m.User.Username
+	}
+
+	d.h.updateUserChan <- DiscordUser{
+		Nick:          nickname,
+		Discriminator: m.User.Discriminator,
+		ID:            m.User.ID,
 	}
 }

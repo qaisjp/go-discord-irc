@@ -11,8 +11,9 @@ import (
 type ircConnection struct {
 	*irc.Connection
 
-	userID   string
-	username string
+	userID        string
+	discriminator string
+	username      string
 
 	messages chan DiscordNewMessage
 
@@ -39,18 +40,13 @@ func (i *ircConnection) JoinChannels() {
 	i.SendRaw("JOIN " + strings.Join(channels, ","))
 }
 
-func (i *ircConnection) RefreshUsername() (err error) {
-	username, err := i.manager.generateUsername(i.userID)
+func (i *ircConnection) UpdateDetails(discriminator string, nickname string) {
+	username := i.manager.generateUsername(discriminator, nickname)
 
-	if err != nil {
-		return
-	}
-
+	i.discriminator = discriminator
 	i.username = username
 
 	if i.Connected() {
 		i.SendRaw("NICK " + username)
 	}
-
-	return
 }

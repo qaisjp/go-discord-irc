@@ -12,3 +12,10 @@ type DiscordNewMessage struct {
 	ircChannel string
 	str        string
 }
+
+// DiscordUser is information that IRC needs to know about a user
+type DiscordUser struct {
+	Nick          string // non-unique nickname
+	Discriminator string // locally unique ID
+	ID            string // globally unique id
+}

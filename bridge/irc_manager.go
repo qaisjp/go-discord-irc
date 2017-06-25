@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"fmt"
+	"time"
 
 	irc "github.com/thoj/go-ircevent"
 )
@@ -30,17 +31,15 @@ func (m *ircManager) DisconnectAll() {
 	}
 }
 
-func (m *ircManager) CreateConnection(userID string) (*ircConnection, error) {
+func (m *ircManager) CreateConnection(userID string, discriminator string, nick string) (*ircConnection, error) {
 	if con, ok := m.ircConnections[userID]; ok {
-		fmt.Println("Returning cached IRC connection")
-
+		con.UpdateDetails(discriminator, nick)
 		return con, nil
+	} else if (discriminator == "") && (nick == "") {
+		panic("Expected nickname and discriminator")
 	}
 
-	username, err := m.generateUsername(userID)
-	if err != nil {
-		return nil, err
-	}
+	username := m.generateUsername(discriminator, nick)
 
 	innerCon := irc.IRC(username, "BetterDiscordBot")
 	setupIRCConnection(innerCon)
@@ -57,7 +56,7 @@ func (m *ircManager) CreateConnection(userID string) (*ircConnection, error) {
 
 	m.ircConnections[userID] = con
 
-	err = con.Connect(m.ircServerAddress)
+	err := con.Connect(m.ircServerAddress)
 	if err != nil {
 		fmt.Println("error opening irc connection,", err)
 		return nil, err
@@ -69,33 +68,30 @@ func (m *ircManager) CreateConnection(userID string) (*ircConnection, error) {
 }
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
-func (m *ircManager) generateUsername(userID string) (string, error) {
-	_, username, err := m.h.GetDiscordUserInfo(userID)
-	if err != nil {
-		return "", err
-	}
-
-	return username + "^d", nil
+func (m *ircManager) generateUsername(_ string, nick string) string {
+	return nick + "^d"
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
-func (m *ircManager) PulseID(userID string) {
-	_, err := m.CreateConnection(userID)
-
-	if err != nil {
-		panic(err)
-	}
-}
-
 func (m *ircManager) SendMessage(userID, channel, message string) {
-	con, err := m.CreateConnection(userID)
-	if err != nil {
-		panic(err)
+	con, ok := m.ircConnections[userID]
+	if !ok {
+		panic("Could not find connection")
 	}
 
-	con.messages <- DiscordNewMessage{
+	msg := DiscordNewMessage{
 		ircChannel: channel,
 		str:        message,
+	}
+
+	select {
+	// Try to send the message immediately
+	case con.messages <- msg:
+	// If it can't after 5ms, do it in a separate goroutine
+	case <-time.After(time.Millisecond * 5):
+		go func() {
+			con.messages <- msg
+		}()
 	}
 }
 

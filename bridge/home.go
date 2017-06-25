@@ -18,6 +18,7 @@ type home struct {
 
 	discordMessagesChan      chan DiscordNewMessage
 	discordMessageEventsChan chan DiscordMessageEvent
+	updateUserChan           chan DiscordUser
 }
 
 func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, ircManager *ircManager) {
@@ -31,6 +32,7 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 
 		discordMessagesChan:      make(chan DiscordNewMessage),
 		discordMessageEventsChan: make(chan DiscordMessageEvent),
+		updateUserChan:           make(chan DiscordUser),
 	}
 
 	go dib.h.loop()
@@ -38,20 +40,6 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 
 func (h *home) GetIRCChannels() []string {
 	return h.dib.chanIRC
-}
-
-func (h *home) GetDiscordUserInfo(userID string) (discriminator, username string, err error) {
-	// TODO: Catch username changes, and cache UserID:Username mappings somewhere
-	u, err := h.discord.User(userID)
-	if err != nil {
-		fmt.Println("Could not find user", err)
-		return "", "", err
-	}
-
-	discriminator = u.Discriminator
-	username = u.Username
-
-	return
 }
 
 func (h *home) loop() {
@@ -69,18 +57,26 @@ func (h *home) loop() {
 		case msg := <-h.discordMessageEventsChan:
 			ircChan := h.dib.chanMapToIRC[msg.channelID]
 			if ircChan == "" {
+				fmt.Println("Ignoring message sent from an unhandled channel.")
 				continue
 			}
 
-			h.ircManager.PulseID(msg.userID)
 			h.ircManager.SendMessage(msg.userID, ircChan, msg.message)
 
+		// Notification to potentially update, or create, a user
+		case user := <-h.updateUserChan:
+			if user.ID != "83386293446246400" {
+				continue
+			}
+
+			h.ircManager.CreateConnection(user.ID, user.Discriminator, user.Nick)
 		// Done!
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
 			h.ircListener.Disconnect()
 			h.ircManager.DisconnectAll()
+
 		default:
 		}
 
