@@ -41,9 +41,9 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	go func(e *irc.Event) {
-		i.h.SendDiscordMessage(DiscordNewMessage{
+		i.h.discordMessagesChan <- DiscordNewMessage{
 			ircChannel: e.Arguments[0],
 			str:        fmt.Sprintf("<%s> %s", e.Nick, e.Message()),
-		})
+		}
 	}(e)
 }

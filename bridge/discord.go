@@ -9,9 +9,11 @@ import (
 type discordBot struct {
 	*discordgo.Session
 	h *home
+
+	guildID string
 }
 
-func prepareDiscord(dib *Bridge, botToken string) (*discordBot, error) {
+func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) {
 
 	// Create a new Discord session using the provided bot token.
 	session, err := discordgo.New("Bot " + botToken)
@@ -20,27 +22,47 @@ func prepareDiscord(dib *Bridge, botToken string) (*discordBot, error) {
 		return nil, err
 	}
 
-	discord := &discordBot{session, nil}
+	discord := &discordBot{session, nil, guildID}
 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.onMessageCreate)
+	discord.AddHandler(discord.onMemberListChunk)
 
 	return discord, nil
 }
 
+func (d *discordBot) Open() error {
+	err := d.Session.Open()
+	if err != nil {
+		return err
+	}
+
+	d.RequestGuildMembers(d.guildID, "", 0)
+	return nil
+}
+
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-
-	// TOOD: Check valid channel
 
 	// If the message is "ping" reply with "Pong!"
 	if m.Content == "ping" {
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	d.h.OnDiscordMessage(m.Author.ID, m.ChannelID, m.Content)
+	d.h.discordMessageEventsChan <- DiscordMessageEvent{
+		userID:    m.Author.ID,
+		channelID: m.ChannelID,
+		message:   m.Content,
+	}
+}
+
+func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {
+	fmt.Println("Chunk received.")
+	for _, m := range m.Members {
+		fmt.Println(m.Nick, m.User.Discriminator, m.User.ID, m.User.Mention(), m.User.String())
+
+	}
 }

@@ -17,6 +17,7 @@ func main() {
 	ircUsername := flag.String("irc_listener_name", "tilded", "Name for IRC-side bot, for listening to messages.")
 	ircServer := flag.String("irc_server", "", "Server address to use, example `irc.freenode.net:7000`.")
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
+	guildID := flag.String("guild_id", "", "Guild to use")
 
 	flag.Parse()
 
@@ -27,6 +28,7 @@ func main() {
 
 	dib, err := bridge.New(bridge.Options{
 		DiscordBotToken: *discordBotToken,
+		GuildID:         *guildID,
 		ChannelMappings: mappingsMap,
 		IRCListenerName: *ircUsername,
 		IRCServer:       *ircServer,

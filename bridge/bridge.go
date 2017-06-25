@@ -3,18 +3,17 @@ package bridge
 import (
 	"errors"
 	"fmt"
-	"runtime/debug"
 )
 
 // Options to be passed to New
 type Options struct {
-	DiscordBotToken string
+	DiscordBotToken, GuildID string
+
 	ChannelMappings map[string]string
 
 	IRCServer       string
 	IRCUseTLS       bool
 	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
-	UsePrimaryOnly  bool   // set to "true" to only echo messages, instead of creating a new connection per user
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -76,7 +75,7 @@ func New(opts Options) (*Bridge, error) {
 		return nil, errors.New("error with Options. TODO: More info here")
 	}
 
-	discord, err := prepareDiscord(dib, opts.DiscordBotToken)
+	discord, err := prepareDiscord(dib, opts.DiscordBotToken, opts.GuildID)
 	ircPrimary := prepareIRCListener(dib)
 	ircManager := prepareIRCManager(opts.IRCServer)
 
@@ -95,8 +94,6 @@ func New(opts Options) (*Bridge, error) {
 
 // Open all the connections required to run the bridge
 func (b *Bridge) Open() (err error) {
-
-	debug.PrintStack()
 
 	// Open a websocket connection to Discord and begin listening.
 	err = b.h.discord.Open()

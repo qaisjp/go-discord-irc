@@ -54,32 +54,28 @@ func (h *home) GetDiscordUserInfo(userID string) (discriminator, username string
 	return
 }
 
-func (h *home) SendDiscordMessage(msg DiscordNewMessage) {
-	h.discordMessagesChan <- msg
-}
-
-func (h *home) OnDiscordMessage(authorID, channelID, content string) {
-	h.discordMessageEventsChan <- DiscordMessageEvent{
-		userID:    authorID,
-		channelID: channelID,
-		message:   content,
-	}
-}
-
 func (h *home) loop() {
 	for {
 		select {
+
+		// Messages from IRC to Discord
 		case msg := <-h.discordMessagesChan:
-			fmt.Println("Received, sending to", h.dib.chanMapToDiscord[msg.ircChannel])
 			_, err := h.discord.ChannelMessageSend(h.dib.chanMapToDiscord[msg.ircChannel], msg.str)
 			if err != nil {
 				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
 			}
+
+		// Messages from Discord to IRC
 		case msg := <-h.discordMessageEventsChan:
 			ircChan := h.dib.chanMapToIRC[msg.channelID]
+			if ircChan == "" {
+				continue
+			}
 
 			h.ircManager.PulseID(msg.userID)
 			h.ircManager.SendMessage(msg.userID, ircChan, msg.message)
+
+		// Done!
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
@@ -89,17 +85,4 @@ func (h *home) loop() {
 		}
 
 	}
-}
-
-// DiscordMessageEvent is a chat message from Discord to IRCManager
-type DiscordMessageEvent struct {
-	channelID string
-	userID    string
-	message   string
-}
-
-// DiscordNewMessage is a chat message from IRCListener to Discord
-type DiscordNewMessage struct {
-	ircChannel string
-	str        string
 }
