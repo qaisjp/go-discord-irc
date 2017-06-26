@@ -55,7 +55,14 @@ func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) 
 		ip = SnowflakeToIP(baseip, user.ID)
 	}
 
-	setupIRCConnection(innerCon, m.webIRCPass, user.ID+".discord", ip)
+	hostname := user.ID
+	if user.Bot {
+		hostname += ".bot.discord"
+	} else {
+		hostname += ".user.discord"
+	}
+
+	setupIRCConnection(innerCon, m.webIRCPass, hostname, ip)
 
 	con := &ircConnection{
 		Connection: innerCon,
