@@ -74,14 +74,13 @@ func (h *home) loop() {
 			}
 
 			h.ircManager.CreateConnection(user)
+
 		// Done!
 		case <-h.done:
 			fmt.Println("Closing all connections!")
 			h.discord.Close()
 			h.ircListener.Disconnect()
 			h.ircManager.DisconnectAll()
-
-		default:
 		}
 
 	}
