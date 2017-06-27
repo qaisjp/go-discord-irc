@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/qaisjp/go-discord-irc/ircnick"
 	irc "github.com/thoj/go-ircevent"
 )
 
@@ -89,6 +90,9 @@ func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) 
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
 func (m *ircManager) generateNickname(_ string, nick string) string {
+	// First clean it
+	nick = ircnick.NickClean(nick)
+
 	return nick + "~d"
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
