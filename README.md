@@ -1,4 +1,4 @@
-# go-discord-irc
+# go-discord-irc [![Go Report Card](https://goreportcard.com/badge/github.com/qaisjp/go-discord-irc)](https://goreportcard.com/report/github.com/qaisjp/go-discord-irc)
 
 [![Preview](https://i.imgur.com/he1euVW.gif)](https://i.imgur.com/he1euVW.webm)
 
