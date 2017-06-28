@@ -35,7 +35,7 @@ func Leftpad(s string, length int, ch ...rune) string {
 	return s
 }
 
-// Takes a snowflake and the first half of an IP to make an IP suitable for WEBIRC
+// SnowflakeToIP takes a snowflake and the first half of an IP to make an IP suitable for WEBIRC
 func SnowflakeToIP(base string, snowflake string) string {
 	num, err := strconv.ParseUint(snowflake, 10, 64)
 	if err != nil {

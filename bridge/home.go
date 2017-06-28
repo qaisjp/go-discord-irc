@@ -14,7 +14,7 @@ type home struct {
 	ircListener *ircListener
 	ircManager  *ircManager
 
-	done chan interface{}
+	done chan bool
 
 	discordMessagesChan      chan DiscordNewMessage
 	discordMessageEventsChan chan DiscordMessageEvent
@@ -28,7 +28,7 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 		ircListener: ircListener,
 		ircManager:  ircManager,
 
-		done: make(chan interface{}),
+		done: make(chan bool),
 
 		discordMessagesChan:      make(chan DiscordNewMessage),
 		discordMessageEventsChan: make(chan DiscordMessageEvent),
@@ -73,14 +73,19 @@ func (h *home) loop() {
 			// 	continue
 			// }
 
-			h.ircManager.CreateConnection(user)
+			h.ircManager.HandleUser(user)
 
 		// Done!
 		case <-h.done:
-			fmt.Println("Closing all connections!")
 			h.discord.Close()
+
+			h.ircListener.Quit()
 			h.ircListener.Disconnect()
-			h.ircManager.DisconnectAll()
+
+			h.ircManager.Close()
+			close(h.done)
+
+			return
 		}
 
 	}

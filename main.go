@@ -53,11 +53,14 @@ func main() {
 
 	err = dib.Open()
 	if err != nil {
+		panic(err)
 		return
 	}
 
 	// Watch for a signal
 	<-sc
+
+	fmt.Println("Shutting down Go-Discord-IRC...")
 
 	// Cleanly close down the Discord session.
 	dib.Close()

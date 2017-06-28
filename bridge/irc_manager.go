@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/ircnick"
 	irc "github.com/thoj/go-ircevent"
 )
@@ -25,19 +26,49 @@ func prepareIRCManager(ircServerAddress, webIRCPass string) *ircManager {
 	}
 }
 
-func (m *ircManager) DisconnectAll() {
-	for key, con := range m.ircConnections {
-		close(con.messages)
-		con.Close()
+func (m *ircManager) CloseConnection(i *ircConnection) {
+	delete(m.ircConnections, i.userID)
+	close(i.messages)
+	i.innerCon.Quit()
+	// i.innerCon.Disconnect()
 
-		m.ircConnections[key] = nil
+}
+
+func (m *ircManager) Close() {
+	i := 0
+	for _, con := range m.ircConnections {
+		con.innerCon.QuitMessage = "[Bridge going down] "
+		if i < len(quitMessages) {
+			con.innerCon.QuitMessage += quitMessages[i]
+		}
+
+		m.CloseConnection(con)
+
+		i++
 	}
 }
 
-func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) {
+func (m *ircManager) HandleUser(user DiscordUser) {
 	if con, ok := m.ircConnections[user.ID]; ok {
+		// Close the connection if they are not online
+		if !user.Online {
+			m.CloseConnection(con)
+			return
+		}
+
+		// Otherwise update their nickname / username
+		// TOOD: Support username changes
+		// Note: this event is still called when their status is changed
+		//       from `online` to `dnd` (online related states)
+		//       In UpdateDetails we handle nickname changes so it is
+		//       OK to call the below potentially redundant function
 		con.UpdateDetails(user.Discriminator, user.Nick)
-		return con, nil
+		return
+	}
+
+	// Don't create a connection if they are not online
+	if !user.Online {
+		return
 	}
 
 	nick := m.generateNickname(user.Discriminator, user.Nick)
@@ -66,26 +97,31 @@ func (m *ircManager) CreateConnection(user DiscordUser) (*ircConnection, error) 
 	setupIRCConnection(innerCon, m.webIRCPass, hostname, ip)
 
 	con := &ircConnection{
-		Connection: innerCon,
+		innerCon: innerCon,
+
+		userID:        user.ID,
+		discriminator: user.Discriminator,
+		nick:          user.Nick,
 
 		messages: make(chan DiscordNewMessage),
 
 		manager: m,
 	}
 
-	con.AddCallback("001", con.OnWelcome)
+	con.innerCon.AddCallback("001", con.OnWelcome)
 
 	m.ircConnections[user.ID] = con
 
-	err := con.Connect(m.ircServerAddress)
+	err := con.innerCon.Connect(m.ircServerAddress)
 	if err != nil {
 		fmt.Println("error opening irc connection,", err)
-		return nil, err
+		// TODO: HANDLE THIS SITUATION
+		return
 	}
 
 	go innerCon.Loop()
 
-	return con, nil
+	return
 }
 
 // TODO: Catch username changes, and cache UserID:Username mappings somewhere
@@ -99,8 +135,20 @@ func (m *ircManager) generateNickname(_ string, nick string) string {
 
 func (m *ircManager) SendMessage(userID, channel, message string) {
 	con, ok := m.ircConnections[userID]
+
+	// Person is likely appearing offline... :/
 	if !ok {
-		panic("Could not find connection")
+		// Should not be doing m.h..discord....
+		member, err := m.h.discord.State.Member(m.h.discord.guildID, userID)
+
+		if err != nil {
+			panic(errors.Wrap(err, "Could not find connection and member!"))
+		}
+
+		// Should not be doing m.h.ircListener....
+		m.h.ircListener.Privmsg(channel, fmt.Sprintf("<%s#%s> %s", member.User.Username, member.User.Discriminator, message))
+
+		return
 	}
 
 	msg := DiscordNewMessage{

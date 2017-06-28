@@ -1,8 +1,9 @@
 package bridge
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // Options to be passed to New
@@ -32,7 +33,8 @@ type Bridge struct {
 
 // Close the Bridge
 func (b *Bridge) Close() {
-	close(b.h.done)
+	b.h.done <- true
+	<-b.h.done
 }
 
 // TODO: Use errors package
@@ -99,14 +101,12 @@ func (b *Bridge) Open() (err error) {
 	// Open a websocket connection to Discord and begin listening.
 	err = b.h.discord.Open()
 	if err != nil {
-		fmt.Println("error opening discord connection,", err)
-		return err
+		return errors.Wrap(err, "can't open discord")
 	}
 
 	err = b.h.ircListener.Connect(b.ircServerAddress)
 	if err != nil {
-		fmt.Println("error opening irc connection,", err)
-		return err
+		return errors.Wrap(err, "can't open irc connection")
 	}
 
 	go b.h.ircListener.Loop()

@@ -36,7 +36,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 }
 
 func (i *ircListener) OnJoinChannel(e *irc.Event) {
-	fmt.Printf("Joined IRC channel %s.\n", e.Arguments[1])
+	fmt.Printf("Listener has joined IRC channel %s.\n", e.Arguments[1])
 }
 
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {

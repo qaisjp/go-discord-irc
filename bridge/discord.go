@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 type discordBot struct {
@@ -18,9 +19,9 @@ func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) 
 	// Create a new Discord session using the provided bot token.
 	session, err := discordgo.New("Bot " + botToken)
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
-		return nil, err
+		return nil, errors.Wrap(err, "discord, could not create new session")
 	}
+	session.StateEnabled = true
 
 	discord := &discordBot{session, nil, guildID}
 
@@ -28,6 +29,9 @@ func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) 
 	discord.AddHandler(discord.onMessageCreate)
 	discord.AddHandler(discord.onMemberListChunk)
 	discord.AddHandler(discord.onMemberUpdate)
+	discord.AddHandler(discord.OnPresencesReplace)
+	discord.AddHandler(discord.OnPresenceUpdate)
+	discord.AddHandler(discord.OnReady)
 
 	return discord, nil
 }
@@ -35,10 +39,9 @@ func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) 
 func (d *discordBot) Open() error {
 	err := d.Session.Open()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	d.RequestGuildMembers(d.guildID, "", 0)
 	return nil
 }
 
@@ -61,28 +64,78 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 }
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {
-	fmt.Println("Chunk received.")
-
 	for _, m := range m.Members {
 		d.handleMemberUpdate(m)
 	}
 }
 
 func (d *discordBot) onMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	fmt.Println("Member updated", m.User.Username, m.Nick)
 	d.handleMemberUpdate(m.Member)
 }
 
+// What does this do? Probably what it sounds like.
+func (d *discordBot) OnPresencesReplace(s *discordgo.Session, m *discordgo.PresencesReplace) {
+	for _, p := range *m {
+		d.handlePresenceUpdate(p)
+	}
+}
+
+// Handle when presence is updated
+func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
+	d.handlePresenceUpdate(&m.Presence)
+}
+
+func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
+	// If they are offline, just deliver a mostly empty struct with the ID and online state
+	if p.Status == "offline" {
+		d.h.updateUserChan <- DiscordUser{
+			ID:     p.User.ID,
+			Online: false,
+		}
+		return
+	}
+
+	// Otherwise get their GuildMember object...
+	user, err := d.State.Member(d.guildID, p.User.ID)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	// .. and handle as per usual
+	d.handleMemberUpdate(user)
+}
+
+func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
+	d.RequestGuildMembers(d.guildID, "", 0)
+}
+
 func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
-	nickname := m.Nick
-	if nickname == "" {
-		nickname = m.User.Username
+	// This error is usually triggered on first run because it represents offline
+	presence, err := d.State.Presence(d.guildID, m.User.ID)
+	if err != nil {
+		// TOOD: Determine the type of the error, and handle non-offline situations
+		return
+	}
+
+	if presence.Status == "offline" {
+		return
 	}
 
 	d.h.updateUserChan <- DiscordUser{
 		ID:            m.User.ID,
 		Discriminator: m.User.Discriminator,
-		Nick:          nickname,
-		Bot:           m.User.Bot, // this should never change, we can't handle it when this changes, but it's ok
+		Nick:          GetMemberNick(m),
+		Bot:           m.User.Bot,
+		Online:        presence.Status != "offline",
 	}
+}
+
+// GetMemberNick returns the real display name for a Discord GuildMember
+func GetMemberNick(m *discordgo.Member) string {
+	if m.Nick == "" {
+		return m.User.Username
+	}
+
+	return m.Nick
 }

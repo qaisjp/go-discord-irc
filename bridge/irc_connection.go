@@ -9,20 +9,15 @@ import (
 // An ircConnection should only ever communicate with its manager
 // Refer to `(m *ircManager) CreateConnection` to see how these are spawned
 type ircConnection struct {
-	*irc.Connection
+	innerCon *irc.Connection
 
 	userID        string
 	discriminator string
-	username      string
+	nick          string
 
 	messages chan DiscordNewMessage
 
 	manager *ircManager
-}
-
-func (i *ircConnection) Close() {
-	i.Quit()
-	i.Disconnect()
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
@@ -30,23 +25,26 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
-			i.Privmsg(m.ircChannel, m.str)
+			i.innerCon.Privmsg(m.ircChannel, m.str)
 		}
 	}(i)
 }
 
 func (i *ircConnection) JoinChannels() {
 	channels := i.manager.RequestChannels(i.userID)
-	i.SendRaw("JOIN " + strings.Join(channels, ","))
+	i.innerCon.SendRaw("JOIN " + strings.Join(channels, ","))
 }
 
-func (i *ircConnection) UpdateDetails(discriminator string, nickname string) {
-	username := i.manager.generateNickname(discriminator, nickname)
+func (i *ircConnection) UpdateDetails(discriminator, nick string) {
+	// if their details haven't changed, don't do anything
+	if (i.nick == nick) && (i.discriminator == discriminator) {
+		return
+	}
+
+	nick = i.manager.generateNickname(discriminator, nick)
 
 	i.discriminator = discriminator
-	i.username = username
+	i.nick = nick
 
-	if i.Connected() {
-		i.SendRaw("NICK " + username)
-	}
+	go i.innerCon.Nick(nick)
 }
