@@ -1,6 +1,6 @@
 package ircnick
 
-func not(i int) int {
+func not(i int32) int8 {
 	if i == 0 {
 		return 1
 	}

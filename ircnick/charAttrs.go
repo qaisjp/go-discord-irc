@@ -2,9 +2,9 @@ package ircnick
 
 // https://github.com/lp0/charybdis/blob/imaginarynet/ircd/match.c#L667-L930
 // replace `unsigned int CharAttrs[] = {` with `var charAttrs = []int{`
-// Don't forget trailing newline
+// Don't forget trailing comma
 
-var charAttrs = []int{
+var charAttrs = []int32{
 	/* 0  */ CNTRL_C,
 	/* 1  */ CNTRL_C | CHAN_C | NONEOS_C,
 	/* 2  */ CNTRL_C | CHAN_C | FCHAN_C | NONEOS_C,
