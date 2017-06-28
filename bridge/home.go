@@ -78,10 +78,7 @@ func (h *home) loop() {
 		// Done!
 		case <-h.done:
 			h.discord.Close()
-
 			h.ircListener.Quit()
-			h.ircListener.Disconnect()
-
 			h.ircManager.Close()
 			close(h.done)
 

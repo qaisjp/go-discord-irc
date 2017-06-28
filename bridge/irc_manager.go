@@ -30,20 +30,12 @@ func (m *ircManager) CloseConnection(i *ircConnection) {
 	delete(m.ircConnections, i.userID)
 	close(i.messages)
 	i.innerCon.Quit()
-	// i.innerCon.Disconnect()
-
 }
 
 func (m *ircManager) Close() {
 	i := 0
 	for _, con := range m.ircConnections {
-		con.innerCon.QuitMessage = "[Bridge going down] "
-		if i < len(quitMessages) {
-			con.innerCon.QuitMessage += quitMessages[i]
-		}
-
 		m.CloseConnection(con)
-
 		i++
 	}
 }
