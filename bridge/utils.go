@@ -13,10 +13,9 @@ import (
 	"github.com/thoj/go-ircevent"
 )
 
-// TODo: Insecure TLS!
 func setupIRCConnection(con *irc.Connection, webIRCPass, hostname, ip string) {
 	con.UseTLS = true
-	con.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: REALLY, THIS IS NOT A VERIFIED CONNECTION!
+	con.TLSConfig = &tls.Config{}
 
 	// this requires a modification to thoj/go-ircevent
 	con.InitialCommand = fmt.Sprintf("WEBIRC %s discord %s %s", webIRCPass, hostname, ip)
