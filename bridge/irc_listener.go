@@ -32,7 +32,7 @@ func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 
 func (i *ircListener) OnWelcome(e *irc.Event) {
 	// Join all channels
-	e.Connection.SendRaw("JOIN " + strings.Join(i.h.GetIRCChannels(), ","))
+	i.SendRaw("JOIN " + strings.Join(i.h.GetIRCChannels(), ","))
 }
 
 func (i *ircListener) OnJoinChannel(e *irc.Event) {
