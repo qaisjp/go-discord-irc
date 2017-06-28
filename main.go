@@ -54,7 +54,6 @@ func main() {
 	err = dib.Open()
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	// Watch for a signal

@@ -13,7 +13,7 @@ import (
 	"github.com/thoj/go-ircevent"
 )
 
-// TOOD: Insecure TLS!
+// TODo: Insecure TLS!
 func setupIRCConnection(con *irc.Connection, webIRCPass, hostname, ip string) {
 	con.UseTLS = true
 	con.TLSConfig = &tls.Config{InsecureSkipVerify: true} // TODO: REALLY, THIS IS NOT A VERIFIED CONNECTION!
