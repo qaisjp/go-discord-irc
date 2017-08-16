@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/bwmarrin/discordgo"
+
 	"github.com/qaisjp/go-discord-irc/ircnick"
 	irc "github.com/thoj/go-ircevent"
 )
@@ -124,36 +125,27 @@ func (m *ircManager) generateNickname(_ string, nick string) string {
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
-func (m *ircManager) SendMessage(userID, channel, message string) {
-	con, ok := m.ircConnections[userID]
+func (m *ircManager) SendMessage(channel string, msg *discordgo.Message) {
+	con, ok := m.ircConnections[msg.Author.ID]
 
-	// Person is likely appearing offline... :/
+	// Person is appearing offline
 	if !ok {
-		// Should not be doing m.h..discord....
-		member, err := m.h.discord.State.Member(m.h.discord.guildID, userID)
-
-		if err != nil {
-			panic(errors.Wrap(err, "Could not find connection and member!"))
-		}
-
-		// Should not be doing m.h.ircListener....
-		m.h.ircListener.Privmsg(channel, fmt.Sprintf("<%s#%s> %s", member.User.Username, member.User.Discriminator, message))
-
+		m.h.ircListener.Privmsg(channel, fmt.Sprintf("<%s#%s> %s", msg.Author.Username, msg.Author.Discriminator, msg.Content))
 		return
 	}
 
-	msg := DiscordNewMessage{
-		ircChannel: channel,
-		str:        message,
+	ircMessage := DiscordNewMessage{
+		IRCChannel: channel,
+		Message:    msg.Content,
 	}
 
 	select {
 	// Try to send the message immediately
-	case con.messages <- msg:
+	case con.messages <- ircMessage:
 	// If it can't after 5ms, do it in a separate goroutine
 	case <-time.After(time.Millisecond * 5):
 		go func() {
-			con.messages <- msg
+			con.messages <- ircMessage
 		}()
 	}
 }

@@ -93,11 +93,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	d.h.discordMessageEventsChan <- DiscordMessageEvent{
-		userID:    m.Author.ID,
-		channelID: m.ChannelID,
-		message:   m.Content,
-	}
+	d.h.discordMessageEventsChan <- m.Message
 }
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {

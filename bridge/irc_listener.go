@@ -55,8 +55,9 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 
 	go func(e *irc.Event) {
 		i.h.discordMessagesChan <- DiscordNewMessage{
-			ircChannel: e.Arguments[0],
-			str:        fmt.Sprintf("<%s> %s", e.Nick, msg),
+			IRCChannel: e.Arguments[0],
+			Username:   e.Nick,
+			Message:    msg,
 		}
 	}(e)
 }

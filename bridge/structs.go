@@ -9,8 +9,9 @@ type DiscordMessageEvent struct {
 
 // DiscordNewMessage is a chat message sent to Discord (from IRCListener)
 type DiscordNewMessage struct {
-	ircChannel string
-	str        string
+	IRCChannel string
+	Username   string
+	Message    string
 }
 
 // DiscordUser is information that IRC needs to know about a user

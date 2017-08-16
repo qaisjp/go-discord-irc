@@ -2,6 +2,8 @@ package bridge
 
 import (
 	"fmt"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type home struct {
@@ -15,7 +17,7 @@ type home struct {
 	done chan bool
 
 	discordMessagesChan      chan DiscordNewMessage
-	discordMessageEventsChan chan DiscordMessageEvent
+	discordMessageEventsChan chan *discordgo.Message
 	updateUserChan           chan DiscordUser
 }
 
@@ -29,7 +31,7 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 		done: make(chan bool),
 
 		discordMessagesChan:      make(chan DiscordNewMessage),
-		discordMessageEventsChan: make(chan DiscordMessageEvent),
+		discordMessageEventsChan: make(chan *discordgo.Message),
 		updateUserChan:           make(chan DiscordUser),
 	}
 
@@ -69,28 +71,45 @@ func (h *home) loop() {
 
 		// Messages from IRC to Discord
 		case msg := <-h.discordMessagesChan:
-			mapping := h.GetMappingByIRC(msg.ircChannel)
+			mapping := h.GetMappingByIRC(msg.IRCChannel)
 
 			if mapping == nil {
 				fmt.Println("Ignoring message sent from an unhandled IRC channel.")
 				continue
 			}
 
-			_, err := h.discord.ChannelMessageSend(mapping.ChannelID, msg.str)
+			// TOOD: What if it takes a long time? wait=true below.
+			err := h.discord.WebhookExecute(mapping.ID, mapping.Token, true, &discordgo.WebhookParams{
+				Content:  msg.Message,
+				Username: msg.Username,
+			})
+
 			if err != nil {
 				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
 			}
 
 		// Messages from Discord to IRC
 		case msg := <-h.discordMessageEventsChan:
-			mapping := h.GetMappingByDiscord(msg.channelID)
+			mapping := h.GetMappingByDiscord(msg.ChannelID)
 
+			// Do not do anything if we do not have a mapping for the channel
 			if mapping == nil {
 				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 
-			h.ircManager.SendMessage(msg.userID, mapping.IRCChannel, msg.message)
+			// Ignore messages sent from our webhooks
+			fromHook := false
+			for _, mapping := range h.Mappings {
+				if mapping.ID == msg.Author.ID {
+					fromHook = true
+				}
+			}
+			if fromHook {
+				continue
+			}
+
+			h.ircManager.SendMessage(mapping.IRCChannel, msg)
 
 		// Notification to potentially update, or create, a user
 		case user := <-h.updateUserChan:
