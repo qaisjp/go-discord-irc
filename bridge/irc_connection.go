@@ -26,7 +26,11 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
-			i.innerCon.Privmsg(m.IRCChannel, m.Message)
+			if m.IsAction {
+				i.innerCon.Action(m.IRCChannel, m.Message)
+			} else {
+				i.innerCon.Privmsg(m.IRCChannel, m.Message)
+			}
 		}
 	}(i)
 }

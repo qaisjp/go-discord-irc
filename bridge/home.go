@@ -17,7 +17,7 @@ type home struct {
 	done chan bool
 
 	discordMessagesChan      chan IRCMessage
-	discordMessageEventsChan chan *discordgo.Message
+	discordMessageEventsChan chan *DiscordMessage
 	updateUserChan           chan DiscordUser
 }
 
@@ -31,7 +31,7 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 		done: make(chan bool),
 
 		discordMessagesChan:      make(chan IRCMessage),
-		discordMessageEventsChan: make(chan *discordgo.Message),
+		discordMessageEventsChan: make(chan *DiscordMessage),
 		updateUserChan:           make(chan DiscordUser),
 	}
 

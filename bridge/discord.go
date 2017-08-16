@@ -93,7 +93,19 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	d.h.discordMessageEventsChan <- m.Message
+	isAction := len(m.Content) > 2 &&
+		m.Content[0] == '_' &&
+		m.Content[len(m.Content)-1] == '_'
+	content := m.Content
+	if isAction {
+		content = content[1 : len(m.Content)-1]
+	}
+
+	d.h.discordMessageEventsChan <- &DiscordMessage{
+		Message:  m.Message,
+		Content:  content,
+		IsAction: isAction,
+	}
 }
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {

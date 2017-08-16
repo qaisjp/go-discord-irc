@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-
 	"github.com/qaisjp/go-discord-irc/ircnick"
 	irc "github.com/thoj/go-ircevent"
 )
@@ -125,7 +123,7 @@ func (m *ircManager) generateNickname(_ string, nick string) string {
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
-func (m *ircManager) SendMessage(channel string, msg *discordgo.Message) {
+func (m *ircManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
 
 	// Person is appearing offline
@@ -137,6 +135,7 @@ func (m *ircManager) SendMessage(channel string, msg *discordgo.Message) {
 	ircMessage := IRCMessage{
 		IRCChannel: channel,
 		Message:    msg.Content,
+		IsAction:   msg.IsAction,
 	}
 
 	select {
