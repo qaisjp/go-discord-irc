@@ -4,10 +4,6 @@ import (
 	"fmt"
 )
 
-// The brains of the operation.
-// We coordinate concurrency between all connections and data stores.
-// I also write a GUI interface in Visual Basic to track your IP address.
-// TODO: Rename to something less comfortable
 type home struct {
 	dib         *Bridge
 	discord     *discordBot

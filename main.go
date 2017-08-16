@@ -19,6 +19,7 @@ func main() {
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	guildID := flag.String("guild_id", "", "Guild to use")
 	webIRCPass := flag.String("webirc_pass", "", "Password for WEBIRC")
+	debugMode := flag.Bool("debug", false, "Debug mode?")
 
 	flag.Parse()
 
@@ -39,6 +40,7 @@ func main() {
 		IRCServer:       *ircServer,
 		IRCUseTLS:       !*ircNoTLS, // exclamation mark is NOT a typo
 		WebIRCPass:      *webIRCPass,
+		Debug:           *debugMode,
 	})
 
 	if err != nil {

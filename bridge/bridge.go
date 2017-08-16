@@ -16,6 +16,8 @@ type Options struct {
 	IRCUseTLS       bool
 	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
 	WebIRCPass      string
+
+	Debug bool
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -27,6 +29,8 @@ type Bridge struct {
 	chanMapToDiscord map[string]string
 	chanIRC          []string
 	chanDiscord      []string
+
+	Debug bool
 
 	h *home
 }
@@ -46,7 +50,7 @@ func (b *Bridge) load(opts Options) bool {
 
 	b.ircServerAddress = opts.IRCServer
 	b.ircPrimaryName = opts.IRCListenerName
-
+	b.Debug = opts.Debug
 	b.chanMapToIRC = opts.ChannelMappings
 
 	ircChannels := make([]string, len(b.chanMapToIRC))

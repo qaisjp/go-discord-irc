@@ -116,7 +116,6 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 	return
 }
 
-// TODO: Catch username changes, and cache UserID:Username mappings somewhere
 func (m *ircManager) generateNickname(_ string, nick string) string {
 	// First clean it
 	nick = ircnick.NickClean(nick)

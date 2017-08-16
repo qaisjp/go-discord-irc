@@ -17,8 +17,10 @@ func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irc := &ircListener{irccon, nil}
 
 	setupIRCConnection(irccon, webIRCPass, "discord.", "fd75:f5f5:226f::")
-	// irccon.VerboseCallbackHandler = true
-	// irccon.Debug = true
+	if dib.Debug {
+		irccon.VerboseCallbackHandler = true
+		irccon.Debug = true
+	}
 
 	// Welcome event
 	irccon.AddCallback("001", irc.OnWelcome)
