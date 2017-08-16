@@ -49,6 +49,11 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
+	// Ignore messages from Discord bots
+	if strings.HasSuffix(e.Nick, "~d") {
+		return
+	}
+
 	msg := e.Message()
 	if e.Code == "CTCP_ACTION" {
 		msg = "_" + msg + "_"
