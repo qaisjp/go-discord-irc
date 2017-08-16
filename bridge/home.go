@@ -78,11 +78,17 @@ func (h *home) loop() {
 				continue
 			}
 
+			avatar := h.discord.GetAvatar(mapping.GuildID, msg.Username)
+			if avatar == "" {
+				// If we don't have a Discord avatar, generate an adorable avatar
+				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
+			}
+
 			// TODO: What if it takes a long time? wait=true below.
 			err := h.discord.WebhookExecute(mapping.ID, mapping.Token, true, &discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,
-				AvatarURL: h.discord.GetAvatar(mapping.GuildID, msg.Username),
+				AvatarURL: avatar,
 			})
 
 			if err != nil {
