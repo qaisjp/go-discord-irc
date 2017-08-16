@@ -28,6 +28,7 @@ func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	// Called when received channel names... essentially OnJoinChannel
 	irccon.AddCallback("366", irc.OnJoinChannel)
 	irccon.AddCallback("PRIVMSG", irc.OnPrivateMessage)
+	irccon.AddCallback("CTCP_ACTION", irc.OnPrivateMessage)
 
 	return irc
 }
@@ -47,10 +48,15 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
+	msg := e.Message()
+	if e.Code == "CTCP_ACTION" {
+		msg = "_" + msg + "_"
+	}
+
 	go func(e *irc.Event) {
 		i.h.discordMessagesChan <- DiscordNewMessage{
 			ircChannel: e.Arguments[0],
-			str:        fmt.Sprintf("<%s> %s", e.Nick, e.Message()),
+			str:        fmt.Sprintf("<%s> %s", e.Nick, msg),
 		}
 	}(e)
 }
