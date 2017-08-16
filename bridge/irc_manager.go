@@ -100,6 +100,7 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 	}
 
 	con.innerCon.AddCallback("001", con.OnWelcome)
+	con.innerCon.AddCallback("PRIVMSG", con.OnPrivateMessage)
 
 	m.ircConnections[user.ID] = con
 

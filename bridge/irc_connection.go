@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"log"
 	"strings"
 
 	irc "github.com/thoj/go-ircevent"
@@ -52,4 +53,14 @@ func (i *ircConnection) UpdateDetails(discriminator, nick string) {
 	i.nick = nick
 
 	go i.innerCon.Nick(nick)
+}
+
+func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
+	// Alert private messages
+	if string(e.Arguments[0][0]) != "#" {
+		i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported.")
+		return
+	}
+
+	log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
 }
