@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
 
@@ -30,6 +31,11 @@ type Bridge struct {
 
 	Config *Config
 	h      *home
+}
+
+type Mapping struct {
+	*discordgo.Webhook
+	IRCChannel string
 }
 
 // Close the Bridge

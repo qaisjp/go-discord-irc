@@ -2,6 +2,8 @@ package bridge
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
@@ -40,6 +42,31 @@ func (d *discordBot) Open() error {
 	err := d.Session.Open()
 	if err != nil {
 		return errors.Wrap(err, "discord, could not open session")
+	}
+
+	wh, err := d.GuildWebhooks(d.h.dib.Config.GuildID)
+	if err != nil {
+		restErr := err.(*discordgo.RESTError)
+		if restErr.Message != nil && restErr.Message.Code == 50013 {
+			fmt.Println("ERROR: The bot does not have the 'Manage Webhooks' permission.")
+			os.Exit(1)
+		}
+
+		panic(err)
+	}
+
+	mappings := []Mapping{}
+	for _, hook := range wh {
+		if strings.HasPrefix(hook.Name, "IRC: #") {
+			mappings = append(mappings, Mapping{
+				Webhook:    hook,
+				IRCChannel: strings.TrimPrefix(hook.Name, "IRC: "),
+			})
+		}
+	}
+
+	for _, m := range mappings {
+		fmt.Printf("%s:%s\n", m.ChannelID, m.IRCChannel)
 	}
 
 	return nil
