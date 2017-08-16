@@ -15,7 +15,6 @@ and spawn additional connections for each online person in the Discord.
 Things to keep in mind in terms of functionality:
 
 - This does not work with private IRC/Discord channels (yet)
-- For some reason it runs at 100% CPU
 
 It's built with configuration in mind, but may need a little bit of tweaking for it to work for you:
 
