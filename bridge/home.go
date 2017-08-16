@@ -16,7 +16,7 @@ type home struct {
 
 	done chan bool
 
-	discordMessagesChan      chan DiscordNewMessage
+	discordMessagesChan      chan IRCMessage
 	discordMessageEventsChan chan *discordgo.Message
 	updateUserChan           chan DiscordUser
 }
@@ -30,7 +30,7 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 
 		done: make(chan bool),
 
-		discordMessagesChan:      make(chan DiscordNewMessage),
+		discordMessagesChan:      make(chan IRCMessage),
 		discordMessageEventsChan: make(chan *discordgo.Message),
 		updateUserChan:           make(chan DiscordUser),
 	}
@@ -78,7 +78,7 @@ func (h *home) loop() {
 				continue
 			}
 
-			// TOOD: What if it takes a long time? wait=true below.
+			// TODO: What if it takes a long time? wait=true below.
 			err := h.discord.WebhookExecute(mapping.ID, mapping.Token, true, &discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,

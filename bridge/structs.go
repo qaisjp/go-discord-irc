@@ -1,14 +1,14 @@
 package bridge
 
-// DiscordMessageEvent is a chat message sent to IRC (from Discord)
-type DiscordMessageEvent struct {
+// DiscordMessage is a chat message sent to IRC (from Discord)
+type DiscordMessage struct {
 	channelID string
 	userID    string
 	message   string
 }
 
-// DiscordNewMessage is a chat message sent to Discord (from IRCListener)
-type DiscordNewMessage struct {
+// IRCMessage is a chat message sent to Discord (from IRCListener)
+type IRCMessage struct {
 	IRCChannel string
 	Username   string
 	Message    string
@@ -22,3 +22,5 @@ type DiscordUser struct {
 	Bot           bool   // are they a bot?
 	Online        bool
 }
+
+//

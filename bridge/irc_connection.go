@@ -15,7 +15,7 @@ type ircConnection struct {
 	discriminator string
 	nick          string
 
-	messages chan DiscordNewMessage
+	messages chan IRCMessage
 
 	manager *ircManager
 }

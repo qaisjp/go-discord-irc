@@ -96,7 +96,7 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 		discriminator: user.Discriminator,
 		nick:          user.Nick,
 
-		messages: make(chan DiscordNewMessage),
+		messages: make(chan IRCMessage),
 
 		manager: m,
 	}
@@ -134,7 +134,7 @@ func (m *ircManager) SendMessage(channel string, msg *discordgo.Message) {
 		return
 	}
 
-	ircMessage := DiscordNewMessage{
+	ircMessage := IRCMessage{
 		IRCChannel: channel,
 		Message:    msg.Content,
 	}

@@ -54,7 +54,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	}
 
 	go func(e *irc.Event) {
-		i.h.discordMessagesChan <- DiscordNewMessage{
+		i.h.discordMessagesChan <- IRCMessage{
 			IRCChannel: e.Arguments[0],
 			Username:   e.Nick,
 			Message:    msg,
