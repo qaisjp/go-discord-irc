@@ -22,8 +22,7 @@ It's built with configuration in mind, but may need a little bit of tweaking for
 - **Dependency mod**: Right now one of the dependencies ([github.com/thoj/irc-event](https://github.com/thoj/irc-event)) needs to be modified.
 This is not yet included as one day I hope to submit a proper pull request supporting WebIRC.
 - **Server mod**: Discord usernames contain `~`. This usually invalid nickname character required custom modifications to the IRC server code.
-- **Server config**: This uses `WEBIRC` to give Discord users on IRC a distinct hostname. [See here](https://kiwiirc.com/docs/webirc). 
-- **Hardcoded**: Only spawns an IRC client for users with @qaisjp's ID at the moment.
+- **Server config**: This uses `WEBIRC` to give Discord users on IRC a distinct hostname. [See here](https://kiwiirc.com/docs/webirc).
 
 ## Configuration
 
