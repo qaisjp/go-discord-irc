@@ -80,8 +80,9 @@ func (h *home) loop() {
 
 			// TOOD: What if it takes a long time? wait=true below.
 			err := h.discord.WebhookExecute(mapping.ID, mapping.Token, true, &discordgo.WebhookParams{
-				Content:  msg.Message,
-				Username: msg.Username,
+				Content:   msg.Message,
+				Username:  msg.Username,
+				AvatarURL: h.discord.GetAvatar(mapping.GuildID, msg.Username),
 			})
 
 			if err != nil {

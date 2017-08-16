@@ -164,6 +164,55 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 	}
 }
 
+// See https://github.com/reactiflux/discord-irc/pull/230/files#diff-7202bb7fb017faefd425a2af32df2f9dR357
+func (d *discordBot) GetAvatar(guildID, username string) (_ string) {
+	// First get all members
+	guild, err := d.State.Guild(guildID)
+	if err != nil {
+		panic(err)
+	}
+
+	// Matching members
+	var foundMember *discordgo.Member
+
+	// First check an exact match, aborting on multiple
+	for _, member := range guild.Members {
+		if (username != member.Nick) && (username != member.User.Username) {
+			continue
+		}
+
+		if foundMember == nil {
+			foundMember = member
+		} else {
+			return
+		}
+	}
+
+	// If no member found, check case-insensitively
+	if foundMember == nil {
+		for _, member := range guild.Members {
+			if !strings.EqualFold(username, member.Nick) && !strings.EqualFold(username, member.User.Username) {
+				continue
+			}
+
+			if foundMember == nil {
+				foundMember = member
+			} else {
+				return
+			}
+		}
+	}
+
+	// Do not provide an avatar if:
+	// - no matching user OR
+	// - multiple matching users
+	if foundMember == nil {
+		return
+	}
+
+	return discordgo.EndpointUserAvatar(foundMember.User.ID, foundMember.User.Avatar)
+}
+
 // GetMemberNick returns the real display name for a Discord GuildMember
 func GetMemberNick(m *discordgo.Member) string {
 	if m.Nick == "" {
