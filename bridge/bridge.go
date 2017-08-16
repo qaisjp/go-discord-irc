@@ -24,11 +24,6 @@ type Config struct {
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
 type Bridge struct {
-	chanMapToIRC     map[string]string
-	chanMapToDiscord map[string]string
-	chanIRC          []string
-	chanDiscord      []string
-
 	Config *Config
 	h      *home
 }
@@ -50,27 +45,6 @@ func (b *Bridge) load(opts *Config) bool {
 		fmt.Println("Missing server name.")
 		return false
 	}
-
-	b.chanMapToIRC = opts.ChannelMappings
-
-	ircChannels := make([]string, len(b.chanMapToIRC))
-	discordChannels := make([]string, len(b.chanMapToIRC))
-
-	i := 0
-	for discord, irc := range opts.ChannelMappings {
-		ircChannels[i] = irc
-		discordChannels[i] = discord
-		i++
-	}
-
-	chanMapToDiscord := make(map[string]string)
-	for k, v := range b.chanMapToIRC {
-		chanMapToDiscord[v] = k
-	}
-	b.chanMapToDiscord = chanMapToDiscord
-
-	b.chanIRC = ircChannels
-	b.chanDiscord = discordChannels
 
 	return true
 }

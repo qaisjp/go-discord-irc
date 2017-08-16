@@ -55,19 +55,29 @@ func (d *discordBot) Open() error {
 		panic(err)
 	}
 
-	mappings := []Mapping{}
+	mappings := []*Mapping{}
 	for _, hook := range wh {
 		if strings.HasPrefix(hook.Name, "IRC: #") {
-			mappings = append(mappings, Mapping{
+			mappings = append(mappings, &Mapping{
 				Webhook:    hook,
 				IRCChannel: strings.TrimPrefix(hook.Name, "IRC: "),
 			})
 		}
 	}
 
-	for _, m := range mappings {
-		fmt.Printf("%s:%s\n", m.ChannelID, m.IRCChannel)
+	// Check for duplicate channels
+	for i, mapping := range mappings {
+		for j, check := range mappings {
+			if (mapping.ChannelID == check.ChannelID) || (mapping.IRCChannel == check.IRCChannel) {
+				if i != j {
+					fmt.Printf("Check channel %s or %s for duplicate webhook entries.\n", check.ChannelID, check.IRCChannel)
+					os.Exit(1)
+				}
+			}
+		}
 	}
+
+	d.h.Mappings = mappings
 
 	return nil
 }

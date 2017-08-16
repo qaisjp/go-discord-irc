@@ -10,6 +10,8 @@ type home struct {
 	ircListener *ircListener
 	ircManager  *ircManager
 
+	Mappings []*Mapping
+
 	done chan bool
 
 	discordMessagesChan      chan DiscordNewMessage
@@ -35,7 +37,30 @@ func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, irc
 }
 
 func (h *home) GetIRCChannels() []string {
-	return h.dib.chanIRC
+	channels := make([]string, len(h.Mappings))
+	for i, mapping := range h.Mappings {
+		channels[i] = mapping.IRCChannel
+	}
+
+	return channels
+}
+
+func (h *home) GetMappingByIRC(channel string) *Mapping {
+	for _, mapping := range h.Mappings {
+		if mapping.IRCChannel == channel {
+			return mapping
+		}
+	}
+	return nil
+}
+
+func (h *home) GetMappingByDiscord(channel string) *Mapping {
+	for _, mapping := range h.Mappings {
+		if mapping.ChannelID == channel {
+			return mapping
+		}
+	}
+	return nil
 }
 
 func (h *home) loop() {
@@ -44,24 +69,28 @@ func (h *home) loop() {
 
 		// Messages from IRC to Discord
 		case msg := <-h.discordMessagesChan:
-			if h.dib.chanMapToDiscord[msg.ircChannel] == "" {
+			mapping := h.GetMappingByIRC(msg.ircChannel)
+
+			if mapping == nil {
 				fmt.Println("Ignoring message sent from an unhandled IRC channel.")
 				continue
 			}
-			_, err := h.discord.ChannelMessageSend(h.dib.chanMapToDiscord[msg.ircChannel], msg.str)
+
+			_, err := h.discord.ChannelMessageSend(mapping.ChannelID, msg.str)
 			if err != nil {
 				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
 			}
 
 		// Messages from Discord to IRC
 		case msg := <-h.discordMessageEventsChan:
-			ircChan := h.dib.chanMapToIRC[msg.channelID]
-			if ircChan == "" {
+			mapping := h.GetMappingByDiscord(msg.channelID)
+
+			if mapping == nil {
 				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 
-			h.ircManager.SendMessage(msg.userID, ircChan, msg.message)
+			h.ircManager.SendMessage(msg.userID, mapping.IRCChannel, msg.message)
 
 		// Notification to potentially update, or create, a user
 		case user := <-h.updateUserChan:
