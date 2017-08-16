@@ -6,10 +6,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Options to be passed to New
-type Options struct {
+// Config to be passed to New
+type Config struct {
 	DiscordBotToken, GuildID string
 
+	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
 	IRCServer       string
@@ -22,17 +23,13 @@ type Options struct {
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
 type Bridge struct {
-	ircServerAddress string
-	ircPrimaryName   string
-
 	chanMapToIRC     map[string]string
 	chanMapToDiscord map[string]string
 	chanIRC          []string
 	chanDiscord      []string
 
-	Debug bool
-
-	h *home
+	Config *Config
+	h      *home
 }
 
 // Close the Bridge
@@ -42,15 +39,12 @@ func (b *Bridge) Close() {
 }
 
 // TODO: Use errors package
-func (b *Bridge) load(opts Options) bool {
+func (b *Bridge) load(opts *Config) bool {
 	if opts.IRCServer == "" {
 		fmt.Println("Missing server name.")
 		return false
 	}
 
-	b.ircServerAddress = opts.IRCServer
-	b.ircPrimaryName = opts.IRCListenerName
-	b.Debug = opts.Debug
 	b.chanMapToIRC = opts.ChannelMappings
 
 	ircChannels := make([]string, len(b.chanMapToIRC))
@@ -76,15 +70,18 @@ func (b *Bridge) load(opts Options) bool {
 }
 
 // New Bridge
-func New(opts Options) (*Bridge, error) {
-	dib := &Bridge{}
-	if !dib.load(opts) {
-		return nil, errors.New("error with Options. TODO: More info here")
+func New(conf *Config) (*Bridge, error) {
+	dib := &Bridge{
+		Config: conf,
 	}
 
-	discord, err := prepareDiscord(dib, opts.DiscordBotToken, opts.GuildID)
-	ircPrimary := prepareIRCListener(dib, opts.WebIRCPass)
-	ircManager := prepareIRCManager(opts.IRCServer, opts.WebIRCPass)
+	if !dib.load(conf) {
+		return nil, errors.New("error with Config. TODO: More info here")
+	}
+
+	discord, err := prepareDiscord(dib, conf.DiscordBotToken, conf.GuildID)
+	ircPrimary := prepareIRCListener(dib, conf.WebIRCPass)
+	ircManager := prepareIRCManager(conf.IRCServer, conf.WebIRCPass)
 
 	if err != nil {
 		return nil, err
@@ -108,7 +105,7 @@ func (b *Bridge) Open() (err error) {
 		return errors.Wrap(err, "can't open discord")
 	}
 
-	err = b.h.ircListener.Connect(b.ircServerAddress)
+	err = b.h.ircListener.Connect(b.Config.IRCServer)
 	if err != nil {
 		return errors.Wrap(err, "can't open irc connection")
 	}

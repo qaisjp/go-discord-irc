@@ -32,7 +32,7 @@ func main() {
 		fmt.Println("Warning: webirc_pass is empty")
 	}
 
-	dib, err := bridge.New(bridge.Options{
+	dib, err := bridge.New(&bridge.Config{
 		DiscordBotToken: *discordBotToken,
 		GuildID:         *guildID,
 		ChannelMappings: mappingsMap,
