@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -70,16 +71,45 @@ func (d *discordBot) Open() error {
 		for j, check := range mappings {
 			if (mapping.ChannelID == check.ChannelID) || (mapping.IRCChannel == check.IRCChannel) {
 				if i != j {
-					fmt.Printf("Check channel %s or %s for duplicate webhook entries.\n", check.ChannelID, check.IRCChannel)
-					os.Exit(1)
+					return errors.New("Check channels for duplicate webhook entries")
 				}
 			}
 		}
 	}
 
+	// Create alt webhooks for each mapping
+	for _, mapping := range mappings {
+		altHook, err := d.WebhookCreate(
+			mapping.ChannelID,
+			"(auto) "+mapping.Name,
+			mapping.Avatar,
+		)
+
+		if err != nil {
+			return errors.Wrapf(err, "Could not automatically create matching mapping")
+		}
+
+		mapping.AltHook = altHook
+	}
+
 	d.h.Mappings = mappings
 
 	return nil
+}
+
+func (d *discordBot) Close() error {
+	if len(d.h.Mappings) > 0 {
+		log.Println("Removing hooks...")
+		for _, hook := range d.h.Mappings {
+			_, err := d.WebhookDelete(hook.AltHook.ID)
+			if (err != nil) && (err != discordgo.ErrJSONUnmarshal) {
+				log.Printf("Could not remove hook %s: %s", hook.AltHook.ID, err.Error())
+			}
+		}
+		log.Println("Hooks removed!")
+	}
+
+	return d.Session.Close()
 }
 
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {

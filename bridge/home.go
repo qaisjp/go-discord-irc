@@ -84,8 +84,11 @@ func (h *home) loop() {
 				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
 			}
 
+			// Get current webhook
+			webhook := mapping.Get(msg.Username)
+
 			// TODO: What if it takes a long time? wait=true below.
-			err := h.discord.WebhookExecute(mapping.ID, mapping.Token, true, &discordgo.WebhookParams{
+			err := h.discord.WebhookExecute(webhook.ID, webhook.Token, true, &discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,
 				AvatarURL: avatar,
@@ -108,7 +111,7 @@ func (h *home) loop() {
 			// Ignore messages sent from our webhooks
 			fromHook := false
 			for _, mapping := range h.Mappings {
-				if mapping.ID == msg.Author.ID {
+				if (mapping.ID == msg.Author.ID) || (mapping.AltHook.ID == msg.Author.ID) {
 					fromHook = true
 				}
 			}
