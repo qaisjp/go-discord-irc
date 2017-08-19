@@ -12,12 +12,12 @@ import (
 
 type discordBot struct {
 	*discordgo.Session
-	h *home
+	bridge *Bridge
 
 	guildID string
 }
 
-func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) {
+func NewDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) {
 
 	// Create a new Discord session using the provided bot token.
 	session, err := discordgo.New("Bot " + botToken)
@@ -26,7 +26,7 @@ func prepareDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) 
 	}
 	session.StateEnabled = true
 
-	discord := &discordBot{session, nil, guildID}
+	discord := &discordBot{session, dib, guildID}
 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.onMessageCreate)
@@ -45,7 +45,7 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	wh, err := d.GuildWebhooks(d.h.Config.GuildID)
+	wh, err := d.GuildWebhooks(d.bridge.Config.GuildID)
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
 		if restErr.Message != nil && restErr.Message.Code == 50013 {
@@ -92,15 +92,15 @@ func (d *discordBot) Open() error {
 		mapping.AltHook = altHook
 	}
 
-	d.h.Mappings = mappings
+	d.bridge.mappings = mappings
 
 	return nil
 }
 
 func (d *discordBot) Close() error {
-	if len(d.h.Mappings) > 0 {
+	if len(d.bridge.mappings) > 0 {
 		log.Println("Removing hooks...")
-		for _, hook := range d.h.Mappings {
+		for _, hook := range d.bridge.mappings {
 			_, err := d.WebhookDelete(hook.AltHook.ID)
 			if (err != nil) && (err != discordgo.ErrJSONUnmarshal) {
 				log.Printf("Could not remove hook %s: %s", hook.AltHook.ID, err.Error())
@@ -131,7 +131,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		content = content[1 : len(m.Content)-1]
 	}
 
-	d.h.discordMessageEventsChan <- &DiscordMessage{
+	d.bridge.discordMessageEventsChan <- &DiscordMessage{
 		Message:  m.Message,
 		Content:  content,
 		IsAction: isAction,
@@ -163,7 +163,7 @@ func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.Presenc
 func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
 	if p.Status == "offline" {
-		d.h.updateUserChan <- DiscordUser{
+		d.bridge.updateUserChan <- DiscordUser{
 			ID:     p.User.ID,
 			Online: false,
 		}
@@ -197,7 +197,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 		return
 	}
 
-	d.h.updateUserChan <- DiscordUser{
+	d.bridge.updateUserChan <- DiscordUser{
 		ID:            m.User.ID,
 		Discriminator: m.User.Discriminator,
 		Nick:          GetMemberNick(m),

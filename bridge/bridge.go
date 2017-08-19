@@ -35,41 +35,24 @@ type Config struct {
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
 type Bridge struct {
 	Config *Config
-	h      *home
-}
 
-type Mapping struct {
-	*discordgo.Webhook
-	AltHook     *discordgo.Webhook
-	UsingAlt    bool
-	CurrentUser string
-	IRCChannel  string
-}
+	discord     *discordBot
+	ircListener *ircListener
+	ircManager  *IRCManager
 
-// Get the webhook given a user
-func (m *Mapping) Get(user string) *discordgo.Webhook {
-	if m.CurrentUser == user {
-		return m.Current()
-	}
+	mappings []*Mapping
 
-	m.UsingAlt = !m.UsingAlt
-	m.CurrentUser = user
-	return m.Current()
-}
+	done chan bool
 
-// Get the current webhook
-func (m *Mapping) Current() *discordgo.Webhook {
-	if m.UsingAlt {
-		return m.AltHook
-	}
-
-	return m.Webhook
+	discordMessagesChan      chan IRCMessage
+	discordMessageEventsChan chan *DiscordMessage
+	updateUserChan           chan DiscordUser
 }
 
 // Close the Bridge
 func (b *Bridge) Close() {
-	b.h.done <- true
-	<-b.h.done
+	b.done <- true
+	<-b.done
 }
 
 // TODO: Use errors package
@@ -86,25 +69,28 @@ func (b *Bridge) load(opts *Config) bool {
 func New(conf *Config) (*Bridge, error) {
 	dib := &Bridge{
 		Config: conf,
+		done:   make(chan bool),
+
+		discordMessagesChan:      make(chan IRCMessage),
+		discordMessageEventsChan: make(chan *DiscordMessage),
+		updateUserChan:           make(chan DiscordUser),
 	}
 
 	if !dib.load(conf) {
 		return nil, errors.New("error with Config. TODO: More info here")
 	}
 
-	discord, err := prepareDiscord(dib, conf.DiscordBotToken, conf.GuildID)
-	ircPrimary := prepareIRCListener(dib, conf.WebIRCPass)
-	ircManager := NewIRCManager()
+	var err error
 
+	dib.discord, err = NewDiscord(dib, conf.DiscordBotToken, conf.GuildID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Could not create discord bot")
 	}
 
-	prepareHome(dib, discord, ircPrimary, ircManager)
+	dib.ircListener = NewIRCListener(dib, conf.WebIRCPass)
+	dib.ircManager = NewIRCManager(dib)
 
-	discord.h = dib.h
-	ircPrimary.h = dib.h
-	ircManager.h = dib.h
+	go dib.loop()
 
 	return dib, nil
 }
@@ -113,17 +99,17 @@ func New(conf *Config) (*Bridge, error) {
 func (b *Bridge) Open() (err error) {
 
 	// Open a websocket connection to Discord and begin listening.
-	err = b.h.discord.Open()
+	err = b.discord.Open()
 	if err != nil {
 		return errors.Wrap(err, "can't open discord")
 	}
 
-	err = b.h.ircListener.Connect(b.Config.IRCServer)
+	err = b.ircListener.Connect(b.Config.IRCServer)
 	if err != nil {
 		return errors.Wrap(err, "can't open irc connection")
 	}
 
-	go b.h.ircListener.Loop()
+	go b.ircListener.Loop()
 
 	return
 }
@@ -135,4 +121,104 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 
 	con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
+}
+
+func (b *Bridge) GetIRCChannels() []string {
+	channels := make([]string, len(b.mappings))
+	for i, mapping := range b.mappings {
+		channels[i] = mapping.IRCChannel
+	}
+
+	return channels
+}
+
+func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
+	for _, mapping := range b.mappings {
+		if mapping.IRCChannel == channel {
+			return mapping
+		}
+	}
+	return nil
+}
+
+func (b *Bridge) GetMappingByDiscord(channel string) *Mapping {
+	for _, mapping := range b.mappings {
+		if mapping.ChannelID == channel {
+			return mapping
+		}
+	}
+	return nil
+}
+
+func (b *Bridge) loop() {
+	for {
+		select {
+
+		// Messages from IRC to Discord
+		case msg := <-b.discordMessagesChan:
+			mapping := b.GetMappingByIRC(msg.IRCChannel)
+
+			if mapping == nil {
+				fmt.Println("Ignoring message sent from an unhandled IRC channel.")
+				continue
+			}
+
+			avatar := b.discord.GetAvatar(mapping.GuildID, msg.Username)
+			if avatar == "" {
+				// If we don't have a Discord avatar, generate an adorable avatar
+				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
+			}
+
+			// Get current webhook
+			webhook := mapping.Get(msg.Username)
+
+			// TODO: What if it takes a long time? wait=true below.
+			err := b.discord.WebhookExecute(webhook.ID, webhook.Token, true, &discordgo.WebhookParams{
+				Content:   msg.Message,
+				Username:  msg.Username,
+				AvatarURL: avatar,
+			})
+
+			if err != nil {
+				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
+			}
+
+		// Messages from Discord to IRC
+		case msg := <-b.discordMessageEventsChan:
+			mapping := b.GetMappingByDiscord(msg.ChannelID)
+
+			// Do not do anything if we do not have a mapping for the channel
+			if mapping == nil {
+				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
+				continue
+			}
+
+			// Ignore messages sent from our webhooks
+			fromHook := false
+			for _, mapping := range b.mappings {
+				if (mapping.ID == msg.Author.ID) || (mapping.AltHook.ID == msg.Author.ID) {
+					fromHook = true
+				}
+			}
+			if fromHook {
+				continue
+			}
+
+			b.ircManager.SendMessage(mapping.IRCChannel, msg)
+
+		// Notification to potentially update, or create, a user
+		case user := <-b.updateUserChan:
+			b.ircManager.HandleUser(user)
+
+		// Done!
+		case <-b.done:
+			b.discord.Close()
+			b.ircListener.Quit()
+			b.ircManager.Close()
+			close(b.done)
+
+			return
+		}
+
+	}
 }

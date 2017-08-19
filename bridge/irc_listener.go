@@ -9,12 +9,12 @@ import (
 
 type ircListener struct {
 	*irc.Connection
-	h *home
+	bridge *Bridge
 }
 
-func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
+func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	irc := &ircListener{irccon, nil}
+	irc := &ircListener{irccon, dib}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
 	if dib.Config.Debug {
@@ -35,7 +35,7 @@ func prepareIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 
 func (i *ircListener) OnWelcome(e *irc.Event) {
 	// Join all channels
-	i.SendRaw("JOIN " + strings.Join(i.h.GetIRCChannels(), ","))
+	i.SendRaw("JOIN " + strings.Join(i.bridge.GetIRCChannels(), ","))
 }
 
 func (i *ircListener) OnJoinChannel(e *irc.Event) {
@@ -60,7 +60,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	}
 
 	go func(e *irc.Event) {
-		i.h.discordMessagesChan <- IRCMessage{
+		i.bridge.discordMessagesChan <- IRCMessage{
 			IRCChannel: e.Arguments[0],
 			Username:   e.Nick,
 			Message:    msg,

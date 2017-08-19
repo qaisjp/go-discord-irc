@@ -12,13 +12,14 @@ import (
 type IRCManager struct {
 	ircConnections map[string]*ircConnection
 
-	h *home
+	bridge *Bridge
 }
 
 // NewIRCManager creates a new IRCManager
-func NewIRCManager() *IRCManager {
+func NewIRCManager(bridge *Bridge) *IRCManager {
 	return &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
+		bridge:         bridge,
 	}
 }
 
@@ -82,7 +83,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		hostname += ".user.discord"
 	}
 
-	m.h.SetupIRCConnection(innerCon, hostname, ip)
+	m.bridge.SetupIRCConnection(innerCon, hostname, ip)
 
 	con := &ircConnection{
 		innerCon: innerCon,
@@ -101,7 +102,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	m.ircConnections[user.ID] = con
 
-	err := con.innerCon.Connect(m.h.Config.IRCServer)
+	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
 	if err != nil {
 		fmt.Println("error opening irc connection,", err)
 		// TODO: HANDLE THIS SITUATION
@@ -126,7 +127,7 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	// Person is appearing offline
 	if !ok {
 		length := len(msg.Author.Username)
-		m.h.ircListener.Privmsg(channel, fmt.Sprintf(
+		m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
 			"<%s#%s> %s",
 			msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
 			msg.Author.Discriminator,
@@ -157,5 +158,5 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels
 func (m *IRCManager) RequestChannels(userID string) []string {
-	return m.h.GetIRCChannels()
+	return m.bridge.GetIRCChannels()
 }
