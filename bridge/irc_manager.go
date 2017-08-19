@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/qaisjp/go-discord-irc/ircnick"
-	irc "github.com/thoj/go-ircevent"
+	irc "github.com/qaisjp/go-ircevent"
 )
 
 // Should only be used from one thread.

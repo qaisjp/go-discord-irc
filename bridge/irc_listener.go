@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/thoj/go-ircevent"
+	"github.com/qaisjp/go-ircevent"
 )
 
 type ircListener struct {

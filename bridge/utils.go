@@ -10,15 +10,14 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/thoj/go-ircevent"
+	"github.com/qaisjp/go-ircevent"
 )
 
 func setupIRCConnection(con *irc.Connection, webIRCPass, hostname, ip string) {
 	con.UseTLS = true
 	con.TLSConfig = &tls.Config{}
 
-	// this requires a modification to thoj/go-ircevent
-	con.InitialCommand = fmt.Sprintf("WEBIRC %s discord %s %s", webIRCPass, hostname, ip)
+	con.WebIRC = fmt.Sprintf("%s discord %s %s", webIRCPass, hostname, ip)
 }
 
 // Leftpad is from github.com/douglarek/leftpad

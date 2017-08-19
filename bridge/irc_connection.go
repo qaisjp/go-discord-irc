@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	irc "github.com/thoj/go-ircevent"
+	irc "github.com/qaisjp/go-ircevent"
 )
 
 // An ircConnection should only ever communicate with its manager
