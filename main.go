@@ -19,6 +19,7 @@ func main() {
 	guildID := flag.String("guild_id", "", "Guild to use")
 	webIRCPass := flag.String("webirc_pass", "", "Password for WEBIRC")
 	debugMode := flag.Bool("debug", false, "Debug mode?")
+	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
 
 	flag.Parse()
 
@@ -27,13 +28,14 @@ func main() {
 	}
 
 	dib, err := bridge.New(&bridge.Config{
-		DiscordBotToken: *discordBotToken,
-		GuildID:         *guildID,
-		IRCListenerName: *ircUsername,
-		IRCServer:       *ircServer,
-		IRCUseTLS:       !*ircNoTLS, // exclamation mark is NOT a typo
-		WebIRCPass:      *webIRCPass,
-		Debug:           *debugMode,
+		DiscordBotToken:    *discordBotToken,
+		GuildID:            *guildID,
+		IRCListenerName:    *ircUsername,
+		IRCServer:          *ircServer,
+		IRCUseTLS:          !*ircNoTLS, // exclamation mark is NOT a typo
+		WebIRCPass:         *webIRCPass,
+		Debug:              *debugMode,
+		InsecureSkipVerify: *insecure,
 	})
 
 	if err != nil {
