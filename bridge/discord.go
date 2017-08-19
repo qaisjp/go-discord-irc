@@ -45,7 +45,7 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	wh, err := d.GuildWebhooks(d.h.dib.Config.GuildID)
+	wh, err := d.GuildWebhooks(d.h.Config.GuildID)
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
 		if restErr.Message != nil && restErr.Message.Code == 50013 {

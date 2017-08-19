@@ -1,24 +1,13 @@
 package bridge
 
 import (
-	"crypto/tls"
-	"fmt"
 	"strconv"
 
 	"strings"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
-
-	"github.com/qaisjp/go-ircevent"
 )
-
-func setupIRCConnection(con *irc.Connection, webIRCPass, hostname, ip string) {
-	con.UseTLS = true
-	con.TLSConfig = &tls.Config{}
-
-	con.WebIRC = fmt.Sprintf("%s discord %s %s", webIRCPass, hostname, ip)
-}
 
 // Leftpad is from github.com/douglarek/leftpad
 func Leftpad(s string, length int, ch ...rune) string {

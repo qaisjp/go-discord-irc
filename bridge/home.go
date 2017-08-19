@@ -7,10 +7,10 @@ import (
 )
 
 type home struct {
-	dib         *Bridge
+	*Bridge
 	discord     *discordBot
 	ircListener *ircListener
-	ircManager  *ircManager
+	ircManager  *IRCManager
 
 	Mappings []*Mapping
 
@@ -21,9 +21,9 @@ type home struct {
 	updateUserChan           chan DiscordUser
 }
 
-func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, ircManager *ircManager) {
+func prepareHome(dib *Bridge, discord *discordBot, ircListener *ircListener, ircManager *IRCManager) {
 	dib.h = &home{
-		dib:         dib,
+		Bridge:      dib,
 		discord:     discord,
 		ircListener: ircListener,
 		ircManager:  ircManager,

@@ -18,7 +18,7 @@ type ircConnection struct {
 
 	messages chan IRCMessage
 
-	manager *ircManager
+	manager *IRCManager
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {

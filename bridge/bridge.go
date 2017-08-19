@@ -1,10 +1,12 @@
 package bridge
 
 import (
+	"crypto/tls"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	irc "github.com/qaisjp/go-ircevent"
 )
 
 // Config to be passed to New
@@ -18,6 +20,14 @@ type Config struct {
 	IRCUseTLS       bool
 	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
 	WebIRCPass      string
+
+	// InsecureSkipVerify controls whether a client verifies the
+	// server's certificate chain and host name.
+	// If InsecureSkipVerify is true, TLS accepts any certificate
+	// presented by the server and any host name in that certificate.
+	// In this mode, TLS is susceptible to man-in-the-middle attacks.
+	// This should be used only for testing.
+	InsecureSkipVerify bool
 
 	Debug bool
 }
@@ -84,7 +94,7 @@ func New(conf *Config) (*Bridge, error) {
 
 	discord, err := prepareDiscord(dib, conf.DiscordBotToken, conf.GuildID)
 	ircPrimary := prepareIRCListener(dib, conf.WebIRCPass)
-	ircManager := prepareIRCManager(conf.IRCServer, conf.WebIRCPass)
+	ircManager := NewIRCManager()
 
 	if err != nil {
 		return nil, err
@@ -116,4 +126,13 @@ func (b *Bridge) Open() (err error) {
 	go b.h.ircListener.Loop()
 
 	return
+}
+
+func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
+	con.UseTLS = true
+	con.TLSConfig = &tls.Config{
+		InsecureSkipVerify: b.Config.InsecureSkipVerify,
+	}
+
+	con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
 }

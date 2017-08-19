@@ -8,30 +8,27 @@ import (
 	irc "github.com/qaisjp/go-ircevent"
 )
 
-// Should only be used from one thread.
-type ircManager struct {
-	ircConnections   map[string]*ircConnection
-	ircServerAddress string
-	webIRCPass       string
+// IRCManager should only be used from one thread.
+type IRCManager struct {
+	ircConnections map[string]*ircConnection
 
 	h *home
 }
 
-func prepareIRCManager(ircServerAddress, webIRCPass string) *ircManager {
-	return &ircManager{
-		ircConnections:   make(map[string]*ircConnection),
-		ircServerAddress: ircServerAddress,
-		webIRCPass:       webIRCPass,
+// NewIRCManager creates a new IRCManager
+func NewIRCManager() *IRCManager {
+	return &IRCManager{
+		ircConnections: make(map[string]*ircConnection),
 	}
 }
 
-func (m *ircManager) CloseConnection(i *ircConnection) {
+func (m *IRCManager) CloseConnection(i *ircConnection) {
 	delete(m.ircConnections, i.userID)
 	close(i.messages)
 	i.innerCon.Quit()
 }
 
-func (m *ircManager) Close() {
+func (m *IRCManager) Close() {
 	i := 0
 	for _, con := range m.ircConnections {
 		m.CloseConnection(con)
@@ -39,7 +36,7 @@ func (m *ircManager) Close() {
 	}
 }
 
-func (m *ircManager) HandleUser(user DiscordUser) {
+func (m *IRCManager) HandleUser(user DiscordUser) {
 	if con, ok := m.ircConnections[user.ID]; ok {
 		// Close the connection if they are not online
 		if !user.Online {
@@ -85,7 +82,7 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 		hostname += ".user.discord"
 	}
 
-	setupIRCConnection(innerCon, m.webIRCPass, hostname, ip)
+	m.h.SetupIRCConnection(innerCon, hostname, ip)
 
 	con := &ircConnection{
 		innerCon: innerCon,
@@ -104,7 +101,7 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 
 	m.ircConnections[user.ID] = con
 
-	err := con.innerCon.Connect(m.ircServerAddress)
+	err := con.innerCon.Connect(m.h.Config.IRCServer)
 	if err != nil {
 		fmt.Println("error opening irc connection,", err)
 		// TODO: HANDLE THIS SITUATION
@@ -116,7 +113,7 @@ func (m *ircManager) HandleUser(user DiscordUser) {
 	return
 }
 
-func (m *ircManager) generateNickname(_ string, nick string) string {
+func (m *IRCManager) generateNickname(_ string, nick string) string {
 	// First clean it
 	nick = ircnick.NickClean(nick)
 
@@ -124,7 +121,7 @@ func (m *ircManager) generateNickname(_ string, nick string) string {
 	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
-func (m *ircManager) SendMessage(channel string, msg *DiscordMessage) {
+func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
 
 	// Person is appearing offline
@@ -154,6 +151,6 @@ func (m *ircManager) SendMessage(channel string, msg *DiscordMessage) {
 // Find all the Discord channels this user belongs to,
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels
-func (m *ircManager) RequestChannels(userID string) []string {
+func (m *IRCManager) RequestChannels(userID string) []string {
 	return m.h.GetIRCChannels()
 }
