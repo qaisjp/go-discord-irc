@@ -118,7 +118,6 @@ func (m *IRCManager) generateNickname(_ string, nick string) string {
 	nick = ircnick.NickClean(nick)
 
 	return nick + "~d"
-	// return fmt.Sprintf("[%s-%s]", username, discriminator), nil
 }
 
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
@@ -126,7 +125,13 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 	// Person is appearing offline
 	if !ok {
-		m.h.ircListener.Privmsg(channel, fmt.Sprintf("<%s#%s> %s", msg.Author.Username, msg.Author.Discriminator, msg.Content))
+		length := len(msg.Author.Username)
+		m.h.ircListener.Privmsg(channel, fmt.Sprintf(
+			"<%s#%s> %s",
+			msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
+			msg.Author.Discriminator,
+			msg.Content,
+		))
 		return
 	}
 
