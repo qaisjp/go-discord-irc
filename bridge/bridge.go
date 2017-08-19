@@ -117,8 +117,3 @@ func (b *Bridge) Open() (err error) {
 
 	return
 }
-
-// func testingChannels(id string) bool {
-// 	// inf1, bottest
-// 	return /*(id == "315278744572919809") ||*/ (id == "316038111811600387")
-// }

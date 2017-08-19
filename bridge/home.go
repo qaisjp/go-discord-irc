@@ -123,10 +123,6 @@ func (h *home) loop() {
 
 		// Notification to potentially update, or create, a user
 		case user := <-h.updateUserChan:
-			// if user.ID != "83386293446246400" {
-			// 	continue
-			// }
-
 			h.ircManager.HandleUser(user)
 
 		// Done!

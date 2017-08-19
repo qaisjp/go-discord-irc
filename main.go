@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,6 +37,7 @@ func main() {
 	})
 
 	if err != nil {
+		log.Printf("Go-Discord-IRC failed to start because: %s", err.Error())
 		return
 	}
 
