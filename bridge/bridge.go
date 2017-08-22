@@ -29,6 +29,10 @@ type Config struct {
 	// This should be used only for testing.
 	InsecureSkipVerify bool
 
+	// SimpleMode, when enabled, will ensure that IRCManager not spawn
+	// an IRC connection for each of the online Discord users.
+	SimpleMode bool
+
 	Suffix string // Suffix is the suffix to append to Discord users on the IRC side.
 
 	Debug bool
@@ -174,7 +178,7 @@ func (b *Bridge) loop() {
 			// Get current webhook
 			webhook := mapping.Get(msg.Username)
 
-			// TODO: What if it takes a long time? wait=true below.
+			// TODO: What if it takes a long time? See wait=true below.
 			err := b.discord.WebhookExecute(webhook.ID, webhook.Token, true, &discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,
@@ -209,6 +213,7 @@ func (b *Bridge) loop() {
 			b.ircManager.SendMessage(mapping.IRCChannel, msg)
 
 		// Notification to potentially update, or create, a user
+		// We should not receive anything on this channel if we're in Simple Mode
 		case user := <-b.updateUserChan:
 			b.ircManager.HandleUser(user)
 

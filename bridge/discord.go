@@ -17,7 +17,7 @@ type discordBot struct {
 	guildID string
 }
 
-func NewDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) {
+func NewDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 
 	// Create a new Discord session using the provided bot token.
 	session, err := discordgo.New("Bot " + botToken)
@@ -26,15 +26,18 @@ func NewDiscord(dib *Bridge, botToken, guildID string) (*discordBot, error) {
 	}
 	session.StateEnabled = true
 
-	discord := &discordBot{session, dib, guildID}
+	discord := &discordBot{session, bridge, guildID}
 
 	// These events are all fired in separate goroutines
-	discord.AddHandler(discord.onMessageCreate)
-	discord.AddHandler(discord.onMemberListChunk)
-	discord.AddHandler(discord.onMemberUpdate)
-	discord.AddHandler(discord.OnPresencesReplace)
-	discord.AddHandler(discord.OnPresenceUpdate)
 	discord.AddHandler(discord.OnReady)
+	discord.AddHandler(discord.onMessageCreate)
+
+	if !bridge.Config.SimpleMode {
+		discord.AddHandler(discord.onMemberListChunk)
+		discord.AddHandler(discord.onMemberUpdate)
+		discord.AddHandler(discord.OnPresencesReplace)
+		discord.AddHandler(discord.OnPresenceUpdate)
+	}
 
 	return discord, nil
 }

@@ -124,7 +124,7 @@ func (m *IRCManager) generateNickname(_ string, nick string) string {
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
 
-	// Person is appearing offline
+	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
 		length := len(msg.Author.Username)
 		m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(

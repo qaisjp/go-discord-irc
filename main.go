@@ -21,6 +21,7 @@ func main() {
 	debugMode := flag.Bool("debug", false, "Debug mode?")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
 	suffix := flag.String("suffix", "~d", "The suffix to append to IRC connections (not in use when simple mode is on)")
+	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 
 	flag.Parse()
 
@@ -38,6 +39,7 @@ func main() {
 		Debug:              *debugMode,
 		InsecureSkipVerify: *insecure,
 		Suffix:             *suffix,
+		SimpleMode:         *simple,
 	})
 
 	if err != nil {
