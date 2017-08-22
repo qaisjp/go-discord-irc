@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -126,10 +127,14 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		s.ChannelMessageSend(m.ChannelID, "Pong!")
 	}
 
-	isAction := len(m.Content) > 2 &&
+	content := d.ParseText(m.Message)
+
+	// The content is an action if it matches "_(.+)_"
+	isAction := len(content) > 2 &&
 		m.Content[0] == '_' &&
-		m.Content[len(m.Content)-1] == '_'
-	content := m.Content
+		m.Content[len(content)-1] == '_'
+
+	// If it is an action, remove the enclosing underscores
 	if isAction {
 		content = content[1 : len(m.Content)-1]
 	}
@@ -139,6 +144,53 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		Content:  content,
 		IsAction: isAction,
 	}
+}
+
+// Up to date as of https://git.io/v5kJg
+var channelMention = regexp.MustCompile(`<#(\d+)>`)
+var roleMention = regexp.MustCompile(`<@&(\d+)>`)
+
+// Up to date as of https://git.io/v5kJg
+func (d *discordBot) ParseText(m *discordgo.Message) string {
+	// Content with @user mentions replaced
+	content := m.ContentWithMentionsReplaced()
+
+	// Sanitise multiple lines in a single message
+	content = strings.Replace(content, "\r\n", "\n", -1) // replace CRLF with LF
+	content = strings.Replace(content, "\r", "\n", -1)   // replace CR with LF
+	content = strings.Replace(content, "\n", " ", -1)    // replace LF with " "
+
+	// Replace <#xxxxx> channel mentions
+	content = channelMention.ReplaceAllStringFunc(content, func(str string) string {
+		// Strip enclosing identifiers
+		channelID := str[2 : len(str)-1]
+
+		channel, err := d.State.Channel(channelID)
+		if err == nil {
+			return "#" + channel.Name
+		} else if err == discordgo.ErrStateNotFound {
+			return "#deleted-channel"
+		}
+
+		panic(errors.Wrap(err, "Channel mention failed for "+str))
+	})
+
+	// Replace <@&xxxxx> role mentions
+	content = roleMention.ReplaceAllStringFunc(content, func(str string) string {
+		// Strip enclosing identifiers
+		roleID := str[3 : len(str)-1]
+
+		role, err := d.State.Role(d.bridge.Config.GuildID, roleID)
+		if err == nil {
+			return "@" + role.Name
+		} else if err == discordgo.ErrStateNotFound {
+			return "@deleted-role"
+		}
+
+		panic(errors.Wrap(err, "Channel mention failed for "+str))
+	})
+
+	return content
 }
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {

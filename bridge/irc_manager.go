@@ -124,6 +124,8 @@ func (m *IRCManager) generateNickname(_ string, nick string) string {
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
 
+	content := msg.Content
+
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
 		length := len(msg.Author.Username)
@@ -131,14 +133,14 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 			"<%s#%s> %s",
 			msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
 			msg.Author.Discriminator,
-			msg.Content,
+			content,
 		))
 		return
 	}
 
 	ircMessage := IRCMessage{
 		IRCChannel: channel,
-		Message:    msg.Content,
+		Message:    content,
 		IsAction:   msg.IsAction,
 	}
 
