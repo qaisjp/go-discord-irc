@@ -118,7 +118,7 @@ func (m *IRCManager) generateNickname(_ string, nick string) string {
 	// First clean it
 	nick = ircnick.NickClean(nick)
 
-	return nick + "~d"
+	return nick + m.bridge.Config.Suffix
 }
 
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {

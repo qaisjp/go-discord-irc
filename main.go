@@ -20,6 +20,7 @@ func main() {
 	webIRCPass := flag.String("webirc_pass", "", "Password for WEBIRC")
 	debugMode := flag.Bool("debug", false, "Debug mode?")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
+	suffix := flag.String("suffix", "~d", "The suffix to append to IRC connections (not in use when simple mode is on)")
 
 	flag.Parse()
 
@@ -36,6 +37,7 @@ func main() {
 		WebIRCPass:         *webIRCPass,
 		Debug:              *debugMode,
 		InsecureSkipVerify: *insecure,
+		Suffix:             *suffix,
 	})
 
 	if err != nil {

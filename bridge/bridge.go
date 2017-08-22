@@ -29,6 +29,8 @@ type Config struct {
 	// This should be used only for testing.
 	InsecureSkipVerify bool
 
+	Suffix string // Suffix is the suffix to append to Discord users on the IRC side.
+
 	Debug bool
 }
 
