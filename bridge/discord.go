@@ -2,8 +2,6 @@ package bridge
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"regexp"
 	"strings"
 
@@ -16,6 +14,8 @@ type discordBot struct {
 	bridge *Bridge
 
 	guildID string
+
+	whx *WebhookDemuxer
 }
 
 func NewDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
@@ -27,7 +27,13 @@ func NewDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 	}
 	session.StateEnabled = true
 
-	discord := &discordBot{session, bridge, guildID}
+	discord := &discordBot{
+		Session: session,
+		bridge:  bridge,
+
+		guildID: guildID,
+	}
+	discord.whx = NewWebhookDemuxer(discord)
 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.OnReady)
@@ -49,76 +55,33 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	wh, err := d.GuildWebhooks(d.bridge.Config.GuildID)
+	// We need to be able to create webhooks, lets check for this.
+	_, err = d.GuildWebhooks(d.bridge.Config.GuildID)
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
 		if restErr.Message != nil && restErr.Message.Code == 50013 {
-			fmt.Println("ERROR: The bot does not have the 'Manage Webhooks' permission.")
-			os.Exit(1)
+			return errors.Wrap(err, "The bot does not have the 'Manage Webhooks' permission.")
 		}
 
 		panic(err)
 	}
 
-	mappings := []*Mapping{}
-	for _, hook := range wh {
-		if strings.HasPrefix(hook.Name, "IRC: #") {
-			mappings = append(mappings, &Mapping{
-				Webhook:    hook,
-				IRCChannel: strings.TrimPrefix(hook.Name, "IRC: "),
-			})
-		}
-	}
-
-	// Check for duplicate channels
-	for i, mapping := range mappings {
-		for j, check := range mappings {
-			if (mapping.ChannelID == check.ChannelID) || (mapping.IRCChannel == check.IRCChannel) {
-				if i != j {
-					return errors.New("Check channels for duplicate webhook entries")
-				}
-			}
-		}
-	}
-
-	// Create alt webhooks for each mapping
-	for _, mapping := range mappings {
-		altHook, err := d.WebhookCreate(
-			mapping.ChannelID,
-			"(auto) "+mapping.Name,
-			mapping.Avatar,
-		)
-
-		if err != nil {
-			return errors.Wrapf(err, "Could not automatically create matching mapping")
-		}
-
-		mapping.AltHook = altHook
-	}
-
-	d.bridge.mappings = mappings
-
 	return nil
 }
 
 func (d *discordBot) Close() error {
-	if len(d.bridge.mappings) > 0 {
-		log.Println("Removing hooks...")
-		for _, hook := range d.bridge.mappings {
-			_, err := d.WebhookDelete(hook.AltHook.ID)
-			if (err != nil) && (err != discordgo.ErrJSONUnmarshal) {
-				log.Printf("Could not remove hook %s: %s", hook.AltHook.ID, err.Error())
-			}
-		}
-		log.Println("Hooks removed!")
-	}
-
+	d.whx.Destroy()
 	return d.Session.Close()
 }
 
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	// Ignore messages sent from our webhooks
+	if d.whx.ContainsWebhook(m.Author.ID) {
 		return
 	}
 

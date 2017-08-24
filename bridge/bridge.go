@@ -3,6 +3,7 @@ package bridge
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
@@ -64,9 +65,31 @@ func (b *Bridge) Close() {
 // TODO: Use errors package
 func (b *Bridge) load(opts *Config) bool {
 	if opts.IRCServer == "" {
-		fmt.Println("Missing server name.")
+		log.Println("ERROR", "Missing server name.")
 		return false
 	}
+
+	mappings := []*Mapping{}
+	for discord, irc := range opts.ChannelMappings {
+		mappings = append(mappings, &Mapping{
+			DiscordChannel: discord,
+			IRCChannel:     irc,
+		})
+	}
+
+	// Check for duplicate channels
+	for i, mapping := range mappings {
+		for j, check := range mappings {
+			if (mapping.DiscordChannel == check.DiscordChannel) || (mapping.IRCChannel == check.IRCChannel) {
+				if i != j {
+					log.Println("ERROR", "Check channel_mappings for duplicate entries")
+					return false
+				}
+			}
+		}
+	}
+
+	b.mappings = mappings
 
 	return true
 }
@@ -149,7 +172,7 @@ func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
 
 func (b *Bridge) GetMappingByDiscord(channel string) *Mapping {
 	for _, mapping := range b.mappings {
-		if mapping.ChannelID == channel {
+		if mapping.DiscordChannel == channel {
 			return mapping
 		}
 	}
@@ -169,17 +192,14 @@ func (b *Bridge) loop() {
 				continue
 			}
 
-			avatar := b.discord.GetAvatar(mapping.GuildID, msg.Username)
+			avatar := b.discord.GetAvatar(b.Config.GuildID, msg.Username)
 			if avatar == "" {
 				// If we don't have a Discord avatar, generate an adorable avatar
 				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
 			}
 
-			// Get current webhook
-			webhook := mapping.Get(msg.Username)
-
 			// TODO: What if it takes a long time? See wait=true below.
-			err := b.discord.WebhookExecute(webhook.ID, webhook.Token, true, &discordgo.WebhookParams{
+			err := b.discord.whx.Execute(mapping.DiscordChannel, &discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,
 				AvatarURL: avatar,
@@ -196,17 +216,6 @@ func (b *Bridge) loop() {
 			// Do not do anything if we do not have a mapping for the channel
 			if mapping == nil {
 				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
-				continue
-			}
-
-			// Ignore messages sent from our webhooks
-			fromHook := false
-			for _, mapping := range b.mappings {
-				if (mapping.ID == msg.Author.ID) || (mapping.AltHook.ID == msg.Author.ID) {
-					fromHook = true
-				}
-			}
-			if fromHook {
 				continue
 			}
 
