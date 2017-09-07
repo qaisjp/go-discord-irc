@@ -45,10 +45,10 @@ func NewWebhookDemuxer(bot *discordBot) *WebhookDemuxer {
 // Execute executes a webhook, keeping track of the username provided in WebhookParams.
 func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams) (err error) {
 	// First find any existing webhooks targeting this channel
-	channelWebhooks := make([]*Webhook, 0, 2)
-	for _, webhook := range x.webhooks {
+	channelWebhooks := make([]**Webhook, 0, 2)
+	for i, webhook := range x.webhooks {
 		if webhook.ChannelID == channelID {
-			channelWebhooks = append(channelWebhooks, webhook)
+			channelWebhooks = append(channelWebhooks, &x.webhooks[i])
 		}
 	}
 
@@ -61,13 +61,15 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	//   both unexpired/expired of the same username and
 	//	 channel existing at the same time.
 	for _, webhook := range channelWebhooks { // searching channel webhooks
-		if webhook.Username == data.Username {
-			chosenWebhook = webhook
+		if (*webhook).Username == data.Username {
+			chosenWebhook = *webhook
 			log.Println("Found perfect webhook")
 			break
 		}
 	}
 
+	// THIS DOESN'T WORK BECAUSE AN EXPIRED WEBHOOK DOES NOT IMPLY USER IS DIFFERENT
+	//
 	// If we haven't got a webhook, find an expired
 	// webhook from the channel pool with any username.
 	// We only care about expiry here because we don't want
@@ -81,7 +83,6 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// 		}
 	// 	}
 	// }
-	// THIS DOESN'T WORK BECAUSE AN EXPIRED WEBHOOK DOES NOT IMPLY USER IS DIFFERENT
 
 	// If we have found an expired webhook, there is the possibility that
 	// there are untouched webhooks that are expired. Lets clean those up.
@@ -90,18 +91,36 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 		// lets only clean up if we have more than 2 hooks
 		// This is the number stuff below:
 
-		n := len(x.webhooks)
+		originalLength := len(x.webhooks)
+		n := originalLength
+
 		// Clean up expired webhooks
-		for _, webhook := range channelWebhooks {
+		for i, webhook := range channelWebhooks {
 			if n <= 2 {
 				break
 			}
-			if webhook.Expired {
-				err := x.WebhookDelete(webhook)
+			if (*webhook).Expired {
+				// Kill the webhook expiry timer
+				(*webhook).Close()
+
+				err := x.WebhookDelete(*webhook)
 				if err != nil {
-					log.Printf("-- Could not remove hook %s: %s", webhook.ID, err.Error())
+					log.Printf("-- Could not remove hook %s: %s", (*webhook).ID, err.Error())
 				}
+
+				// nil the webhook
+				*channelWebhooks[i] = nil
+
 				n--
+			}
+		}
+
+		if originalLength != n {
+			// Remove any niled items
+			for _, hook := range x.webhooks {
+				if hook == nil {
+					log.Println("Found nil webhook")
+				}
 			}
 		}
 	}
@@ -111,13 +130,13 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// our channel is going to be the most recent speaker.
 	// Only necessary for the Android/web bug workaround.
 	if (chosenWebhook == nil) && (len(channelWebhooks) > 1) {
-		chosenWebhook = channelWebhooks[0]
+		chosenWebhook = *channelWebhooks[0]
 		for _, webhook := range channelWebhooks {
 			// So if the chosen webhook is born after (younger than)
 			// the current webhook. The make the current webhook
 			// our chosen webhook.
-			if chosenWebhook.LastUse.After(webhook.LastUse) {
-				chosenWebhook = webhook
+			if chosenWebhook.LastUse.After((*webhook).LastUse) {
+				chosenWebhook = *webhook
 			}
 		}
 	}
@@ -126,8 +145,8 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// and modify it to be for our channel
 	if chosenWebhook == nil {
 		for _, webhook := range x.webhooks { // searching global webhooks
-			if (webhook.Expired) && (webhook.ChannelID != channelID) {
-				log.Println("Found global unexpired webhook from another channel")
+			if webhook.Expired && (webhook.ChannelID != channelID) {
+				log.Println("Found global expired webhook from another channel")
 				chosenWebhook = webhook
 				break
 			}
@@ -139,7 +158,7 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 				// Don't panic, only log this. We have a backup scenario.
 				log.Println("ERROR", err.Error())
 			} else {
-				log.Println("Modified aforementioned unexpired webhook to channel")
+				log.Println("Modified aforementioned expired webhook to channel")
 			}
 		}
 	}
