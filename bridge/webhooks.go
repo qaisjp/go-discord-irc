@@ -280,7 +280,7 @@ func (x *WebhookDemuxer) Destroy() {
 
 // DestroyWebhook destroys the given webhook
 func (x *WebhookDemuxer) WebhookDelete(w *Webhook) error {
-	_, err := x.Discord.WebhookDelete(w.ID)
+	err := x.Discord.WebhookDelete(w.ID)
 
 	// Workaround for library bug: github.com/bwmarrin/discordgo/issues/429
 	if err != discordgo.ErrJSONUnmarshal {
