@@ -1,7 +1,7 @@
 package bridge
 
 import (
-	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -116,7 +116,11 @@ var roleMention = regexp.MustCompile(`<@&(\d+)>`)
 // Up to date as of https://git.io/v5kJg
 func (d *discordBot) ParseText(m *discordgo.Message) string {
 	// Content with @user mentions replaced
-	content := m.ContentWithMentionsReplaced()
+	content, err := m.ContentWithMoreMentionsReplaced(d.Session)
+	if err != nil {
+		log.Println("Error getting content with mentions replaced")
+		return m.ContentWithMentionsReplaced()
+	}
 
 	// Sanitise multiple lines in a single message
 	content = strings.Replace(content, "\r\n", "\n", -1) // replace CRLF with LF
@@ -191,7 +195,7 @@ func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
 	// Otherwise get their GuildMember object...
 	user, err := d.State.Member(d.guildID, p.User.ID)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return
 	}
 
