@@ -107,6 +107,14 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		Content:  content,
 		IsAction: isAction,
 	}
+
+	for _, attachment := range m.Attachments {
+		d.bridge.discordMessageEventsChan <- &DiscordMessage{
+			Message:  m.Message,
+			Content:  attachment.URL,
+			IsAction: isAction,
+		}
+	}
 }
 
 // Up to date as of https://git.io/v5kJg
