@@ -166,9 +166,10 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	}
 
 	// If we still haven't found a webhook, create one.
-	log.Println("Creating a webhook stream...")
 	var newWebhook *discordgo.Webhook
 	if chosenWebhook == nil {
+		log.Println("Creating a webhook stream...")
+
 		newWebhook, err = x.Discord.WebhookCreate(channelID, "(auto) IRC", "")
 		if err != nil {
 			log.Println("ERROR: Could not create webhook. Stealing expired webhook.", err)
@@ -213,7 +214,17 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	log.Println("--------- done, executing webhook -------")
 
 	// TODO: What if it takes a long time? See wait=true below.
-	return x.Discord.WebhookExecute(chosenWebhook.ID, chosenWebhook.Token, true, data)
+	err = x.Discord.WebhookExecute(chosenWebhook.ID, chosenWebhook.Token, true, data)
+	if err != nil {
+		chosenWebhook.Close()
+		chosenWebhook.Username = ""
+		chosenWebhook.User = nil
+
+		// there's a danger of an infinite loop here, but it should fail earlier if it could not create a hook
+		return x.Execute(channelID, data)
+	}
+
+	return nil
 }
 
 // WebhookEdit updates an existing Webhook.
