@@ -117,9 +117,11 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 
 		if originalLength != n {
 			// Remove any niled items
-			for _, hook := range x.webhooks {
-				if hook == nil {
-					log.Println("Found nil webhook")
+			a := x.webhooks
+			for i := 0; i < len(a); i++ {
+				if a[i] == nil {
+					a = append(a[:i], a[i+1:]...)
+					i-- // Since we just deleted a[i], we must redo that index
 				}
 			}
 		}
