@@ -215,7 +215,7 @@ func (b *Bridge) loop() {
 
 			// Do not do anything if we do not have a mapping for the channel
 			if mapping == nil {
-				fmt.Println("Ignoring message sent from an unhandled Discord channel.")
+				// fmt.Println("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 
