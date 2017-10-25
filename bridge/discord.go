@@ -55,8 +55,8 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	// We need to be able to create webhooks, lets check for this.
-	_, err = d.GuildWebhooks(d.bridge.Config.GuildID)
+	// Delete webhooks existing webhooks.
+	hooks, err := d.GuildWebhooks(d.bridge.Config.GuildID)
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
 		if restErr.Message != nil && restErr.Message.Code == 50013 {
@@ -64,6 +64,14 @@ func (d *discordBot) Open() error {
 		}
 
 		panic(err)
+	}
+
+	for _, wh := range hooks {
+		if strings.HasPrefix(wh.Name, "(auto)") {
+			if err := d.WebhookDelete(wh.ID); err != nil {
+				log.Printf("Could not delete webhook %s (\"%s\")\n", wh.ID, wh.Name)
+			}
+		}
 	}
 
 	return nil
