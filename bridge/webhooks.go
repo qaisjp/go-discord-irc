@@ -9,9 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO: make longer
-var webhookExpiryDuration = time.Second * 5
-
 // A WebhookDemuxer automatically keeps track of the webhooks
 // being used. If webhooks are taking too long to modify, it will
 // automatically create a new one to speed up the process.
@@ -44,6 +41,16 @@ func NewWebhookDemuxer(bot *discordBot) *WebhookDemuxer {
 
 // Execute executes a webhook, keeping track of the username provided in WebhookParams.
 func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams) (err error) {
+	// Remove any niled items
+	a := x.webhooks
+	for i := 0; i < len(a); i++ {
+		if a[i] == nil {
+			a = append(a[:i], a[i+1:]...)
+			i-- // Since we just deleted a[i], we must redo that index
+		}
+	}
+	x.webhooks = a
+
 	// First find any existing webhooks targeting this channel
 	channelWebhooks := make([]**Webhook, 0, 2)
 	for i, webhook := range x.webhooks {
@@ -56,74 +63,11 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	var chosenWebhook *Webhook
 
 	// Find a webhook of the same username and channel.
-	// The aim here is to find the
-	// - No need to check expiry here as you can't have
-	//   both unexpired/expired of the same username and
-	//	 channel existing at the same time.
 	for _, webhook := range channelWebhooks { // searching channel webhooks
 		if (*webhook).Username == data.Username {
 			chosenWebhook = *webhook
 			log.Println("Found perfect webhook")
 			break
-		}
-	}
-
-	// THIS DOESN'T WORK BECAUSE AN EXPIRED WEBHOOK DOES NOT IMPLY USER IS DIFFERENT
-	//
-	// If we haven't got a webhook, find an expired
-	// webhook from the channel pool with any username.
-	// We only care about expiry here because we don't want
-	// to use a webhook that the previous user has used
-	// if chosenWebhook == nil {
-	// 	for _, webhook := range channelWebhooks { // searching channel webhooks
-	// 		if webhook.Expired {
-	// 			chosenWebhook = webhook
-	// 			log.Println("Found channel-based expired webhook")
-	// 			break
-	// 		}
-	// 	}
-	// }
-
-	// If we have found an expired webhook, there is the possibility that
-	// there are untouched webhooks that are expired. Lets clean those up.
-	if chosenWebhook != nil {
-		// Android/web bug workaround:
-		// lets only clean up if we have more than 2 hooks
-		// This is the number stuff below:
-
-		originalLength := len(x.webhooks)
-		n := originalLength
-
-		// Clean up expired webhooks
-		for i, webhook := range channelWebhooks {
-			if n <= 2 {
-				break
-			}
-			if (*webhook).Expired {
-				// Kill the webhook expiry timer
-				(*webhook).Close()
-
-				err := x.WebhookDelete(*webhook)
-				if err != nil {
-					log.Printf("-- Could not remove hook %s: %s", (*webhook).ID, err.Error())
-				}
-
-				// nil the webhook
-				*channelWebhooks[i] = nil
-
-				n--
-			}
-		}
-
-		if originalLength != n {
-			// Remove any niled items
-			a := x.webhooks
-			for i := 0; i < len(a); i++ {
-				if a[i] == nil {
-					a = append(a[:i], a[i+1:]...)
-					i-- // Since we just deleted a[i], we must redo that index
-				}
-			}
 		}
 	}
 
@@ -139,28 +83,6 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 			// our chosen webhook.
 			if chosenWebhook.LastUse.After((*webhook).LastUse) {
 				chosenWebhook = *webhook
-			}
-		}
-	}
-
-	// No webhook still? Take an expired one from another channel
-	// and modify it to be for our channel
-	if chosenWebhook == nil {
-		for _, webhook := range x.webhooks { // searching global webhooks
-			if webhook.Expired && (webhook.ChannelID != channelID) {
-				log.Println("Found global expired webhook from another channel")
-				chosenWebhook = webhook
-				break
-			}
-		}
-
-		if chosenWebhook != nil {
-			chosenWebhook, err = chosenWebhook.ModifyChannel(x, channelID)
-			if err != nil {
-				// Don't panic, only log this. We have a backup scenario.
-				log.Println("ERROR", err.Error())
-			} else {
-				log.Println("Modified aforementioned expired webhook to channel")
 			}
 		}
 	}
@@ -202,9 +124,6 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 		x.webhooks = append(x.webhooks, chosenWebhook)
 	}
 
-	// Ensure the webhook is not expired
-	chosenWebhook.Expired = false
-
 	// Reset the expiry ticket for the webhook
 	chosenWebhook.ResetExpiry()
 
@@ -220,8 +139,7 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 		chosenWebhook.Username = ""
 		chosenWebhook.User = nil
 
-		// there's a danger of an infinite loop here, but it should fail earlier if it could not create a hook
-		return x.Execute(channelID, data)
+		x.Discord.bridge.ircListener.Privmsg("#bottest", "Something bad happened! "+err.Error())
 	}
 
 	return nil
@@ -291,7 +209,7 @@ func (x *WebhookDemuxer) Destroy() {
 	log.Println("...WebhookDemuxer destroyed!")
 }
 
-// DestroyWebhook destroys the given webhook
+// WebhookDelete destroys the given webhook
 func (x *WebhookDemuxer) WebhookDelete(w *Webhook) error {
 	err := x.Discord.WebhookDelete(w.ID)
 
@@ -308,41 +226,18 @@ func (x *WebhookDemuxer) WebhookDelete(w *Webhook) error {
 // works around the Android/Web bug.
 type Webhook struct {
 	*discordgo.Webhook
-	Expired  bool
 	Username string
-
-	expiryTimer *time.Timer
-	LastUse     time.Time
+	LastUse  time.Time
 }
 
-// ResetExpiry returns a function that resets the expiry after a certain duration
+// ResetExpiry resets the expiry of the webhook
 func (w *Webhook) ResetExpiry() {
-	lastUse := time.Now()
-	w.LastUse = lastUse
-
-	if w.expiryTimer != nil {
-		w.expiryTimer.Stop()
-	}
-
-	w.expiryTimer = time.AfterFunc(webhookExpiryDuration, func() {
-		if w == nil {
-			return
-		}
-
-		// This check is required because of race conditions
-		// with the above w.expiryTimer.Stop() line
-		if lastUse == w.LastUse {
-			w.Expired = true
-			log.Println("Expired webhook", w.ID)
-		}
-	})
+	w.LastUse = time.Now()
 }
 
 // Close closes the webhook expiry timer
 func (w *Webhook) Close() {
-	if w.expiryTimer != nil {
-		w.expiryTimer.Stop()
-	}
+	// w.Close()
 }
 
 // ModifyChannel changes the channel of a webhook
