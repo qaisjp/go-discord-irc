@@ -28,7 +28,11 @@ func main() {
 	flag.Parse()
 
 	if *webIRCPass == "" {
-		fmt.Println("Warning: webirc_pass is empty")
+		log.Println("Warning: webirc_pass is empty")
+	}
+
+	if *simple {
+		log.Println("Running in simple mode.")
 	}
 
 	mappingsMap := validateChannelMappings(*channelMappings)

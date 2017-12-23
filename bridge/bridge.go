@@ -149,7 +149,9 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 		InsecureSkipVerify: b.Config.InsecureSkipVerify,
 	}
 
-	con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
+	if b.Config.WebIRCPass != "" {
+		con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
+	}
 }
 
 func (b *Bridge) GetIRCChannels() []string {
