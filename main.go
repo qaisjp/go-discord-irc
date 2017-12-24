@@ -35,9 +35,18 @@ func main() {
 
 	viper := viper.New()
 	ext := filepath.Ext(*config)
-	viper.SetConfigName(strings.TrimSuffix(filepath.Base(*config), ext))
-	viper.SetConfigType(ext[1:])
-	viper.AddConfigPath(filepath.Dir(*config))
+	configName := strings.TrimSuffix(filepath.Base(*config), ext)
+	configType := ext[1:]
+	configPath := filepath.Dir(*config)
+	viper.SetConfigName(configName)
+	viper.SetConfigType(configType)
+	viper.AddConfigPath(configPath)
+
+	log.WithFields(log.Fields{
+		"ConfigName": configName,
+		"ConfigType": configType,
+		"ConfigPath": configPath,
+	}).Infoln("Loading confinguration...")
 
 	err := viper.ReadInConfig()
 	if err != nil {
