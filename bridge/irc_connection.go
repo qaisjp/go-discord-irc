@@ -14,6 +14,7 @@ type ircConnection struct {
 
 	userID        string
 	discriminator string
+	originalNick  string
 	nick          string
 
 	messages chan IRCMessage
@@ -43,9 +44,11 @@ func (i *ircConnection) JoinChannels() {
 
 func (i *ircConnection) UpdateDetails(discriminator, nick string) {
 	// if their details haven't changed, don't do anything
-	if (i.nick == nick) && (i.discriminator == discriminator) {
+	if (i.originalNick == nick) && (i.discriminator == discriminator) {
 		return
 	}
+
+	i.originalNick = nick
 
 	nick = i.manager.generateNickname(discriminator, nick)
 
@@ -58,7 +61,13 @@ func (i *ircConnection) UpdateDetails(discriminator, nick string) {
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
-		i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported.")
+		if e.Message() == "help" {
+			i.innerCon.Privmsg(e.Nick, "help, who")
+		} else if e.Message() == "who" {
+			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.originalNick, i.discriminator, i.userID)
+		} else {
+			i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
+		}
 		return
 	}
 
