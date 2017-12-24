@@ -20,7 +20,7 @@ import (
 func main() {
 	config := flag.String("config", "", "Config file to read configuration stuff from")
 	debugMode := flag.Bool("debug", false, "Debug mode? False will use the value set in the settings")
-	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
+	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE) (false = use settings)")
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 
@@ -54,6 +54,10 @@ func main() {
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
+	}
+	//
+	if !*insecure {
+		*insecure = viper.GetBool("insecure")
 	}
 	//
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.

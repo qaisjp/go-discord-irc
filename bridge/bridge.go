@@ -141,7 +141,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 			}
 		}
 
-		// The listener needs to leave the remove mappings
+		// The bots needs to leave the remove mappings
 		rmChannels := []string{}
 		for _, mapping := range removedMappings {
 			// Looking for the irc channel to remove
@@ -161,10 +161,17 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 				rmChannels = append(rmChannels, mapping.IRCChannel)
 			}
 		}
-		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
 
-		// The listener needs to join the new mappings
+		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
+		for _, conn := range b.ircManager.ircConnections {
+			conn.innerCon.SendRaw("PART " + strings.Join(rmChannels, ","))
+		}
+
+		// The bots needs to join the new mappings
 		b.ircListener.JoinChannels()
+		for _, conn := range b.ircManager.ircConnections {
+			conn.JoinChannels()
+		}
 	}
 
 	return true
