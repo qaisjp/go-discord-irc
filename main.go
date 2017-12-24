@@ -21,7 +21,6 @@ func main() {
 	config := flag.String("config", "", "Config file to read configuration stuff from")
 	debugMode := flag.Bool("debug", false, "Debug mode? False will use the value set in the settings")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE) (false = use settings)")
-	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 
 	flag.Parse()
@@ -80,7 +79,6 @@ func main() {
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
-		IRCUseTLS:          !*ircNoTLS, // exclamation mark is NOT a typo
 		WebIRCPass:         webIRCPass,
 		Debug:              *debugMode,
 		InsecureSkipVerify: *insecure,
