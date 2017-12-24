@@ -2,11 +2,11 @@ package bridge
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // A WebhookDemuxer automatically keeps track of the webhooks

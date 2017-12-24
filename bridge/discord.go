@@ -1,12 +1,12 @@
 package bridge
 
 import (
-	"log"
 	"regexp"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type discordBot struct {

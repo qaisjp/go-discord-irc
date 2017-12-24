@@ -1,10 +1,10 @@
 package bridge
 
 import (
-	"log"
 	"strings"
 
 	irc "github.com/qaisjp/go-ircevent"
+	log "github.com/sirupsen/logrus"
 )
 
 // An ircConnection should only ever communicate with its manager
