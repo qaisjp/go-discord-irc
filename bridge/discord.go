@@ -69,7 +69,7 @@ func (d *discordBot) Open() error {
 	for _, wh := range hooks {
 		if strings.HasPrefix(wh.Name, "(auto)") {
 			if err := d.WebhookDelete(wh.ID); err != nil {
-				log.Printf("Could not delete webhook %s (\"%s\")\n", wh.ID, wh.Name)
+				log.Printf("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
 			}
 		}
 	}
