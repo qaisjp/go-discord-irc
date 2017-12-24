@@ -17,10 +17,7 @@ func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irc := &ircListener{irccon, dib}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
-	if dib.Config.Debug {
-		irccon.VerboseCallbackHandler = true
-		irccon.Debug = true
-	}
+	irc.SetDebugMode(dib.Config.Debug)
 
 	// Welcome event
 	irccon.AddCallback("001", irc.OnWelcome)
@@ -31,6 +28,11 @@ func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon.AddCallback("CTCP_ACTION", irc.OnPrivateMessage)
 
 	return irc
+}
+
+func (i *ircListener) SetDebugMode(debug bool) {
+	i.VerboseCallbackHandler = debug
+	i.Debug = debug
 }
 
 func (i *ircListener) OnWelcome(e *irc.Event) {

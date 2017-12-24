@@ -132,6 +132,11 @@ func (b *Bridge) SetIRCListenerName(name string) {
 	b.ircListener.Nick(name)
 }
 
+func (b *Bridge) SetDebugMode(debug bool) {
+	b.Config.Debug = debug
+	b.ircListener.SetDebugMode(debug)
+}
+
 // Open all the connections required to run the bridge
 func (b *Bridge) Open() (err error) {
 

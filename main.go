@@ -18,7 +18,7 @@ import (
 
 func main() {
 	config := flag.String("config", "", "Config file to read configuration stuff from")
-	debugMode := flag.Bool("debug", false, "Debug mode?")
+	debugMode := flag.Bool("debug", false, "Debug mode? False will use the value set in the settings")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
 	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
@@ -50,6 +50,10 @@ func main() {
 	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
 	guildID := viper.GetString("guild_id")                          // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
+	//
+	if !*debugMode {
+		*debugMode = viper.GetBool("debug")
+	}
 	//
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
 	viper.SetDefault("irc_listener_name", "~d")
@@ -96,6 +100,12 @@ func main() {
 			// Listener name has changed
 			ircUsername = newUsername
 			dib.SetIRCListenerName(ircUsername)
+		}
+
+		if debug := viper.GetBool("debug"); *debugMode != debug {
+			log.Printf("Debug changed from %+v to %+v", *debugMode, debug)
+			*debugMode = debug
+			dib.SetDebugMode(*debugMode)
 		}
 	})
 
