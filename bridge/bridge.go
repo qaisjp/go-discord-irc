@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
@@ -69,16 +70,24 @@ func (b *Bridge) load(opts *Config) bool {
 		return false
 	}
 
+	if !b.SetChannelMappings(opts.ChannelMappings) {
+		return false
+	}
+
+	// This should not be used anymore!
+	opts.ChannelMappings = nil
+
+	return true
+}
+
+func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 	mappings := []*Mapping{}
-	for irc, discord := range opts.ChannelMappings {
+	for irc, discord := range inMappings {
 		mappings = append(mappings, &Mapping{
 			DiscordChannel: discord,
 			IRCChannel:     irc,
 		})
 	}
-
-	// This should not be used anymore!
-	opts.ChannelMappings = nil
 
 	// Check for duplicate channels
 	for i, mapping := range mappings {
@@ -92,7 +101,71 @@ func (b *Bridge) load(opts *Config) bool {
 		}
 	}
 
+	oldMappings := b.mappings
 	b.mappings = mappings
+
+	// If doing some changes mid-bot
+	if oldMappings != nil {
+		newMappings := []*Mapping{}
+		removedMappings := []*Mapping{}
+
+		// Find positive difference
+		// These are the items in the new mappings list, but not the oldMappings
+		for _, mapping := range mappings {
+			found := false
+			for _, curr := range oldMappings {
+				if *curr == *mapping {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				newMappings = append(newMappings, mapping)
+			}
+		}
+
+		// Find negative difference
+		// These are the items in the oldMappings, but not the new one
+		for _, mapping := range oldMappings {
+			found := false
+			for _, curr := range mappings {
+				if *curr == *mapping {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				removedMappings = append(removedMappings, mapping)
+			}
+		}
+
+		// The listener needs to leave the remove mappings
+		rmChannels := []string{}
+		for _, mapping := range removedMappings {
+			// Looking for the irc channel to remove
+			// inside our list of newly added channels.
+			//
+			// This will prevent swaps from joinquitting the bots.
+			found := false
+			for _, curr := range newMappings {
+				if curr.IRCChannel == mapping.IRCChannel {
+					found = true
+				}
+			}
+
+			// If we've not found this channel to remove in the new channels
+			// actually part the channel
+			if !found {
+				rmChannels = append(rmChannels, mapping.IRCChannel)
+			}
+		}
+		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
+
+		// The listener needs to join the new mappings
+		b.ircListener.JoinChannels()
+	}
 
 	return true
 }

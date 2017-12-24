@@ -37,6 +37,10 @@ func (i *ircListener) SetDebugMode(debug bool) {
 
 func (i *ircListener) OnWelcome(e *irc.Event) {
 	// Join all channels
+	i.JoinChannels()
+}
+
+func (i *ircListener) JoinChannels() {
 	i.SendRaw("JOIN " + strings.Join(i.bridge.GetIRCChannels(), ","))
 }
 

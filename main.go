@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 
@@ -106,6 +107,19 @@ func main() {
 			log.Printf("Debug changed from %+v to %+v", *debugMode, debug)
 			*debugMode = debug
 			dib.SetDebugMode(*debugMode)
+		}
+
+		chans := viper.GetStringMapString("channel_mappings")
+		equalChans := reflect.DeepEqual(chans, channelMappings)
+		if !equalChans {
+			log.Println("Channel mappings updated!")
+			if chans == nil || len(chans) == 0 {
+				log.Println("Channel mappings are missing!")
+			}
+
+			if dib.SetChannelMappings(chans) {
+				channelMappings = chans
+			}
 		}
 	})
 
