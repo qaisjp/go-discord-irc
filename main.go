@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -63,13 +63,12 @@ func main() {
 	viper.SetDefault("suffix", "~d")
 
 	if webIRCPass == "" {
-		log.Println("Warning: webirc_pass is empty")
+		log.Warnln("webirc_pass is empty")
 	}
 
 	// Validate mappings
 	if channelMappings == nil || len(channelMappings) == 0 {
-		log.Fatalln("Channel mappings are missing!")
-		return
+		log.Warnln("Channel mappings are missing!")
 	}
 
 	dib, err := bridge.New(&bridge.Config{
