@@ -18,9 +18,9 @@ import (
 
 func main() {
 	config := flag.String("config", "", "Config file to read configuration stuff from")
+	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 	debugMode := flag.Bool("debug", false, "Debug mode? (false = use value from settings)")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE) (false = use value from settings)")
-	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 
 	flag.Parse()
 
