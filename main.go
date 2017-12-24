@@ -6,52 +6,78 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	discordBotToken := flag.String("discord_token", "", "Discord Bot User Token")
-	channelMappings := flag.String("channel_mappings", "", "Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'")
-	ircUsername := flag.String("irc_listener_name", "~d", "Name for IRC-side bot, for listening to messages.")
-	ircServer := flag.String("irc_server", "", "Server address to use, example `irc.freenode.net:7000`.")
-	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
-	guildID := flag.String("guild_id", "", "Guild to use")
-	webIRCPass := flag.String("webirc_pass", "", "Password for WEBIRC")
+	config := flag.String("config", "", "Config file to read configuration stuff from")
 	debugMode := flag.Bool("debug", false, "Debug mode?")
 	insecure := flag.Bool("insecure", false, "Skip TLS verification? (INSECURE MODE)")
-	suffix := flag.String("suffix", "~d", "The suffix to append to IRC connections (not in use when simple mode is on)")
+	ircNoTLS := flag.Bool("no_irc_tls", false, "Disable TLS for IRC bots?")
 	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 
 	flag.Parse()
 
-	if *webIRCPass == "" {
-		log.Println("Warning: webirc_pass is empty")
+	if *config == "" {
+		log.Fatalln("--config argument is required!")
+		return
 	}
 
 	if *simple {
 		log.Println("Running in simple mode.")
 	}
 
-	mappingsMap := validateChannelMappings(*channelMappings)
-	if mappingsMap == nil {
+	viper := viper.New()
+	ext := filepath.Ext(*config)
+	viper.SetConfigName(strings.TrimSuffix(filepath.Base(*config), ext))
+	viper.SetConfigType(ext[1:])
+	viper.AddConfigPath(filepath.Dir(*config))
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalln(errors.Wrap(err, "could not read config"))
+	}
+
+	discordBotToken := viper.GetString("discord_token")             // Discord Bot User Token
+	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
+	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
+	guildID := viper.GetString("guild_id")                          // Guild to use
+	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
+	//
+	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
+	viper.SetDefault("irc_listener_name", "~d")
+	//
+	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
+	viper.SetDefault("suffix", "~d")
+
+	if webIRCPass == "" {
+		log.Println("Warning: webirc_pass is empty")
+	}
+
+	// Validate mappings
+	if channelMappings == nil || len(channelMappings) == 0 {
+		log.Fatalln("Channel mappings are missing!")
 		return
 	}
 
 	dib, err := bridge.New(&bridge.Config{
-		DiscordBotToken:    *discordBotToken,
-		GuildID:            *guildID,
-		IRCListenerName:    *ircUsername,
-		IRCServer:          *ircServer,
+		DiscordBotToken:    discordBotToken,
+		GuildID:            guildID,
+		IRCListenerName:    ircUsername,
+		IRCServer:          ircServer,
 		IRCUseTLS:          !*ircNoTLS, // exclamation mark is NOT a typo
-		WebIRCPass:         *webIRCPass,
+		WebIRCPass:         webIRCPass,
 		Debug:              *debugMode,
 		InsecureSkipVerify: *insecure,
-		Suffix:             *suffix,
+		Suffix:             suffix,
 		SimpleMode:         *simple,
-		ChannelMappings:    mappingsMap,
+		ChannelMappings:    channelMappings,
 	})
 
 	if err != nil {
@@ -77,42 +103,4 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	dib.Close()
-}
-
-func validateChannelMappings(rawMappings string) map[string]string {
-	mappings := make(map[string]string)
-
-	// Validate mappings
-	splitMappings := strings.Split(rawMappings, ",")
-	if len(splitMappings) == 1 && splitMappings[0] == "" {
-		fmt.Println("Channel mappings are missing!")
-		return nil
-	}
-
-	invalidMappings := 0
-	for _, mapping := range splitMappings {
-		sides := strings.Split(mapping, ":")
-		valid := true
-
-		if len(sides) != 2 {
-			fmt.Printf("Mapping `%s` must be in the format `discordChannelID:#ircChannel`.\n", mapping)
-			valid = false
-		}
-
-		if valid {
-			discordChannel := sides[0]
-			ircChannel := sides[1]
-
-			mappings[discordChannel] = ircChannel
-		} else {
-			invalidMappings++
-		}
-	}
-
-	if invalidMappings != 0 {
-		fmt.Printf("Channel mappings contains %d errors!\n", invalidMappings)
-		return nil
-	}
-
-	return mappings
 }

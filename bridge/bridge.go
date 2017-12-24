@@ -70,12 +70,15 @@ func (b *Bridge) load(opts *Config) bool {
 	}
 
 	mappings := []*Mapping{}
-	for discord, irc := range opts.ChannelMappings {
+	for irc, discord := range opts.ChannelMappings {
 		mappings = append(mappings, &Mapping{
 			DiscordChannel: discord,
 			IRCChannel:     irc,
 		})
 	}
+
+	// This should not be used anymore!
+	opts.ChannelMappings = nil
 
 	// Check for duplicate channels
 	for i, mapping := range mappings {
