@@ -1,10 +1,10 @@
 package bridge
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/qaisjp/go-ircevent"
+	log "github.com/sirupsen/logrus"
 )
 
 type ircListener struct {
@@ -45,7 +45,7 @@ func (i *ircListener) JoinChannels() {
 }
 
 func (i *ircListener) OnJoinChannel(e *irc.Event) {
-	fmt.Printf("Listener has joined IRC channel %s.\n", e.Arguments[1])
+	log.Infof("Listener has joined IRC channel %s.\n", e.Arguments[1])
 }
 
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {

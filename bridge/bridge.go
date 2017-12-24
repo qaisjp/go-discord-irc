@@ -3,12 +3,12 @@ package bridge
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
+	log "github.com/sirupsen/logrus"
 )
 
 // Config to be passed to New
@@ -282,7 +282,7 @@ func (b *Bridge) loop() {
 			mapping := b.GetMappingByIRC(msg.IRCChannel)
 
 			if mapping == nil {
-				fmt.Println("Ignoring message sent from an unhandled IRC channel.")
+				log.Warnln("Ignoring message sent from an unhandled IRC channel.")
 				continue
 			}
 
@@ -300,7 +300,7 @@ func (b *Bridge) loop() {
 			})
 
 			if err != nil {
-				fmt.Println("Message from IRC to Discord was unsuccessfully sent!", err.Error())
+				log.Errorln("Message from IRC to Discord was unsuccessfully sent!", err.Error())
 			}
 
 		// Messages from Discord to IRC
@@ -309,7 +309,7 @@ func (b *Bridge) loop() {
 
 			// Do not do anything if we do not have a mapping for the channel
 			if mapping == nil {
-				// fmt.Println("Ignoring message sent from an unhandled Discord channel.")
+				// log.Warnln("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 

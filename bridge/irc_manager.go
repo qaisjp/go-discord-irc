@@ -6,6 +6,7 @@ import (
 
 	"github.com/qaisjp/go-discord-irc/ircnick"
 	irc "github.com/qaisjp/go-ircevent"
+	log "github.com/sirupsen/logrus"
 )
 
 // IRCManager should only be used from one thread.
@@ -104,7 +105,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
 	if err != nil {
-		fmt.Println("error opening irc connection,", err)
+		log.Errorln("error opening irc connection,", err)
 		// TODO: HANDLE THIS SITUATION
 		return
 	}

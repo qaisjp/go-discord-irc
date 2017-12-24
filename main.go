@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -88,11 +87,11 @@ func main() {
 	})
 
 	if err != nil {
-		log.Printf("Go-Discord-IRC failed to start because: %s", err.Error())
+		log.Fatalln("Go-Discord-IRC failed to start because: %s", err.Error())
 		return
 	}
 
-	fmt.Println("Go-Discord-IRC is now running. Press Ctrl-C to exit.")
+	log.Infoln("Go-Discord-IRC is now running. Press Ctrl-C to exit.")
 
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
@@ -136,7 +135,7 @@ func main() {
 	// Watch for a signal
 	<-sc
 
-	fmt.Println("Shutting down Go-Discord-IRC...")
+	log.Infoln("Shutting down Go-Discord-IRC...")
 
 	// Cleanly close down the Discord session.
 	dib.Close()
