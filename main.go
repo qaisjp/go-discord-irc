@@ -59,11 +59,11 @@ func main() {
 		*insecure = viper.GetBool("insecure")
 	}
 	//
-	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
 	viper.SetDefault("irc_listener_name", "~d")
+	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
 	//
-	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
 	viper.SetDefault("suffix", "~d")
+	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
