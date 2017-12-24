@@ -65,7 +65,7 @@ func (b *Bridge) Close() {
 // TODO: Use errors package
 func (b *Bridge) load(opts *Config) bool {
 	if opts.IRCServer == "" {
-		log.Println("ERROR", "Missing server name.")
+		log.Errorln("Missing server name.")
 		return false
 	}
 
@@ -93,7 +93,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 		for j, check := range mappings {
 			if (mapping.DiscordChannel == check.DiscordChannel) || (mapping.IRCChannel == check.IRCChannel) {
 				if i != j {
-					log.Println("ERROR", "Check channel_mappings for duplicate entries")
+					log.Errorln("Check channel_mappings for duplicate entries")
 					return false
 				}
 			}

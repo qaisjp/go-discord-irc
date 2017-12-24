@@ -94,7 +94,7 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 
 		newWebhook, err = x.Discord.WebhookCreate(channelID, "(auto) IRC", "")
 		if err != nil {
-			log.Println("ERROR: Could not create webhook. Stealing expired webhook.", err)
+			log.Errorln("Could not create webhook. Stealing expired webhook.", err)
 
 			// We couldn't create the webhook for some reason.
 			// Lets steal an expired one from somewhere...
