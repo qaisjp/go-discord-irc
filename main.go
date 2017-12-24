@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
 	"github.com/spf13/viper"
@@ -86,6 +87,17 @@ func main() {
 	}
 
 	fmt.Println("Go-Discord-IRC is now running. Press Ctrl-C to exit.")
+
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		log.Println("Configuration file has changed!")
+		if newUsername := viper.GetString("irc_listener_name"); ircUsername != newUsername {
+			log.Printf("Changed irc_listener_name from '%s' to '%s'", ircUsername, newUsername)
+			// Listener name has changed
+			ircUsername = newUsername
+			dib.SetIRCListenerName(ircUsername)
+		}
+	})
 
 	// Create new signal receiver
 	sc := make(chan os.Signal, 1)

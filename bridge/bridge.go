@@ -127,6 +127,11 @@ func New(conf *Config) (*Bridge, error) {
 	return dib, nil
 }
 
+func (b *Bridge) SetIRCListenerName(name string) {
+	b.Config.IRCListenerName = name
+	b.ircListener.Nick(name)
+}
+
 // Open all the connections required to run the bridge
 func (b *Bridge) Open() (err error) {
 
