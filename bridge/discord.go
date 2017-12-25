@@ -247,6 +247,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 
 	d.bridge.updateUserChan <- DiscordUser{
 		ID:            m.User.ID,
+		Username:      m.User.Username,
 		Discriminator: m.User.Discriminator,
 		Nick:          GetMemberNick(m),
 		Bot:           m.User.Bot,

@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/qaisjp/go-discord-irc/ircnick"
@@ -25,7 +26,7 @@ func NewIRCManager(bridge *Bridge) *IRCManager {
 }
 
 func (m *IRCManager) CloseConnection(i *ircConnection) {
-	delete(m.ircConnections, i.userID)
+	delete(m.ircConnections, i.discord.ID)
 	close(i.messages)
 	i.innerCon.Quit()
 }
@@ -52,7 +53,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		//       from `online` to `dnd` (online related states)
 		//       In UpdateDetails we handle nickname changes so it is
 		//       OK to call the below potentially redundant function
-		con.UpdateDetails(user.Discriminator, user.Nick)
+		con.UpdateDetails(user)
 		return
 	}
 
@@ -61,10 +62,10 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		return
 	}
 
-	nick := m.generateNickname(user.Discriminator, user.Nick)
+	nick := m.generateNickname(user)
 
 	innerCon := irc.IRC(nick, "discord")
-	// innerCon.Debug = true
+	innerCon.Debug = m.bridge.Config.Debug
 
 	var ip string
 	{
@@ -89,9 +90,8 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	con := &ircConnection{
 		innerCon: innerCon,
 
-		userID:        user.ID,
-		discriminator: user.Discriminator,
-		nick:          user.Nick,
+		discord: user,
+		nick:    nick,
 
 		messages: make(chan IRCMessage),
 
@@ -115,11 +115,37 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	return
 }
 
-func (m *IRCManager) generateNickname(_ string, nick string) string {
-	// First clean it
-	nick = ircnick.NickClean(nick)
+func (m *IRCManager) generateNickname(discord DiscordUser) string {
+	username := discord.Username
+	discriminator := discord.Discriminator
+	nick := discord.Nick
 
-	return nick + m.bridge.Config.Suffix
+	// https://github.com/lp0/charybdis/blob/9ced2a7932dddd069636fe6fe8e9faa6db904703/ircd/client.c#L854-L884
+	if nick[0] == '-' {
+		nick = "_" + nick
+	}
+	if ircnick.IsDigit(nick[0]) {
+		nick = "_" + nick
+	}
+
+	newNick := []byte(nick)
+
+	// Replace bad characters with underscores
+	for i, c := range []byte(nick) {
+		if !ircnick.IsNickChar(c) || ircnick.IsFakeNickChar(c) {
+			newNick[i] = '_'
+		}
+	}
+
+	suffix := m.bridge.Config.Suffix
+	nick = string(newNick) + suffix
+
+	if len(nick) > 30 {
+		length := int(math.Min(float64(len(username)), float64(30-len(discriminator)-len(suffix))))
+		return username[:length] + discriminator + suffix
+	}
+
+	return nick
 }
 
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {

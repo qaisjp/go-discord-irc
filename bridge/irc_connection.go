@@ -12,10 +12,8 @@ import (
 type ircConnection struct {
 	innerCon *irc.Connection
 
-	userID        string
-	discriminator string
-	originalNick  string
-	nick          string
+	discord DiscordUser
+	nick    string
 
 	messages chan IRCMessage
 
@@ -38,24 +36,20 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 }
 
 func (i *ircConnection) JoinChannels() {
-	channels := i.manager.RequestChannels(i.userID)
+	channels := i.manager.RequestChannels(i.discord.ID)
 	i.innerCon.SendRaw("JOIN " + strings.Join(channels, ","))
 }
 
-func (i *ircConnection) UpdateDetails(discriminator, nick string) {
+func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	// if their details haven't changed, don't do anything
-	if (i.originalNick == nick) && (i.discriminator == discriminator) {
+	if (i.discord.Nick == discord.Nick) && (i.discord.Discriminator == discord.Discriminator) {
 		return
 	}
 
-	i.originalNick = nick
+	i.discord = discord
+	i.nick = i.manager.generateNickname(i.discord)
 
-	nick = i.manager.generateNickname(discriminator, nick)
-
-	i.discriminator = discriminator
-	i.nick = nick
-
-	go i.innerCon.Nick(nick)
+	go i.innerCon.Nick(i.nick)
 }
 
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
@@ -64,7 +58,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		if e.Message() == "help" {
 			i.innerCon.Privmsg(e.Nick, "help, who")
 		} else if e.Message() == "who" {
-			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.originalNick, i.discriminator, i.userID)
+			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
 		} else {
 			i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
 		}
