@@ -46,7 +46,7 @@ func main() {
 		"ConfigName": configName,
 		"ConfigType": configType,
 		"ConfigPath": configPath,
-	}).Infoln("Loading confinguration...")
+	}).Infoln("Loading configuration...")
 
 	err := viper.ReadInConfig()
 	if err != nil {
