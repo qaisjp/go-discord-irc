@@ -62,7 +62,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	}
 
 	// Ignore messages from Discord bots
-	if strings.HasSuffix(e.Nick, i.bridge.Config.Suffix) {
+	if strings.HasSuffix(strings.TrimRight(e.Nick, "_"), i.bridge.Config.Suffix) {
 		return
 	}
 
