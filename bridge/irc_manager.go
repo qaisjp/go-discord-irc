@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"time"
 
 	"github.com/qaisjp/go-discord-irc/ircnick"
@@ -133,9 +134,13 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	// Replace bad characters with underscores
 	for i, c := range []byte(nick) {
 		if !ircnick.IsNickChar(c) || ircnick.IsFakeNickChar(c) {
-			newNick[i] = '_'
+			newNick[i] = ' '
 		}
 	}
+
+	// Now every invalid character has been replaced with a space (just some invalid character)
+	// Lets replace each sequence of invalid characters with a single underscore
+	newNick = regexp.MustCompile(` +`).ReplaceAllLiteral(newNick, []byte{'_'})
 
 	suffix := m.bridge.Config.Suffix
 	nick = string(newNick) + suffix
