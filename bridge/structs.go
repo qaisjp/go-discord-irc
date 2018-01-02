@@ -29,4 +29,8 @@ type DiscordUser struct {
 	Online        bool
 }
 
-//
+// Mapping is a mapping between a Discord channel and an IRC channel (essentially a tuple).
+type Mapping struct {
+	DiscordChannel string
+	IRCChannel     string
+}
