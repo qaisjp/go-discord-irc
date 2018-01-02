@@ -239,11 +239,20 @@ func (b *Bridge) Open() (err error) {
 	return
 }
 
+func rejoinIRC(con *irc.Connection, event *irc.Event) {
+	if event.Arguments[1] == con.GetNick() {
+		con.Join(event.Arguments[0])
+	}
+}
+
 func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	con.UseTLS = true
 	con.TLSConfig = &tls.Config{
 		InsecureSkipVerify: b.Config.InsecureSkipVerify,
 	}
+	con.AddCallback("KICK", func(e *irc.Event) {
+		rejoinIRC(con, e)
+	})
 
 	if b.Config.WebIRCPass != "" {
 		con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
