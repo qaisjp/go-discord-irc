@@ -30,3 +30,6 @@ const (
 
 // add )
 )
+
+// MAXLENGTH is the maximum length of a nickname
+const MAXLENGTH = 30

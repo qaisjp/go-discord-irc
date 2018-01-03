@@ -2,7 +2,6 @@ package bridge
 
 import (
 	"fmt"
-	"math"
 	"regexp"
 	"time"
 
@@ -116,11 +115,10 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	return
 }
 
-func (m *IRCManager) generateNickname(discord DiscordUser) string {
-	username := discord.Username
-	discriminator := discord.Discriminator
-	nick := discord.Nick
-
+// Converts a nickname to a sanitised form.
+// Does not check IRC or Discord existence, so don't use this method
+// unless you're also checking IRC and Discord.
+func sanitiseNickname(nick string) string {
 	// https://github.com/lp0/charybdis/blob/9ced2a7932dddd069636fe6fe8e9faa6db904703/ircd/client.c#L854-L884
 	if nick[0] == '-' {
 		nick = "_" + nick
@@ -142,15 +140,79 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	// Lets replace each sequence of invalid characters with a single underscore
 	newNick = regexp.MustCompile(` +`).ReplaceAllLiteral(newNick, []byte{'_'})
 
-	suffix := m.bridge.Config.Suffix
-	nick = string(newNick) + suffix
+	return string(newNick)
+}
 
-	if len(nick) > 30 || m.bridge.ircListener.DoesUserExist(nick) {
-		length := int(math.Min(float64(len(username)), float64(30-len(discriminator)-len(suffix))))
-		return username[:length] + discriminator + suffix
+func (m *IRCManager) generateNickname(discord DiscordUser) string {
+	username := discord.Username
+	discriminator := discord.Discriminator
+
+	nick := sanitiseNickname(discord.Nick)
+	suffix := m.bridge.Config.Suffix
+	newNick := nick + suffix
+
+	useFallback := len(newNick) > ircnick.MAXLENGTH || m.bridge.ircListener.DoesUserExist(newNick)
+	// log.WithFields(log.Fields{
+	// 	"length":      len(newNick) > ircnick.MAXLENGTH,
+	// 	"useFallback": useFallback,
+	// }).Infoln("nickgen: fallback?")
+
+	if !useFallback {
+		guild, err := m.bridge.discord.State.Guild(m.bridge.Config.GuildID)
+		if err != nil {
+			// log.Fatalln("nickgen: guild not found when generating nickname")
+			return ""
+		}
+
+		for _, member := range guild.Members {
+			if member.User.ID == discord.ID {
+				continue
+			}
+
+			name := member.Nick
+			if member.Nick == "" {
+				name = member.User.Username
+			}
+
+			if name == "" {
+				log.WithField("member", member).Errorln("blank username encountered")
+				continue
+			}
+
+			if sanitiseNickname(name) == nick {
+				// log.WithField("member", member).Infoln("nickgen: using fallback because of discord")
+				useFallback = true
+				break
+			}
+		}
 	}
 
-	return nick
+	if useFallback {
+		suffix = "~" + discriminator + suffix
+
+		// Maximum length of a username but without the suffix
+		length := ircnick.MAXLENGTH - len(suffix)
+		if length >= len(username) {
+			length = len(username)
+			// log.Infoln("nickgen: maximum length limit not reached")
+		}
+
+		newNick = username[:length] + suffix
+		// log.WithFields(log.Fields{
+		// 	"nick":     discord.Nick,
+		// 	"username": discord.Username,
+		// 	"newNick":  newNick,
+		// }).Infoln("nickgen: resultant nick after falling back")
+		return newNick
+	}
+
+	// log.WithFields(log.Fields{
+	// 	"nick":     discord.Nick,
+	// 	"username": discord.Username,
+	// 	"newNick":  newNick,
+	// }).Infoln("nickgen: resultant nick WITHOUT falling back")
+
+	return newNick
 }
 
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
