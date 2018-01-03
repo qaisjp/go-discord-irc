@@ -56,7 +56,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {
-			i.innerCon.Privmsg(e.Nick, "help, who")
+			i.innerCon.Privmsg(e.Nick, "Commands: help, who")
 		} else if e.Message() == "who" {
 			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
 		} else {

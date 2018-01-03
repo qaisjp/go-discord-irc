@@ -40,8 +40,9 @@ func (m *IRCManager) Close() {
 }
 
 func (m *IRCManager) HandleUser(user DiscordUser) {
+	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
-		// Close the connection if they are not online
+		// Close the connection if they are not online on Discord anymore
 		if !user.Online {
 			m.CloseConnection(con)
 			return
@@ -57,7 +58,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		return
 	}
 
-	// Don't create a connection if they are not online
+	// If they are not online, do not create a connection.
 	if !user.Online {
 		return
 	}
@@ -105,8 +106,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
 	if err != nil {
-		log.Errorln("error opening irc connection,", err)
-		// TODO: HANDLE THIS SITUATION
+		log.WithField("error", err).Errorln("error opening irc connection")
 		return
 	}
 

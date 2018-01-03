@@ -66,7 +66,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	// Ignore private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {
-			i.Privmsg(e.Nick, "help, who")
+			i.Privmsg(e.Nick, "Commands: help, who")
 		} else if e.Message() == "who" {
 			i.Privmsg(e.Nick, "I am the bot listener.")
 		} else {

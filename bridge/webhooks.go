@@ -66,7 +66,6 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	for _, webhook := range channelWebhooks { // searching channel webhooks
 		if (*webhook).Username == data.Username {
 			chosenWebhook = *webhook
-			log.Println("Found perfect webhook")
 			break
 		}
 	}
