@@ -14,20 +14,34 @@ type ircListener struct {
 
 func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	irc := &ircListener{irccon, dib}
+	listener := &ircListener{irccon, dib}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
-	irc.SetDebugMode(dib.Config.Debug)
+	listener.SetDebugMode(dib.Config.Debug)
+
+	// Nick tracker for nick tracking
+	irccon.SetupNickTrack()
 
 	// Welcome event
-	irccon.AddCallback("001", irc.OnWelcome)
+	irccon.AddCallback("001", listener.OnWelcome)
 
 	// Called when received channel names... essentially OnJoinChannel
-	irccon.AddCallback("366", irc.OnJoinChannel)
-	irccon.AddCallback("PRIVMSG", irc.OnPrivateMessage)
-	irccon.AddCallback("CTCP_ACTION", irc.OnPrivateMessage)
+	irccon.AddCallback("366", listener.OnJoinChannel)
+	irccon.AddCallback("PRIVMSG", listener.OnPrivateMessage)
+	irccon.AddCallback("CTCP_ACTION", listener.OnPrivateMessage)
 
-	return irc
+	return listener
+}
+
+func (i *ircListener) DoesUserExist(user string) bool {
+	for _, channel := range i.Channels {
+		_, ok := channel.Users[user]
+		if ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (i *ircListener) SetDebugMode(debug bool) {

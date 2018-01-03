@@ -145,7 +145,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	suffix := m.bridge.Config.Suffix
 	nick = string(newNick) + suffix
 
-	if len(nick) > 30 {
+	if len(nick) > 30 || m.bridge.ircListener.DoesUserExist(nick) {
 		length := int(math.Min(float64(len(username)), float64(30-len(discriminator)-len(suffix))))
 		return username[:length] + discriminator + suffix
 	}
