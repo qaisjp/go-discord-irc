@@ -96,7 +96,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalln("Go-Discord-IRC failed to start because: %s", err.Error())
+		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to start.")
 		return
 	}
 
@@ -126,8 +126,10 @@ func main() {
 				log.Println("Channel mappings are missing!")
 			}
 
-			if dib.SetChannelMappings(chans) {
+			if err := dib.SetChannelMappings(chans); err != nil {
 				channelMappings = chans
+			} else {
+				log.WithField("error", err).Errorln("could not set channel mappings")
 			}
 		}
 	})

@@ -63,23 +63,22 @@ func (b *Bridge) Close() {
 }
 
 // TODO: Use errors package
-func (b *Bridge) load(opts *Config) bool {
+func (b *Bridge) load(opts *Config) error {
 	if opts.IRCServer == "" {
-		log.Errorln("Missing server name.")
-		return false
+		return errors.New("missing server name")
 	}
 
-	if !b.SetChannelMappings(opts.ChannelMappings) {
-		return false
+	if err := b.SetChannelMappings(opts.ChannelMappings); err != nil {
+		return errors.Wrap(err, "channel mappings could not be set")
 	}
 
 	// This should not be used anymore!
 	opts.ChannelMappings = nil
 
-	return true
+	return nil
 }
 
-func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
+func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 	mappings := []*Mapping{}
 	for irc, discord := range inMappings {
 		mappings = append(mappings, &Mapping{
@@ -93,8 +92,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 		for j, check := range mappings {
 			if (mapping.DiscordChannel == check.DiscordChannel) || (mapping.IRCChannel == check.IRCChannel) {
 				if i != j {
-					log.Errorln("Check channel_mappings for duplicate entries")
-					return false
+					return errors.New("channel_mappings contains duplicate entries")
 				}
 			}
 		}
@@ -173,7 +171,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) bool {
 		}
 	}
 
-	return true
+	return nil
 }
 
 // New Bridge
@@ -187,8 +185,8 @@ func New(conf *Config) (*Bridge, error) {
 		updateUserChan:           make(chan DiscordUser),
 	}
 
-	if !dib.load(conf) {
-		return nil, errors.New("error with Config. TODO: More info here")
+	if err := dib.load(conf); err != nil {
+		return nil, errors.Wrap(err, "configuration invalid")
 	}
 
 	var err error
