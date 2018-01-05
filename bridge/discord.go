@@ -234,11 +234,12 @@ func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 }
 
 func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
-	// This error is usually triggered on first run because it represents offline
 	presence, err := d.State.Presence(d.guildID, m.User.ID)
 	if err != nil {
-		// log.WithField("error", err).Errorln("presence retrieval failed")
-		// TODO: Determine the type of the error, and handle non-offline situations
+		// This error is usually triggered on first run because it represents offline
+		if err != discordgo.ErrStateNotFound {
+			log.WithField("error", err).Errorln("presence retrieval failed")
+		}
 		return
 	}
 
