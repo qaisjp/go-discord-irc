@@ -5,4 +5,4 @@ install:
   - go get -t -v ./...
 
 script:
-  - goveralls -coverprofile=coverage.out -service=travis-ci
+  - goveralls -service=travis-ci
