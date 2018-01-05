@@ -89,7 +89,7 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// If we still haven't found a webhook, create one.
 	var newWebhook *discordgo.Webhook
 	if chosenWebhook == nil {
-		log.Println("Creating a webhook stream...")
+		log.WithField("params", data).Debugln("Creating a new webhook...")
 
 		newWebhook, err = x.Discord.WebhookCreate(channelID, x.Discord.bridge.Config.WebhookPrefix+" IRC", "")
 		if err != nil {
@@ -100,19 +100,18 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 			if len(x.webhooks) > 0 {
 				chosenWebhook, err = x.webhooks[0].ModifyChannel(x, channelID)
 				if err != nil {
-					// Panic. We can't send our message :(
-					panic(errors.Wrap(err, "Could not modify existing webhook after webhook creation failure"))
+					return errors.Wrap(err, "Could not modify existing webhook after webhook creation failure")
 				}
 				// ... if we can. But we can't. Because there aren't any webhooks to use.
 			} else {
-				panic(errors.Wrap(err, "No webhooks available to fall back on after webhook creation failure"))
+				return errors.Wrap(err, "No webhooks available to fall back on after webhook creation failure")
 			}
 		}
 	}
 
 	// If we have created a new webhook
 	if newWebhook != nil {
-		log.Println("Created new webhook now, so creating wrapped webhook")
+		log.Debugln("Created new webhook now, so creating wrapped webhook")
 		// Create demux compatible webhook
 		chosenWebhook = &Webhook{
 			Webhook: newWebhook,
@@ -129,7 +128,7 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// Update the webook username field
 	chosenWebhook.Username = data.Username
 
-	log.Println("--------- done, executing webhook -------")
+	log.Debugln("--------- done, executing webhook -------")
 
 	// TODO: What if it takes a long time? See wait=true below.
 	err = x.Discord.WebhookExecute(chosenWebhook.ID, chosenWebhook.Token, true, data)

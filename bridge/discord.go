@@ -63,13 +63,13 @@ func (d *discordBot) Open() error {
 			return errors.Wrap(err, "The bot does not have the 'Manage Webhooks' permission.")
 		}
 
-		panic(err)
+		return errors.Wrap(err, "could not get webhooks")
 	}
 
 	for _, wh := range hooks {
 		if strings.HasPrefix(wh.Name, d.bridge.Config.WebhookPrefix) {
 			if err := d.WebhookDelete(wh.ID); err != nil {
-				log.Printf("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
+				log.Errorln("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
 			}
 		}
 	}

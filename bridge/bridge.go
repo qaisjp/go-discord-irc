@@ -310,15 +310,20 @@ func (b *Bridge) loop() {
 				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
 			}
 
-			// TODO: What if it takes a long time? See wait=true below.
-			err := b.discord.whx.Execute(mapping.DiscordChannel, &discordgo.WebhookParams{
+			params := discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  msg.Username,
 				AvatarURL: avatar,
-			})
+			}
+
+			// TODO: What if it takes a long time? See wait=true below.
+			err := b.discord.whx.Execute(mapping.DiscordChannel, &params)
 
 			if err != nil {
-				log.Errorln("Message from IRC to Discord was unsuccessfully sent!", err.Error())
+				log.WithFields(log.Fields{
+					"error":  err,
+					"params": params,
+				}).Errorln("could not send message to Discord")
 			}
 
 		// Messages from Discord to IRC

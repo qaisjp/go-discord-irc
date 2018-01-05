@@ -99,12 +99,25 @@ func main() {
 	})
 
 	if err != nil {
+		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to initialise.")
+		return
+	}
+
+	// Create new signal receiver
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+
+	// Open the bot
+	err = dib.Open()
+	if err != nil {
 		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to start.")
 		return
 	}
 
+	// Inform the user that things are happening!
 	log.Infoln("Go-Discord-IRC is now running. Press Ctrl-C to exit.")
 
+	// Start watching for live changes...
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		log.Println("Configuration file has changed!")
@@ -137,20 +150,11 @@ func main() {
 		}
 	})
 
-	// Create new signal receiver
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-
-	err = dib.Open()
-	if err != nil {
-		panic(err)
-	}
-
-	// Watch for a signal
+	// Watch for a shutdown signal
 	<-sc
 
 	log.Infoln("Shutting down Go-Discord-IRC...")
 
-	// Cleanly close down the Discord session.
+	// Cleanly close down the bridge.
 	dib.Close()
 }

@@ -26,7 +26,7 @@ func Leftpad(s string, length int, ch ...rune) string {
 func SnowflakeToIP(base string, snowflake string) string {
 	num, err := strconv.ParseUint(snowflake, 10, 64)
 	if err != nil {
-		panic(errors.Wrapf(err, "could not convert snowflake to uint: %s", snowflake))
+		panic(errors.Wrap(err, "could not convert snowflake to uint"))
 	}
 
 	for i, c := range Leftpad(strconv.FormatUint(num, 16), 16, '0') {
