@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	"lag"
 	"os"
 	"os/signal"
 	"path/filepath"
