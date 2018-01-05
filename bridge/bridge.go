@@ -34,6 +34,9 @@ type Config struct {
 	// an IRC connection for each of the online Discord users.
 	SimpleMode bool
 
+	// WebhookPrefix is prefixed to each webhook created by the Discord bot.
+	WebhookPrefix string
+
 	Suffix string // Suffix is the suffix to append to Discord users on the IRC side.
 
 	Debug bool
@@ -66,6 +69,10 @@ func (b *Bridge) Close() {
 func (b *Bridge) load(opts *Config) error {
 	if opts.IRCServer == "" {
 		return errors.New("missing server name")
+	}
+
+	if opts.WebhookPrefix == "" {
+		return errors.New("missing webhook prefix")
 	}
 
 	if err := b.SetChannelMappings(opts.ChannelMappings); err != nil {
