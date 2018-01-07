@@ -84,6 +84,8 @@ func main() {
 		log.Warnln("Channel mappings are missing!")
 	}
 
+	SetLogDebug(*debugMode)
+
 	dib, err := bridge.New(&bridge.Config{
 		DiscordBotToken:    discordBotToken,
 		GuildID:            guildID,
@@ -131,7 +133,8 @@ func main() {
 		if debug := viper.GetBool("debug"); *debugMode != debug {
 			log.Printf("Debug changed from %+v to %+v", *debugMode, debug)
 			*debugMode = debug
-			dib.SetDebugMode(*debugMode)
+			dib.SetDebugMode(debug)
+			SetLogDebug(debug)
 		}
 
 		chans := viper.GetStringMapString("channel_mappings")
@@ -157,4 +160,13 @@ func main() {
 
 	// Cleanly close down the bridge.
 	dib.Close()
+}
+
+func SetLogDebug(debug bool) {
+	logger := log.StandardLogger()
+	if debug {
+		logger.SetLevel(log.DebugLevel)
+	} else {
+		logger.SetLevel(log.InfoLevel)
+	}
 }
