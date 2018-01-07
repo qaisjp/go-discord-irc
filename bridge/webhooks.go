@@ -67,6 +67,7 @@ Retry:
 	for _, webhook := range channelWebhooks { // searching channel webhooks
 		if (*webhook).Username == data.Username {
 			chosenWebhook = webhook
+			log.WithField("params", data).Debugln("Webhook with same username and channel found.")
 			break
 		}
 	}
@@ -85,6 +86,8 @@ Retry:
 				chosenWebhook = webhook
 			}
 		}
+
+		log.WithField("params", data).Debugln("Using oldest webhook...")
 	}
 
 	// Make sure that webhook actually exists!
@@ -97,6 +100,8 @@ Retry:
 			log.WithField("error", err).Warnln("Retrying webhook execution")
 			goto Retry
 		}
+
+		log.WithField("params", data).Debugln("Webhook passed validity test.")
 	}
 
 	// If we still haven't found a webhook, create one.
@@ -106,27 +111,29 @@ Retry:
 
 		newWebhook, err = x.Discord.WebhookCreate(channelID, x.Discord.bridge.Config.WebhookPrefix+" IRC", "")
 		if err != nil {
-			log.Errorln("Could not create webhook. Stealing expired webhook.", err)
+			// An error could occur here if we run out of remaining webhooks to use.
+			log.WithField("params", data).Errorln("Could not create webhook. Attempting to use fallback webhooks.", err)
 
-			// We couldn't create the webhook for some reason.
-			// Lets steal an expired one from somewhere...
-			if len(x.webhooks) > 0 {
-				modifyWebhook := x.webhooks[0]
-				wh, err := modifyWebhook.ModifyChannel(x, channelID)
-				if err != nil {
-					return errors.Wrap(err, "Could not modify existing webhook after webhook creation failure")
-				}
-				chosenWebhook = &wh
-			} else {
-				// ... if we can. But we can't. Because there aren't any webhooks to use.
-				return errors.Wrap(err, "No webhooks available to fall back on after webhook creation failure")
+			// Do you we have any existing webhooks?
+			if len(x.webhooks) == 0 {
+				return errors.Wrap(err, "webhook creation failed, and no fallback webhooks")
 			}
+
+			// Lets try to reuse an existing webhook
+			wh, err := x.webhooks[0].ModifyChannel(x, channelID)
+			if err != nil {
+				return errors.Wrap(err, "webhook creation failed, and could not modify webhook")
+			}
+
+			x.webhooks[0] = wh
+			chosenWebhook = &wh
+
+			log.WithField("params", data).Debugln("Fallback webhook successfully used.")
 		}
 	}
 
 	// If we have created a new webhook
 	if newWebhook != nil {
-		log.Debugln("Created new webhook now, so creating wrapped webhook")
 		// Create demux compatible webhook
 		wh := &Webhook{
 			Webhook: newWebhook,
@@ -136,6 +143,8 @@ Retry:
 
 		// Add the newly created demux compatible webhook to our pool
 		x.webhooks = append(x.webhooks, wh)
+
+		log.WithField("params", data).Debugln("New webhook successfully created.")
 	}
 
 	webhook := *chosenWebhook
@@ -146,7 +155,7 @@ Retry:
 	// Update the webook username field
 	webhook.Username = data.Username
 
-	log.Debugln("--------- done, executing webhook -------")
+	log.WithField("params", data).Debugln("Executing webhook now...")
 
 	// TODO: What if it takes a long time? See wait=true below.
 	err = x.Discord.WebhookExecute(webhook.ID, webhook.Token, true, data)
@@ -155,9 +164,11 @@ Retry:
 		webhook.Username = ""
 		webhook.User = nil
 
-		log.WithField("error", err).Errorln("Could not execute webhook")
+		log.WithField("error", err).WithField("params", data).Errorln("Could not execute webhook,")
 		x.Discord.bridge.ircListener.Privmsg("qaisjp", "Check error log! "+err.Error())
 	}
+
+	log.WithField("params", data).Debugln("Webhook successfully executed.")
 
 	return nil
 }
