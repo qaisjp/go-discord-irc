@@ -42,7 +42,7 @@ func (i *ircConnection) JoinChannels() {
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	// if their details haven't changed, don't do anything
-	if (i.discord.Nick == discord.Nick) && (i.discord.Discriminator == discord.Discriminator) {
+	if (i.discord.Nick == discord.Nick) && (i.discord.Username == discord.Username) && (i.discord.Discriminator == discord.Discriminator) {
 		return
 	}
 
