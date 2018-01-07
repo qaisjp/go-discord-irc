@@ -41,6 +41,7 @@ func NewWebhookDemuxer(bot *discordBot) *WebhookDemuxer {
 
 // Execute executes a webhook, keeping track of the username provided in WebhookParams.
 func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams) (err error) {
+Retry:
 	// Remove any niled items
 	a := x.webhooks
 	for i := 0; i < len(a); i++ {
@@ -60,12 +61,12 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	}
 
 	// The webhook to use
-	var chosenWebhook *Webhook
+	var chosenWebhook **Webhook
 
 	// Find a webhook of the same username and channel.
 	for _, webhook := range channelWebhooks { // searching channel webhooks
 		if (*webhook).Username == data.Username {
-			chosenWebhook = *webhook
+			chosenWebhook = webhook
 			break
 		}
 	}
@@ -75,14 +76,26 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	// our channel is going to be the most recent speaker.
 	// Only necessary for the Android/web bug workaround.
 	if (chosenWebhook == nil) && (len(channelWebhooks) > 1) {
-		chosenWebhook = *channelWebhooks[0]
+		chosenWebhook = channelWebhooks[0]
 		for _, webhook := range channelWebhooks {
 			// So if the chosen webhook is born after (younger than)
 			// the current webhook. The make the current webhook
 			// our chosen webhook.
-			if chosenWebhook.LastUse.After((*webhook).LastUse) {
-				chosenWebhook = *webhook
+			if (*chosenWebhook).LastUse.After((*webhook).LastUse) {
+				chosenWebhook = webhook
 			}
+		}
+	}
+
+	// Make sure that webhook actually exists!
+	if chosenWebhook != nil {
+		_, err := x.Discord.bridge.discord.Webhook((*chosenWebhook).ID)
+		if err != nil {
+			*chosenWebhook = nil
+
+			err = errors.Wrap(err, "chosen webhook does not actually exist")
+			log.WithField("error", err).Warnln("Retrying webhook execution")
+			goto Retry
 		}
 	}
 
@@ -98,12 +111,14 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 			// We couldn't create the webhook for some reason.
 			// Lets steal an expired one from somewhere...
 			if len(x.webhooks) > 0 {
-				chosenWebhook, err = x.webhooks[0].ModifyChannel(x, channelID)
+				modifyWebhook := x.webhooks[0]
+				wh, err := modifyWebhook.ModifyChannel(x, channelID)
 				if err != nil {
 					return errors.Wrap(err, "Could not modify existing webhook after webhook creation failure")
 				}
-				// ... if we can. But we can't. Because there aren't any webhooks to use.
+				chosenWebhook = &wh
 			} else {
+				// ... if we can. But we can't. Because there aren't any webhooks to use.
 				return errors.Wrap(err, "No webhooks available to fall back on after webhook creation failure")
 			}
 		}
@@ -113,31 +128,35 @@ func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams
 	if newWebhook != nil {
 		log.Debugln("Created new webhook now, so creating wrapped webhook")
 		// Create demux compatible webhook
-		chosenWebhook = &Webhook{
+		wh := &Webhook{
 			Webhook: newWebhook,
 			// Username and Expired fields set later
 		}
+		chosenWebhook = &wh
 
 		// Add the newly created demux compatible webhook to our pool
-		x.webhooks = append(x.webhooks, chosenWebhook)
+		x.webhooks = append(x.webhooks, wh)
 	}
 
+	webhook := *chosenWebhook
+
 	// Reset the expiry ticket for the webhook
-	chosenWebhook.ResetExpiry()
+	webhook.ResetExpiry()
 
 	// Update the webook username field
-	chosenWebhook.Username = data.Username
+	webhook.Username = data.Username
 
 	log.Debugln("--------- done, executing webhook -------")
 
 	// TODO: What if it takes a long time? See wait=true below.
-	err = x.Discord.WebhookExecute(chosenWebhook.ID, chosenWebhook.Token, true, data)
+	err = x.Discord.WebhookExecute(webhook.ID, webhook.Token, true, data)
 	if err != nil {
-		chosenWebhook.Close()
-		chosenWebhook.Username = ""
-		chosenWebhook.User = nil
+		webhook.Close()
+		webhook.Username = ""
+		webhook.User = nil
 
-		x.Discord.bridge.ircListener.Privmsg("#bottest", "Something bad happened! "+err.Error())
+		log.WithField("error", err).Errorln("Could not execute webhook")
+		x.Discord.bridge.ircListener.Privmsg("qaisjp", "Check error log! "+err.Error())
 	}
 
 	return nil
