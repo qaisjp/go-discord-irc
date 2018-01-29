@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var cooldownDuration = time.Minute * 10
+
 // IRCManager should only be used from one thread.
 type IRCManager struct {
 	ircConnections map[string]*ircConnection
@@ -26,6 +28,12 @@ func NewIRCManager(bridge *Bridge) *IRCManager {
 }
 
 func (m *IRCManager) CloseConnection(i *ircConnection) {
+	// Destroy the cooldown timer
+	if i.cooldownTimer != nil {
+		i.cooldownTimer.Stop()
+		i.cooldownTimer = nil
+	}
+
 	delete(m.ircConnections, i.discord.ID)
 	close(i.messages)
 	i.innerCon.Quit()
@@ -39,16 +47,34 @@ func (m *IRCManager) Close() {
 	}
 }
 
+func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
+	if con.cooldownTimer != nil {
+		con.cooldownTimer.Stop()
+	}
+
+	con.cooldownTimer = time.AfterFunc(
+		cooldownDuration,
+		func() {
+			m.CloseConnection(con)
+		},
+	)
+}
+
 func (m *IRCManager) HandleUser(user DiscordUser) {
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
-		// Close the connection if they are not online on Discord anymore
+		// Close the connection if they are not
+		// online on Discord anymore (after cooldown)
 		if !user.Online {
-			m.CloseConnection(con)
+			m.SetConnectionCooldown(con)
+		}
+
+		// If user.Nick is empty then we probably just had a status change
+		if user.Nick == "" {
 			return
 		}
 
-		// Otherwise update their nickname / username
+		// Update their nickname / username
 		// TODO: Support username changes
 		// Note: this event is still called when their status is changed
 		//       from `online` to `dnd` (online related states)
@@ -94,7 +120,8 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		discord: user,
 		nick:    nick,
 
-		messages: make(chan IRCMessage),
+		messages:      make(chan IRCMessage),
+		cooldownTimer: nil,
 
 		manager: m,
 	}
@@ -229,6 +256,11 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 			content,
 		))
 		return
+	}
+
+	// If there is a cooldown, reset the cooldown
+	if con.cooldownTimer != nil {
+		m.SetConnectionCooldown(con)
 	}
 
 	ircMessage := IRCMessage{

@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"strings"
+	"time"
 
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +16,8 @@ type ircConnection struct {
 	discord DiscordUser
 	nick    string
 
-	messages chan IRCMessage
+	messages      chan IRCMessage
+	cooldownTimer *time.Timer
 
 	manager *IRCManager
 }
