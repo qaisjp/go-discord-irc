@@ -211,12 +211,14 @@ func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.Presenc
 func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
 	if p.Status == "offline" {
+		log.WithField("id", p.User.ID).Debugln("PRESENCE offline")
 		d.bridge.updateUserChan <- DiscordUser{
 			ID:     p.User.ID,
 			Online: false,
 		}
 		return
 	}
+	log.WithField("id", p.User.ID).Debugln("PRESENCE " + p.Status)
 
 	// Otherwise get their GuildMember object...
 	user, err := d.State.Member(d.guildID, p.User.ID)

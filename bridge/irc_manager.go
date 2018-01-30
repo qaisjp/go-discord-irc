@@ -28,6 +28,7 @@ func NewIRCManager(bridge *Bridge) *IRCManager {
 }
 
 func (m *IRCManager) CloseConnection(i *ircConnection) {
+	log.WithField("nick", i.nick).Println("Closing connection.")
 	// Destroy the cooldown timer
 	if i.cooldownTimer != nil {
 		i.cooldownTimer.Stop()
@@ -49,15 +50,19 @@ func (m *IRCManager) Close() {
 
 func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 	if con.cooldownTimer != nil {
+		log.WithField("nick", con.nick).Println("IRC connection cooldownTimer stopped!")
 		con.cooldownTimer.Stop()
 	}
 
 	con.cooldownTimer = time.AfterFunc(
 		cooldownDuration,
 		func() {
+			log.WithField("nick", con.nick).Println("IRC connection expired by cooldownTimer...")
 			m.CloseConnection(con)
 		},
 	)
+
+	log.WithField("nick", con.nick).Println("IRC connection cooldownTimer created...")
 }
 
 func (m *IRCManager) HandleUser(user DiscordUser) {
@@ -67,6 +72,13 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		// online on Discord anymore (after cooldown)
 		if !user.Online {
 			m.SetConnectionCooldown(con)
+		} else {
+			// The user is online, destroy any connection cooldown.
+			if con.cooldownTimer != nil {
+				log.WithField("nick", user.Nick).Println("Destroying connection cooldown.")
+				con.cooldownTimer.Stop()
+				con.cooldownTimer = nil
+			}
 		}
 
 		// If user.Nick is empty then we probably just had a status change
