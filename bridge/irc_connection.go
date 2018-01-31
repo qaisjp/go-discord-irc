@@ -69,3 +69,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 
 	log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
 }
+
+func (i *ircConnection) SetAway(status string) {
+	i.innerCon.SendRawf("AWAY :%s", status)
+}

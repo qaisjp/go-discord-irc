@@ -72,12 +72,15 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		// online on Discord anymore (after cooldown)
 		if !user.Online {
 			m.SetConnectionCooldown(con)
+			con.SetAway("offline on discord")
 		} else {
 			// The user is online, destroy any connection cooldown.
 			if con.cooldownTimer != nil {
 				log.WithField("nick", user.Nick).Println("Destroying connection cooldown.")
 				con.cooldownTimer.Stop()
 				con.cooldownTimer = nil
+
+				con.SetAway("")
 			}
 		}
 
