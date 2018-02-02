@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var cooldownDuration = time.Hour * 2
+var cooldownDuration = time.Hour * 24
 
 // IRCManager should only be used from one thread.
 type IRCManager struct {
