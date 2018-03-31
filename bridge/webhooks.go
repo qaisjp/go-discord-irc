@@ -52,6 +52,9 @@ Retry:
 	}
 	x.webhooks = a
 
+	// The webhook to use
+	var chosenWebhook **Webhook
+
 	// First find any existing webhooks targeting this channel
 	channelWebhooks := make([]**Webhook, 0, 2)
 	for i, webhook := range x.webhooks {
@@ -60,34 +63,13 @@ Retry:
 		}
 	}
 
-	// The webhook to use
-	var chosenWebhook **Webhook
-
-	// Find a webhook of the same username and channel.
-	for _, webhook := range channelWebhooks { // searching channel webhooks
-		if (*webhook).Username == data.Username {
-			chosenWebhook = webhook
-			log.WithField("params", data).Debugln("Webhook with same username and channel found.")
-			break
-		}
+	if len(channelWebhooks) > 1 {
+		log.WithField("webhooks", channelWebhooks).Warn("Investigate: multiple webhooks for a channel")
 	}
 
-	// So we don't have an expired webhook from our channel.
-	// Lets use the oldest webhook. The most recently active from
-	// our channel is going to be the most recent speaker.
-	// Only necessary for the Android/web bug workaround.
-	if (chosenWebhook == nil) && (len(channelWebhooks) > 1) {
+	// Set chosen webhook to the first channelWebhook (if exists)
+	if len(channelWebhooks) > 0 {
 		chosenWebhook = channelWebhooks[0]
-		for _, webhook := range channelWebhooks {
-			// So if the chosen webhook is born after (younger than)
-			// the current webhook. The make the current webhook
-			// our chosen webhook.
-			if (*chosenWebhook).LastUse.After((*webhook).LastUse) {
-				chosenWebhook = webhook
-			}
-		}
-
-		log.WithField("params", data).Debugln("Using oldest webhook...")
 	}
 
 	// Make sure that webhook actually exists!
