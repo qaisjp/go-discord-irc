@@ -139,14 +139,79 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 var channelMention = regexp.MustCompile(`<#(\d+)>`)
 var roleMention = regexp.MustCompile(`<@&(\d+)>`)
 
+var patternChannels = regexp.MustCompile("<#[^>]*>")
+
 // Up to date as of https://git.io/v5kJg
 func (d *discordBot) ParseText(m *discordgo.Message) string {
-	// Content with @user mentions replaced
-	content, err := m.ContentWithMoreMentionsReplaced(d.Session)
-	if err != nil {
-		log.Println("Error getting content with mentions replaced")
-		return m.ContentWithMentionsReplaced()
+	// Replace @user mentions with name~d mentions
+	content := m.Content
+
+	for _, user := range m.Mentions {
+		// Find the irc username with the discord ID in irc connections
+		username := ""
+		for _, u := range d.bridge.ircManager.ircConnections {
+			if u.discord.ID == user.ID {
+				username = u.nick
+			}
+		}
+
+		if username == "" {
+			// Nickname is their username by default
+			nick := user.Username
+
+			// If we can get their member + nick, set nick to the real nick
+			member, err := d.State.Member(d.guildID, user.ID)
+			if err == nil && member.Nick != "" {
+				nick = member.Nick
+			}
+
+			username = d.bridge.ircManager.generateNickname(DiscordUser{
+				ID:            user.ID,
+				Username:      user.Username,
+				Discriminator: user.Discriminator,
+				Nick:          nick,
+				Bot:           user.Bot,
+				Online:        false,
+			})
+
+			log.WithFields(log.Fields{
+				"discord-username": user.Username,
+				"irc-username":     username,
+				"discord-id":       user.ID,
+			}).Infoln("Could not convert mention using existing IRC connection")
+		} else {
+			log.WithFields(log.Fields{
+				"discord-username": user.Username,
+				"irc-username":     username,
+				"discord-id":       user.ID,
+			}).Infoln("Converted mention using existing IRC connection")
+		}
+
+		content = strings.NewReplacer(
+			"<@"+user.ID+">", username,
+			"<@!"+user.ID+">", username,
+		).Replace(content)
 	}
+
+	// Copied from message.go ContentWithMoreMentionsReplaced(s)
+	for _, roleID := range m.MentionRoles {
+		role, err := d.State.Role(d.guildID, roleID)
+		if err != nil || !role.Mentionable {
+			continue
+		}
+
+		content = strings.Replace(content, "<&"+role.ID+">", "@"+role.Name, -1)
+	}
+
+	// Also copied from message.go ContentWithMoreMentionsReplaced(s)
+	content = patternChannels.ReplaceAllStringFunc(content, func(mention string) string {
+		channel, err := d.State.Channel(mention[2 : len(mention)-1])
+		if err != nil || channel.Type == discordgo.ChannelTypeGuildVoice {
+			return mention
+		}
+
+		return "#" + channel.Name
+	})
 
 	// Sanitise multiple lines in a single message
 	content = strings.Replace(content, "\r\n", "\n", -1) // replace CRLF with LF
