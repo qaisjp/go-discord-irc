@@ -80,7 +80,15 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
-	msg := e.Message()
+	replacements := []string{}
+	for _, con := range i.bridge.ircManager.ircConnections {
+		replacements = append(replacements, con.nick, "<@!"+con.discord.ID+">")
+	}
+
+	msg := strings.NewReplacer(
+		replacements...,
+	).Replace(e.Message())
+
 	if e.Code == "CTCP_ACTION" {
 		msg = "_" + msg + "_"
 	}
