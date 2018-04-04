@@ -75,11 +75,6 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
-	// Ignore messages from Discord bots
-	if strings.HasSuffix(strings.TrimRight(e.Nick, "_"), i.bridge.Config.Suffix) {
-		return
-	}
-
 	replacements := []string{}
 	for _, con := range i.bridge.ircManager.ircConnections {
 		replacements = append(replacements, con.nick, "<@!"+con.discord.ID+">")
