@@ -311,11 +311,10 @@ func (b *Bridge) loop() {
 			}
 
 			username := msg.Username
-			if len(username) < 3 {
-				// Append usernames with 1 or 2 characters
+			if len(username) == 1 {
+				// Append usernames with 1 character
 				// This is because Discord doesn't accept single character usernames
-				// (2 characters is ok, but it's ok)
-				username += " (irc user)"
+				username += `.` // <- zero width space in here, ayylmao
 			}
 
 			params := discordgo.WebhookParams{
