@@ -75,6 +75,11 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
+	// Discord doesn't accept an empty message
+	if strings.TrimSpace(e.Message()) == "" {
+		return
+	}
+
 	// Ignore messages from Discord bots
 	if strings.HasSuffix(strings.TrimRight(e.Nick, "_"), i.bridge.Config.Suffix) {
 		return
