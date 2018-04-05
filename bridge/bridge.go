@@ -310,9 +310,17 @@ func (b *Bridge) loop() {
 				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
 			}
 
+			username := msg.Username
+			if len(username) < 3 {
+				// Append usernames with 1 or 2 characters
+				// This is because Discord doesn't accept single character usernames
+				// (2 characters is ok, but it's ok)
+				username += " (irc user)"
+			}
+
 			params := discordgo.WebhookParams{
 				Content:   msg.Message,
-				Username:  msg.Username,
+				Username:  username,
 				AvatarURL: avatar,
 			}
 
