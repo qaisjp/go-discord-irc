@@ -5,7 +5,9 @@
 [![Build Status](https://travis-ci.org/qaisjp/go-discord-irc.svg?branch=master)](https://travis-ci.org/qaisjp/go-discord-irc)
 [![Coverage Status](https://coveralls.io/repos/github/qaisjp/go-discord-irc/badge.svg?branch=master)](https://coveralls.io/github/qaisjp/go-discord-irc?branch=master)
 
-[![Preview](https://i.imgur.com/he1euVW.gif)](https://i.imgur.com/he1euVW.webm)
+[![Preview](https://i.imgur.com/YpCqzdn.gif)](https://i.imgur.com/YpCqzdn.webm)
+
+
 
 This is an IRC to Discord bridge built just for [@compsoc-edinburgh](http://github.com/compsoc-edinburgh) and
 [ImaginaryNet](http://imaginarynet.uk/).
@@ -29,15 +31,43 @@ It's built with configuration in mind, but may need a little bit of tweaking for
 
 ## Configuration
 
-Refer to `main.go` for the flag list. Here is my modified script for making things work:
+The binary takes three flags:
+
+- `--config filename.yaml`: to pass along a configuration file containing things like passwords and channel options
+- `--simple`: to only spawn one connection (the listener will send across messages from Discord) instead of a connection per online Discord user
+- `--debug`: provide this flag to print extra debug info. Setting this flag to false (or not providing this flag) will take the value from the config file instead
+- `--insecure`: used to skip TLS verification (false = use value from settings)
+
+The config file is a yaml formatted file with the following fields:
+
+- `discord_token`, [the bot user token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
+- `channel_mappings`, a dict with irc channel as key (prefixed with `#`) and Discord channel ID as value
+- `suffix`, appended to each Discord user's nickname when they are connected to IRC
+- `irc_listener_name`, the name of the irc listener
+- `guild_id`, the Discord guild (server) id
+- `webirc_pass`, optional, but recommended for regular (non-simple) usage. this must be obtained by the IRC sysops
+- `debug`, debug mode
+- `insecure`, insecure mode
+- `webhook_prefix`, a prefix for webhooks, so we know which ones to keep and which ones to delete
+
+**The filename.yaml file is continuously read from and many changes will automatically update on the bridge. This means you can add or remove channels without restarting the bot.**
+
+An example configuration file (those marked as `requires restart` definitely require restart, but others may not currently be configured to automatically update):
 
 ```
-./go-discord-irc \
-        --discord_token "bot_token_here" \
-        --channel_mappings "discordchannelid:#ircchannel,discordchannelid2:#ircchannel2,..." \
-        --irc_server "irchost:6697" \
-        --guild_id "guild_id_here" \
-        --webirc_pass "verylongpassword"
+discord_token: abc.def.ghi
+irc_server: localhost:6697
+guild_id: 315277951597936640
+channel_mappings:
+  "#bottest": 316038111811600387
+  "#bottest2": 318327329044561920
+suffix: "_d2"
+irc_listener_name: "_d2"
+webirc_pass: abcdef.ghijk.lmnop
+insecure: true # this requires restart
+debug: false
+webhook_prefix: "(auto-test)" # this probably requires restart
+#simple: true # this requires restart
 ```
 
 This bot needs permissions to manage webhooks as it creates webhooks on the go.
