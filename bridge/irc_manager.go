@@ -108,6 +108,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	innerCon := irc.IRC(nick, "discord")
 	innerCon.Debug = m.bridge.Config.Debug
+	innerCon.RealName = user.Username
 
 	var ip string
 	{
