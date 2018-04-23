@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -43,13 +44,26 @@ func (i *ircConnection) JoinChannels() {
 }
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {
+	if i.discord.Username != discord.Username {
+		i.innerCon.QuitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
+		i.manager.CloseConnection(i)
+
+		// After one second make the user reconnect.
+		// This should be enough time for the nick tracker to update.
+		time.AfterFunc(time.Second, func() {
+			i.manager.HandleUser(discord)
+		})
+		return
+	}
+
 	// if their details haven't changed, don't do anything
-	if (i.discord.Nick == discord.Nick) && (i.discord.Username == discord.Username) && (i.discord.Discriminator == discord.Discriminator) {
+	if (i.discord.Nick == discord.Nick) && (i.discord.Discriminator == discord.Discriminator) {
 		return
 	}
 
 	i.discord = discord
 	i.nick = i.manager.generateNickname(i.discord)
+	i.innerCon.RealName = discord.Username
 
 	go i.innerCon.Nick(i.nick)
 }

@@ -37,7 +37,10 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 
 	delete(m.ircConnections, i.discord.ID)
 	close(i.messages)
-	i.innerCon.Quit()
+
+	if i.innerCon.Connected() {
+		i.innerCon.Quit()
+	}
 }
 
 func (m *IRCManager) Close() {
@@ -109,6 +112,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	innerCon := irc.IRC(nick, "discord")
 	innerCon.Debug = m.bridge.Config.Debug
 	innerCon.RealName = user.Username
+	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", cooldownDuration)
 
 	var ip string
 	{
