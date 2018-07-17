@@ -240,11 +240,6 @@ func (b *Bridge) Open() (err error) {
 		return errors.Wrap(err, "can't open irc connection")
 	}
 
-	// identify as listener
-	if b.Config.NickServIdentify != "" {
-		b.ircListener.Privmsgf("MSG", "nickserv identify %s", b.Config.NickServIdentify)
-	}
-
 	// run listener loop
 	go b.ircListener.Loop()
 
