@@ -53,7 +53,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 	identify := i.bridge.Config.NickServIdentify
 	// identify as listener
 	if identify != "" {
-		i.Privmsgf("MSG", "nickserv identify %s", identify)
+		i.Privmsgf("nickserv", "identify %s", identify)
 	}
 
 	// Join all channels
