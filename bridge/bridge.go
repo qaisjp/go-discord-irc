@@ -18,9 +18,10 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer       string
-	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
-	WebIRCPass      string
+	IRCServer        string
+	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
+	WebIRCPass       string
+	NickServIdentify string // string: "[account] password"
 
 	// InsecureSkipVerify controls whether a client verifies the
 	// server's certificate chain and host name.
@@ -239,6 +240,12 @@ func (b *Bridge) Open() (err error) {
 		return errors.Wrap(err, "can't open irc connection")
 	}
 
+	// identify as listener
+	if b.Config.NickServIdentify != "" {
+		b.ircListener.Privmsgf("MSG", "nickserv identify %s", b.Config.NickServIdentify)
+	}
+
+	// run listener loop
 	go b.ircListener.Loop()
 
 	return

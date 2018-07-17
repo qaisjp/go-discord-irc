@@ -58,6 +58,7 @@ func main() {
 	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
 	guildID := viper.GetString("guild_id")                          // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
+	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -91,6 +92,7 @@ func main() {
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
+		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
 		Debug:              *debugMode,
 		InsecureSkipVerify: *insecure,
