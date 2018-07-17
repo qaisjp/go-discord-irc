@@ -30,6 +30,11 @@ func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon.AddCallback("PRIVMSG", listener.OnPrivateMessage)
 	irccon.AddCallback("CTCP_ACTION", listener.OnPrivateMessage)
 
+	irccon.AddCallback("900", func(e *irc.Event) {
+		// Try to rejoni channels after authenticated with NickServ
+		listener.JoinChannels()
+	})
+
 	return listener
 }
 
