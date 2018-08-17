@@ -20,13 +20,14 @@ type IRCManager struct {
 }
 
 // NewIRCManager creates a new IRCManager
-func NewIRCManager(bridge *Bridge) *IRCManager {
+func newIRCManager(bridge *Bridge) *IRCManager {
 	return &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
 		bridge:         bridge,
 	}
 }
 
+// CloseConnection shuts down a particular connection and its channels.
 func (m *IRCManager) CloseConnection(i *ircConnection) {
 	log.WithField("nick", i.nick).Println("Closing connection.")
 	// Destroy the cooldown timer
@@ -43,6 +44,7 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 	}
 }
 
+// Close closes all of an IRCManager's connections.
 func (m *IRCManager) Close() {
 	i := 0
 	for _, con := range m.ircConnections {
@@ -51,6 +53,7 @@ func (m *IRCManager) Close() {
 	}
 }
 
+// SetConnectionCooldown renews/starts a timer for expiring a connection.
 func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 	if con.cooldownTimer != nil {
 		log.WithField("nick", con.nick).Println("IRC connection cooldownTimer stopped!")
@@ -68,6 +71,7 @@ func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 	log.WithField("nick", con.nick).Println("IRC connection cooldownTimer created...")
 }
 
+// HandleUser deals with messages sent from a DiscordUser
 func (m *IRCManager) HandleUser(user DiscordUser) {
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
@@ -261,6 +265,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	return newNick
 }
 
+// SendMessage sends a broken down Discord Message to a particular IRC channel.
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
 
@@ -300,10 +305,10 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	}
 }
 
-// TODO
-// Find all the Discord channels this user belongs to,
+// RequestChannels finds all the Discord channels this user belongs to,
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels
+// TODO (?)
 func (m *IRCManager) RequestChannels(userID string) []string {
 	return m.bridge.GetIRCChannels()
 }

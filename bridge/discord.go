@@ -18,7 +18,7 @@ type discordBot struct {
 	whx *WebhookDemuxer
 }
 
-func NewDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
+func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 
 	// Create a new Discord session using the provided bot token.
 	session, err := discordgo.New("Bot " + botToken)

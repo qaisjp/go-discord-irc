@@ -86,6 +86,11 @@ func (b *Bridge) load(opts *Config) error {
 	return nil
 }
 
+// SetChannelMappings allows you to set (or update) the
+// hashmap containing irc to discord mappings.
+//
+// Calling this function whilst the bot is running will
+// add or remove IRC bots accordingly.
 func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 	mappings := []*Mapping{}
 	for irc, discord := range inMappings {
@@ -199,24 +204,26 @@ func New(conf *Config) (*Bridge, error) {
 
 	var err error
 
-	dib.discord, err = NewDiscord(dib, conf.DiscordBotToken, conf.GuildID)
+	dib.discord, err = newDiscord(dib, conf.DiscordBotToken, conf.GuildID)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not create discord bot")
 	}
 
-	dib.ircListener = NewIRCListener(dib, conf.WebIRCPass)
-	dib.ircManager = NewIRCManager(dib)
+	dib.ircListener = newIRCListener(dib, conf.WebIRCPass)
+	dib.ircManager = newIRCManager(dib)
 
 	go dib.loop()
 
 	return dib, nil
 }
 
+// SetIRCListenerName changes the username of the listener bot.
 func (b *Bridge) SetIRCListenerName(name string) {
 	b.Config.IRCListenerName = name
 	b.ircListener.Nick(name)
 }
 
+// SetDebugMode allows you to control debug logging.
 func (b *Bridge) SetDebugMode(debug bool) {
 	b.Config.Debug = debug
 	b.ircListener.SetDebugMode(debug)
@@ -252,6 +259,8 @@ func rejoinIRC(con *irc.Connection, event *irc.Event) {
 	}
 }
 
+// SetupIRCConnection sets up an IRC connection with config settings like
+// UseTLS, InsecureSkipVerify, and WebIRCPass.
 func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	con.UseTLS = true
 	con.TLSConfig = &tls.Config{
@@ -266,6 +275,7 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
+// GetIRCChannels returns a list of irc channels in no particular order.
 func (b *Bridge) GetIRCChannels() []string {
 	channels := make([]string, len(b.mappings))
 	for i, mapping := range b.mappings {
@@ -275,6 +285,8 @@ func (b *Bridge) GetIRCChannels() []string {
 	return channels
 }
 
+// GetMappingByIRC returns a Mapping for a given IRC channel.
+// Returns nil if a Mapping does not exist.
 func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
 	for _, mapping := range b.mappings {
 		if mapping.IRCChannel == channel {
@@ -284,6 +296,8 @@ func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
 	return nil
 }
 
+// GetMappingByDiscord returns a Mapping for a given Discord channel.
+// Returns nil if a Mapping does not exist.
 func (b *Bridge) GetMappingByDiscord(channel string) *Mapping {
 	for _, mapping := range b.mappings {
 		if mapping.DiscordChannel == channel {

@@ -12,7 +12,7 @@ type ircListener struct {
 	bridge *Bridge
 }
 
-func NewIRCListener(dib *Bridge, webIRCPass string) *ircListener {
+func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
 	listener := &ircListener{irccon, dib}
 
