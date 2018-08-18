@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/webhooks"
@@ -64,7 +66,10 @@ func (d *discordBot) Open() error {
 }
 
 func (d *discordBot) Close() error {
-	return d.Session.Close()
+	return multierror.Append(
+		d.transmitter.Close(),
+		d.Session.Close(),
+	).ErrorOrNil()
 }
 
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
