@@ -130,16 +130,11 @@ Retry:
 	// Reset the expiry ticket for the webhook
 	webhook.ResetExpiry()
 
-	// Update the webook username field
-	webhook.Username = data.Username
-
 	log.WithField("params", data).Debugln("Executing webhook now...")
 
 	// TODO: What if it takes a long time? See wait=true below.
 	err = x.Discord.WebhookExecute(webhook.ID, webhook.Token, true, data)
 	if err != nil {
-		webhook.Username = ""
-		webhook.User = nil
 
 		log.WithField("error", err).WithField("params", data).Errorln("Could not execute webhook,")
 		x.Discord.bridge.ircListener.Privmsg("qaisjp", "Check error log! "+err.Error())
@@ -214,8 +209,7 @@ func (x *WebhookDemuxer) Destroy() {
 // works around the Android/Web bug.
 type Webhook struct {
 	*discordgo.Webhook
-	Username string
-	LastUse  time.Time
+	LastUse time.Time
 }
 
 // ResetExpiry resets the expiry of the webhook
