@@ -104,20 +104,21 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 
 	err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
 	if err != nil {
-		// Lets troubleshoot!
-		// Try to get the webhook we just attempted to use.
-		_, existErr := t.session.Webhook(wh.ID)
-		if existErr != nil {
-			// Check if the error is a known REST error (UnknownWebhook)
-			restErr, ok := err.(*discordgo.RESTError)
-			if ok && restErr.Message != nil && restErr.Message.Code == 10015 { // todo: in next discordgo version use discordgo.ErrCodeUnknownWebhook
-				// Retry the message because the webhook is dead
-				delete(t.webhooks, channel)
-				return t.Message(channel, username, avatarURL, content)
-			}
+		exists, checkErr := t.checkAndDeleteWebhook(channel)
+
+		// If there was error performing the check, compose the list
+		if checkErr != nil {
+			err = multierror.Append(err, checkErr).ErrorOrNil()
 		}
 
-		return errors.Wrap(err, "could not execute existing webhook")
+		// If the webhook exists OR there was an error performing the check
+		// return the error to the caller
+		if exists || checkErr != nil {
+			return errors.Wrap(err, "could not execute existing webhook")
+		}
+
+		// Otherwise just try and send the message again
+		return t.Message(channel, username, avatarURL, content)
 	}
 
 	return nil
@@ -134,4 +135,34 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 	t.webhooks[channel] = wh
 
 	return wh, nil
+}
+
+// checkAndDeleteWebhook checks to see if the webhook exists, and will delete accordingly.
+//
+// If the transmitter does not know about the webhook, false is returned.
+// If the transmitter does know about the webhook:
+// 		- false is returned if Discord doesn't know.
+//		- true is returned if Discord does know it exists
+// If Discord returns an error, this function will return an error for the second argument.
+func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
+	wh := t.webhooks[channel]
+
+	// If no webhook, return false
+	if wh == nil {
+		return false, nil
+	}
+
+	_, err := t.session.Webhook(wh.ID)
+	if err != nil {
+		// Check if the error is a known REST error (UnknownWebhook)
+		err, ok := err.(*discordgo.RESTError)
+		if ok && err.Message != nil && err.Message.Code == 10015 { // todo: in next discordgo version use discordgo.ErrCodeUnknownWebhook
+			// Retry the message because the webhook is dead
+			delete(t.webhooks, channel)
+			return false, nil
+		}
+
+		return false, err
+	}
+	return true, nil
 }
