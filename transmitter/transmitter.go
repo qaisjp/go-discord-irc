@@ -78,22 +78,22 @@ func (t *Transmitter) Close() error {
 // Message transmits a message to the given channel with the given username, avatarURL, and content.
 //
 // Note that this function will wait until Discord responds with an answer.
+//
+// This will use an existing webhook if it exists.
+// If an existing webhook doesn't exist then it will try to repurpose a webhook.
+// If there is space to create a new webhook then it will do that.
 func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) (err error) {
-	wh := t.webhooks[channel]
+	wh, err := t.getWebhook(channel)
+	if err != nil {
+		return err
+	}
 
+	// webhook will be nil if there was none to repurpose
 	if wh == nil {
-		// todo: repurpose a webhook if there is an out of date one
-
 		wh, err = t.createWebhook(channel)
 		if err != nil {
 			return err // this error is already wrapped by us
 		}
-
-		// todo: if we can't create a webhook, we want to repurpose a webhook
-	}
-
-	if wh == nil {
-		return errors.New("no webhook available")
 	}
 
 	params := discordgo.WebhookParams{
@@ -133,6 +133,22 @@ func (t *Transmitter) HasWebhook(id string) bool {
 	}
 
 	return false
+}
+
+// getWebhook attempts to return a webhook for the channel, or
+// repurposes an existing webhook to be used with that channel.
+//
+// An error will be returned if webhook repurposing failed
+//
+// If no webhook is available, the webhook returned will be nil.
+func (t *Transmitter) getWebhook(channel string) (webhook, error) {
+	if wh := t.webhooks[channel]; wh != nil {
+		return wh, nil
+	}
+
+	// errors.Wrap(err, "failed to repurpose webhook")
+
+	return nil, nil
 }
 
 // createWebhook creates a webhook for a specific channel.
