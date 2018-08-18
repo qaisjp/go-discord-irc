@@ -78,8 +78,19 @@ func (t *Transmitter) Close() error {
 // Message transmits a message to the given channel with the given username, avatarURL, and content.
 //
 // Note that this function will wait until Discord responds with an answer.
-func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) error {
+func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) (err error) {
 	wh := t.webhooks[channel]
+
+	if wh == nil {
+		// todo: repurpose a webhook if there is an out of date one
+
+		wh, err = t.createWebhook(channel)
+		if err != nil {
+			return errors.Wrap(err, "could not create webhook")
+		}
+
+		// todo: if we can't create a webhook, we want to repurpose a webhook
+	}
 
 	if wh == nil {
 		return errors.New("no webhook available")
@@ -91,10 +102,23 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 		Content:   content,
 	}
 
-	err := t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
+	err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
 	if err != nil {
 		return errors.Wrap(err, "could not execute webhook")
 	}
 
 	return nil
+}
+
+// createWebhook creates a webhook for a specific channel.
+func (t *Transmitter) createWebhook(channel string) (webhook, error) {
+	wh, err := t.session.WebhookCreate(channel, t.prefix+" IRC", "")
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create webhook")
+	}
+
+	t.webhooks[channel] = wh
+
+	return wh, nil
 }
