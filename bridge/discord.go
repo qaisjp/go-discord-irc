@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/go-discord-irc/hookmanager"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,7 +16,8 @@ type discordBot struct {
 
 	guildID string
 
-	whx *WebhookDemuxer
+	whx         *WebhookDemuxer
+	transmitter *hookmanager.Transmitter
 }
 
 func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
@@ -55,23 +57,9 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	// Delete webhooks existing webhooks.
-	hooks, err := d.GuildWebhooks(d.bridge.Config.GuildID)
+	d.transmitter, err = hookmanager.NewTransmitter(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
 	if err != nil {
-		restErr := err.(*discordgo.RESTError)
-		if restErr.Message != nil && restErr.Message.Code == 50013 {
-			return errors.Wrap(err, "The bot does not have the 'Manage Webhooks' permission.")
-		}
-
-		return errors.Wrap(err, "could not get webhooks")
-	}
-
-	for _, wh := range hooks {
-		if strings.HasPrefix(wh.Name, d.bridge.Config.WebhookPrefix) {
-			if err := d.WebhookDelete(wh.ID); err != nil {
-				log.Errorln("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
-			}
-		}
+		return errors.Wrap(err, "could not create transmitter")
 	}
 
 	return nil
