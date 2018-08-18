@@ -27,14 +27,6 @@ type WebhookDemuxer struct {
 	webhooks []*Webhook
 }
 
-// NewWebhookDemuxer creates a new WebhookDemuxer
-func NewWebhookDemuxer(bot *discordBot) *WebhookDemuxer {
-	return &WebhookDemuxer{
-		Discord:  bot,
-		webhooks: make([]*Webhook, 0, 2),
-	}
-}
-
 // Execute executes a webhook, keeping track of the username provided in WebhookParams.
 func (x *WebhookDemuxer) Execute(channelID string, data *discordgo.WebhookParams) (err error) {
 Retry:
@@ -172,35 +164,6 @@ func (x *WebhookDemuxer) WebhookEdit(webhookID, name, avatar, channelID string) 
 	}
 
 	return
-}
-
-// ContainsWebhook checks whether the pool contains the given webhookID
-func (x *WebhookDemuxer) ContainsWebhook(webhookID string) (contains bool) {
-	for _, webhook := range x.webhooks {
-		if webhook.ID == webhookID {
-			contains = true
-			break
-		}
-	}
-
-	return
-}
-
-// Destroy destroys the webhook demultiplexer
-func (x *WebhookDemuxer) Destroy() {
-	log.Println("Destroying WebhookDemuxer...")
-	// Delete all the webhooks
-	if len(x.webhooks) > 0 {
-		log.Println("- Removing hooks...")
-		for _, webhook := range x.webhooks {
-			err := x.Discord.WebhookDelete(webhook.ID)
-			if err != nil {
-				log.Printf("-- Could not remove hook %s: %s", webhook.ID, err.Error())
-			}
-		}
-		log.Println("- Hooks removed!")
-	}
-	log.Println("...WebhookDemuxer destroyed!")
 }
 
 // Webhook is a wrapper around discordgo.Webhook,
