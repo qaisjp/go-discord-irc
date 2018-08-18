@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+type webhook *discordgo.Webhook
+
 // Package webhooks provides functionality for displaying arbitrary
 // webhook messages on Discord.
 //
@@ -22,7 +24,7 @@ type Transmitter struct {
 	guild   string
 	prefix  string
 
-	webhooks map[string]*discordgo.Webhook
+	webhooks map[string]webhook
 }
 
 // NewTransmitter returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -54,7 +56,7 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 		guild:   guild,
 		prefix:  prefix,
 
-		webhooks: make(map[string]*discordgo.Webhook),
+		webhooks: make(map[string]webhook),
 	}, nil
 }
 
