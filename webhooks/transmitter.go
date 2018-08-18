@@ -35,7 +35,7 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 	// Check to make sure we have permissions
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
-		if restErr.Message != nil && restErr.Message.Code == 50013 {
+		if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeMissingPermissions {
 			return nil, errors.Wrap(err, "the 'Manage Webhooks' permission is required")
 		}
 
