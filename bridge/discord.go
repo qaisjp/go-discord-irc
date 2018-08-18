@@ -6,7 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/qaisjp/go-discord-irc/hookmanager"
+	"github.com/qaisjp/go-discord-irc/webhooks"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +17,7 @@ type discordBot struct {
 	guildID string
 
 	whx         *WebhookDemuxer
-	transmitter *hookmanager.Transmitter
+	transmitter *webhooks.Transmitter
 }
 
 func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
@@ -57,7 +57,7 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	d.transmitter, err = hookmanager.NewTransmitter(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
+	d.transmitter, err = webhooks.NewTransmitter(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
 	if err != nil {
 		return errors.Wrap(err, "could not create transmitter")
 	}

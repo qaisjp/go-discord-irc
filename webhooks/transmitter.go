@@ -1,4 +1,4 @@
-package hookmanager
+package webhooks
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Package hookmanager provides functionality for displaying arbitrary
+// Package webhooks provides functionality for displaying arbitrary
 // webhook messages on Discord.
 //
 // Existing webhooks are used for messages sent, and if necessary,
