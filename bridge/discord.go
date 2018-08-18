@@ -92,7 +92,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 	if m.Author.ID == "159985870458322944" {
 		content = strings.Replace(
 			content,
-			`CompSoc is The University of Edinburgh's society for anyone interested in tech.  This server is linked up with IRC, another way of chatting, so you'll find there are a lot more people listening than what it shows on Discord.`,
+			`CompSoc is the University of Edinburgh's society for anyone interested in tech.`,
 			"",
 			-1,
 		)
