@@ -16,7 +16,6 @@ type discordBot struct {
 
 	guildID string
 
-	whx         *WebhookDemuxer
 	transmitter *webhooks.Transmitter
 }
 
@@ -35,7 +34,6 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 
 		guildID: guildID,
 	}
-	discord.whx = NewWebhookDemuxer(discord)
 
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.OnReady)
@@ -66,7 +64,6 @@ func (d *discordBot) Open() error {
 }
 
 func (d *discordBot) Close() error {
-	d.whx.Destroy()
 	return d.Session.Close()
 }
 
@@ -77,7 +74,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 	}
 
 	// Ignore messages sent from our webhooks
-	if d.whx.ContainsWebhook(m.Author.ID) || d.transmitter.HasWebhook(m.Author.ID) {
+	if d.transmitter.HasWebhook(m.Author.ID) {
 		return
 	}
 

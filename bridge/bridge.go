@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -351,21 +350,6 @@ func (b *Bridge) loop() {
 					}).Errorln("could not transmit message to discord")
 				}
 			}()
-
-			params := discordgo.WebhookParams{
-				Content:   msg.Message,
-				Username:  username,
-				AvatarURL: avatar,
-			}
-
-			err := b.discord.whx.Execute(mapping.DiscordChannel, &params)
-
-			if err != nil {
-				log.WithFields(log.Fields{
-					"error":  err,
-					"params": params,
-				}).Errorln("could not send message to Discord")
-			}
 
 		// Messages from Discord to IRC
 		case msg := <-b.discordMessageEventsChan:
