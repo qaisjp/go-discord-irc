@@ -15,7 +15,6 @@ import (
 // Existing webhooks are used for messages sent, and if necessary,
 // new webhooks are created to ensure messages in multiple popular channels
 // don't cause messages to be registered as new users.
-//
 
 // A Transmitter represents a message manager instance for a single guild.
 type Transmitter struct {
@@ -23,7 +22,7 @@ type Transmitter struct {
 	guild   string
 	prefix  string
 
-	webhooks []*discordgo.Webhook
+	webhooks map[string]*discordgo.Webhook
 }
 
 // NewTransmitter returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -55,7 +54,7 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 		guild:   guild,
 		prefix:  prefix,
 
-		webhooks: []*discordgo.Webhook{},
+		webhooks: make(map[string]*discordgo.Webhook),
 	}, nil
 }
 
