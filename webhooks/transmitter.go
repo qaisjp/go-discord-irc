@@ -86,7 +86,7 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 
 		wh, err = t.createWebhook(channel)
 		if err != nil {
-			return errors.Wrap(err, "could not create webhook")
+			return err // this error is already wrapped by us
 		}
 
 		// todo: if we can't create a webhook, we want to repurpose a webhook
