@@ -51,6 +51,10 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 
 // createWebhook creates a webhook for a specific channel.
 func (t *Transmitter) createWebhook(channel string) (webhook, error) {
+	if len(t.webhooks) == t.limit {
+		panic(errors.New("webhook limit has been reached"))
+	}
+
 	wh, err := t.session.WebhookCreate(channel, t.prefix, "")
 
 	if err != nil {
