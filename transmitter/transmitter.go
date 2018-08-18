@@ -1,4 +1,4 @@
-package webhooks
+package transmitter
 
 import (
 	"strings"
@@ -11,8 +11,8 @@ import (
 
 type webhook *discordgo.Webhook
 
-// Package webhooks provides functionality for displaying arbitrary
-// webhook messages on Discord.
+// Package transmitter provides functionality for transmitting
+// arbitrary webhook messages on Discord.
 //
 // Existing webhooks are used for messages sent, and if necessary,
 // new webhooks are created to ensure messages in multiple popular channels
@@ -27,8 +27,8 @@ type Transmitter struct {
 	webhooks map[string]webhook
 }
 
-// NewTransmitter returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
-func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*Transmitter, error) {
+// New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
+func New(session *discordgo.Session, guild string, prefix string) (*Transmitter, error) {
 	// Get all existing webhooks
 	hooks, err := session.GuildWebhooks(guild)
 
