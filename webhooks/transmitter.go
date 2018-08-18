@@ -3,6 +3,8 @@ package webhooks
 import (
 	"strings"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
@@ -20,6 +22,8 @@ type Transmitter struct {
 	session *discordgo.Session
 	guild   string
 	prefix  string
+
+	webhooks []*discordgo.Webhook
 }
 
 // NewTransmitter returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -50,5 +54,22 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 		session: session,
 		guild:   guild,
 		prefix:  prefix,
+
+		webhooks: []*discordgo.Webhook{},
 	}, nil
+}
+
+// Close immediately stops all active webhook timers and deletes webhooks.
+func (t *Transmitter) Close() error {
+	var result error
+
+	// Delete all the webhooks
+	for _, webhook := range t.webhooks {
+		err := t.session.WebhookDelete(webhook.ID)
+		if err != nil {
+			multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", webhook.ID))
+		}
+	}
+
+	return result
 }
