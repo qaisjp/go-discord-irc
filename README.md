@@ -49,6 +49,7 @@ The config file is a yaml formatted file with the following fields:
 - `debug`, debug mode
 - `insecure`, insecure mode
 - `webhook_prefix`, a prefix for webhooks, so we know which ones to keep and which ones to delete
+- `webhook_limit`, integer limit for the maximum number of webhooks to create
 - `nickserv_identify`, optional, on connect this message will be sent: `PRIVMSG nickserv IDENTIFY <value>`, you can provide both a username and password if your ircd supports it
 
 **The filename.yaml file is continuously read from and many changes will automatically update on the bridge. This means you can add or remove channels without restarting the bot.**
@@ -69,6 +70,7 @@ webirc_pass: abcdef.ghijk.lmnop
 insecure: true # this requires restart
 debug: false
 webhook_prefix: "(auto-test)" # this probably requires restart
+webhook_limit: 3
 #simple: true # this requires restart
 ```
 
