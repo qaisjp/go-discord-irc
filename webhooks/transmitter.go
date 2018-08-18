@@ -46,7 +46,7 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 	for _, wh := range hooks {
 		if strings.HasPrefix(wh.Name, prefix) {
 			if err := session.WebhookDelete(wh.ID); err != nil {
-				return nil, errors.Errorf("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
+				return nil, errors.Wrapf(err, "could not remove hook %s", wh.ID)
 			}
 		}
 	}
@@ -65,10 +65,10 @@ func (t *Transmitter) Close() error {
 	var result error
 
 	// Delete all the webhooks
-	for _, webhook := range t.webhooks {
-		err := t.session.WebhookDelete(webhook.ID)
+	for _, wh := range t.webhooks {
+		err := t.session.WebhookDelete(wh.ID)
 		if err != nil {
-			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", webhook.ID)).ErrorOrNil()
+			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", wh.ID)).ErrorOrNil()
 		}
 	}
 
