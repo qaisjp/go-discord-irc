@@ -68,7 +68,7 @@ func (t *Transmitter) Close() error {
 	for _, webhook := range t.webhooks {
 		err := t.session.WebhookDelete(webhook.ID)
 		if err != nil {
-			multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", webhook.ID))
+			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", webhook.ID)).ErrorOrNil()
 		}
 	}
 
