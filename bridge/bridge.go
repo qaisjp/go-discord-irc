@@ -37,6 +37,9 @@ type Config struct {
 	// WebhookPrefix is prefixed to each webhook created by the Discord bot.
 	WebhookPrefix string
 
+	// WebhookLimit is the max number of webhooks to create
+	WebhookLimit int
+
 	Suffix string // Suffix is the suffix to append to Discord users on the IRC side.
 
 	Debug bool

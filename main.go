@@ -75,6 +75,9 @@ func main() {
 	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
 	//
 	webhookPrefix := viper.GetString("webhook_prefix") // the unique prefix for this bottiful bot
+	//
+	viper.SetDefault("webhook_limit", 2)
+	webhookLimit := viper.GetInt("webhook_limit")
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -100,6 +103,7 @@ func main() {
 		SimpleMode:         *simple,
 		ChannelMappings:    channelMappings,
 		WebhookPrefix:      webhookPrefix,
+		WebhookLimit:       webhookLimit,
 	})
 
 	if err != nil {
