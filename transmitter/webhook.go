@@ -36,6 +36,14 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 		return wh, nil
 	}
 
+	// First check if there are any expired ones to use, and reuse those
+	// todo: do something
+
+	// Since there are no expired ones to use
+	// lets check if the webhook limit has been reached.
+	// If it has, we need to reuse the oldest one we can.
+	// todo: do something
+
 	// errors.Wrap(err, "failed to repurpose webhook")
 
 	return nil, nil
