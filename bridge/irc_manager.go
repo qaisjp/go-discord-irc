@@ -162,8 +162,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	}
 
 	go innerCon.Loop()
-
-	return
 }
 
 // Converts a nickname to a sanitised form.

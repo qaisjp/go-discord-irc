@@ -81,7 +81,7 @@ func main() {
 	}
 
 	// Validate mappings
-	if channelMappings == nil || len(channelMappings) == 0 {
+	if len(channelMappings) == 0 {
 		log.Warnln("Channel mappings are missing!")
 	}
 
@@ -109,7 +109,7 @@ func main() {
 
 	// Create new signal receiver
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	// Open the bot
 	err = dib.Open()
@@ -143,7 +143,7 @@ func main() {
 		equalChans := reflect.DeepEqual(chans, channelMappings)
 		if !equalChans {
 			log.Println("Channel mappings updated!")
-			if chans == nil || len(chans) == 0 {
+			if len(chans) == 0 {
 				log.Println("Channel mappings are missing!")
 			}
 

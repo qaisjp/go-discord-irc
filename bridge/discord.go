@@ -83,7 +83,10 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 
 	// If the message is "ping" reply with "Pong!"
 	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
+		_, err := s.ChannelMessageSend(m.ChannelID, "Pong!")
+		if err != nil {
+			log.Warningln("Could not respond to Discord ping message", err.Error())
+		}
 	}
 
 	content := d.ParseText(m.Message)
@@ -285,7 +288,11 @@ func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
 }
 
 func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
-	d.RequestGuildMembers(d.guildID, "", 0)
+	err := d.RequestGuildMembers(d.guildID, "", 0)
+	if err != nil {
+		log.Warningln(errors.Wrap(err, "could not request guild members").Error())
+		return
+	}
 }
 
 func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
