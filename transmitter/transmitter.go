@@ -1,3 +1,9 @@
+// Package transmitter provides functionality for transmitting
+// arbitrary webhook messages on Discord.
+//
+// Existing webhooks are used for messages sent, and if necessary,
+// new webhooks are created to ensure messages in multiple popular channels
+// don't cause messages to be registered as new users.
 package transmitter
 
 import (
@@ -8,13 +14,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
-
-// Package transmitter provides functionality for transmitting
-// arbitrary webhook messages on Discord.
-//
-// Existing webhooks are used for messages sent, and if necessary,
-// new webhooks are created to ensure messages in multiple popular channels
-// don't cause messages to be registered as new users.
 
 // A Transmitter represents a message manager instance for a single guild.
 type Transmitter struct {
