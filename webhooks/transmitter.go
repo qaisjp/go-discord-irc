@@ -137,7 +137,7 @@ func (t *Transmitter) HasWebhook(id string) bool {
 
 // createWebhook creates a webhook for a specific channel.
 func (t *Transmitter) createWebhook(channel string) (webhook, error) {
-	wh, err := t.session.WebhookCreate(channel, t.prefix+" IRC", "")
+	wh, err := t.session.WebhookCreate(channel, t.prefix, "")
 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create webhook")
