@@ -19,8 +19,7 @@ import (
 type Transmitter struct {
 	session *discordgo.Session
 	guild   string
-
-	Prefix string
+	prefix  string
 }
 
 // NewTransmitter returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -50,7 +49,6 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 	return &Transmitter{
 		session: session,
 		guild:   guild,
-
-		Prefix: prefix,
+		prefix:  prefix,
 	}, nil
 }
