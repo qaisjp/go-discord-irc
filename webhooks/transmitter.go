@@ -72,3 +72,27 @@ func (t *Transmitter) Close() error {
 
 	return result
 }
+
+// Message transmits a message to the given channel with the given username, avatarURL, and content.
+//
+// Note that this function will wait until Discord responds with an answer.
+func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) error {
+	wh := t.webhooks[channel]
+
+	if wh == nil {
+		return errors.New("no webhook available")
+	}
+
+	params := discordgo.WebhookParams{
+		Username:  username,
+		AvatarURL: avatarURL,
+		Content:   content,
+	}
+
+	err := t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
+	if err != nil {
+		return errors.Wrap(err, "could not execute webhook")
+	}
+
+	return nil
+}

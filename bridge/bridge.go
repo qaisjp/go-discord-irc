@@ -333,13 +333,31 @@ func (b *Bridge) loop() {
 				username += `.` // <- zero width space in here, ayylmao
 			}
 
+			go func() {
+				err := b.discord.transmitter.Message(
+					mapping.DiscordChannel,
+					username,
+					avatar,
+					msg.Message,
+				)
+
+				if err != nil {
+					log.WithFields(log.Fields{
+						"error":        err,
+						"msg.channel":  mapping.DiscordChannel,
+						"msg.username": username,
+						"msg.avatar":   avatar,
+						"msg.content":  msg.Message,
+					}).Errorln("could not transmit message to discord")
+				}
+			}()
+
 			params := discordgo.WebhookParams{
 				Content:   msg.Message,
 				Username:  username,
 				AvatarURL: avatar,
 			}
 
-			// TODO: What if it takes a long time? See wait=true below.
 			err := b.discord.whx.Execute(mapping.DiscordChannel, &params)
 
 			if err != nil {
