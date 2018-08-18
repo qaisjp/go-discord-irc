@@ -198,7 +198,7 @@ func (x *WebhookDemuxer) Destroy() {
 	if len(x.webhooks) > 0 {
 		log.Println("- Removing hooks...")
 		for _, webhook := range x.webhooks {
-			err := x.WebhookDelete(webhook)
+			err := x.Discord.WebhookDelete(webhook.ID)
 			if err != nil {
 				log.Printf("-- Could not remove hook %s: %s", webhook.ID, err.Error())
 			}
@@ -206,17 +206,6 @@ func (x *WebhookDemuxer) Destroy() {
 		log.Println("- Hooks removed!")
 	}
 	log.Println("...WebhookDemuxer destroyed!")
-}
-
-// WebhookDelete destroys the given webhook
-func (x *WebhookDemuxer) WebhookDelete(w *Webhook) error {
-	err := x.Discord.WebhookDelete(w.ID)
-
-	// Workaround for library bug: github.com/bwmarrin/discordgo/issues/429
-	if err != discordgo.ErrJSONUnmarshal {
-		return err
-	}
-	return nil
 }
 
 // Webhook is a wrapper around discordgo.Webhook,
