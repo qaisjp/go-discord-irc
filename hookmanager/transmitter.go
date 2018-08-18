@@ -5,7 +5,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // Package hookmanager provides functionality for displaying arbitrary
@@ -43,7 +42,7 @@ func NewTransmitter(session *discordgo.Session, guild string, prefix string) (*T
 	for _, wh := range hooks {
 		if strings.HasPrefix(wh.Name, prefix) {
 			if err := session.WebhookDelete(wh.ID); err != nil {
-				log.Errorln("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
+				return nil, errors.Errorf("Could not delete webhook %s (\"%s\")", wh.ID, wh.Name)
 			}
 		}
 	}
