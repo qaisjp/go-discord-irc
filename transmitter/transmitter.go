@@ -101,7 +101,7 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 		Content:   content,
 	}
 
-	err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
+	err = t.executeWebhook(channel, &params)
 	if err != nil {
 		exists, checkErr := t.checkAndDeleteWebhook(channel)
 

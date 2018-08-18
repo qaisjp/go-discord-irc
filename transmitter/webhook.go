@@ -1,16 +1,34 @@
 package transmitter
 
 import (
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 )
 
-type webhook *discordgo.Webhook
+type wrappedWebhook struct {
+	*discordgo.Webhook
+	lastUse time.Time
+}
+
+type webhook *wrappedWebhook
+
+// executeWebhook executes a webhook for a specific channel, if it exists
+func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookParams) error {
+	wh, ok := t.webhooks[channel]
+	if !ok {
+		return errors.New("webhook does not exist")
+	}
+
+	wh.lastUse = time.Now()
+	return t.session.WebhookExecute(wh.ID, wh.Token, true, params)
+}
 
 // getWebhook attempts to return a webhook for the channel, or
 // repurposes an existing webhook to be used with that channel.
 //
-// An error will be returned if webhook repurposing failed
+// An error will be returned if webhook repurposing failed.
 //
 // If no webhook is available, the webhook returned will be nil.
 func (t *Transmitter) getWebhook(channel string) (webhook, error) {
@@ -31,9 +49,9 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 		return nil, errors.Wrap(err, "could not create webhook")
 	}
 
-	t.webhooks[channel] = wh
+	t.webhooks[channel] = &wrappedWebhook{wh, time.Time{}}
 
-	return wh, nil
+	return t.webhooks[channel], nil
 }
 
 // checkAndDeleteWebhook checks to see if the webhook exists, and will delete accordingly.
