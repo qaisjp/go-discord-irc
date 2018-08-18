@@ -16,10 +16,6 @@ import (
 // It also detects removed webhooks and removes them from the system,
 // guaranteeing message delivery. Messages may not be in the right order.
 //
-// Until the Android/Web bug is fixed, it will also handle swapping between
-// two webhooks per user. It will automatically time out webhooks preserved
-// for a certain user on a channel.
-//
 // WebhookDemuxer does not need to keep track of all the currently bridged
 // channels. It only needs to know the target channel as it is being used.
 //
