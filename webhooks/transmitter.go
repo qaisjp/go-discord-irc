@@ -104,7 +104,20 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 
 	err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
 	if err != nil {
-		return errors.Wrap(err, "could not execute webhook")
+		// Lets troubleshoot!
+		// Try to get the webhook we just attempted to use.
+		_, existErr := t.session.Webhook(wh.ID)
+		if existErr != nil {
+			// Check if the error is a known REST error (UnknownWebhook)
+			restErr, ok := err.(*discordgo.RESTError)
+			if ok && restErr.Message != nil && restErr.Message.Code == 10015 { // todo: in next discordgo version use discordgo.ErrCodeUnknownWebhook
+				// Retry the message because the webhook is dead
+				delete(t.webhooks, channel)
+				return t.Message(channel, username, avatarURL, content)
+			}
+		}
+
+		return errors.Wrap(err, "could not execute existing webhook")
 	}
 
 	return nil
