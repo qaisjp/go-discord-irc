@@ -138,7 +138,6 @@ Retry:
 	// TODO: What if it takes a long time? See wait=true below.
 	err = x.Discord.WebhookExecute(webhook.ID, webhook.Token, true, data)
 	if err != nil {
-		webhook.Close()
 		webhook.Username = ""
 		webhook.User = nil
 
@@ -197,12 +196,6 @@ func (x *WebhookDemuxer) Destroy() {
 	log.Println("Destroying WebhookDemuxer...")
 	// Delete all the webhooks
 	if len(x.webhooks) > 0 {
-		// Stop all the webhooks expiry timers.
-		log.Println("- Stopping hook timers...")
-		for _, webhook := range x.webhooks {
-			webhook.Close()
-		}
-
 		log.Println("- Removing hooks...")
 		for _, webhook := range x.webhooks {
 			err := x.WebhookDelete(webhook)
@@ -239,11 +232,6 @@ type Webhook struct {
 // ResetExpiry resets the expiry of the webhook
 func (w *Webhook) ResetExpiry() {
 	w.LastUse = time.Now()
-}
-
-// Close closes the webhook expiry timer
-func (w *Webhook) Close() {
-	// w.Close()
 }
 
 // ModifyChannel changes the channel of a webhook
