@@ -77,7 +77,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 	}
 
 	// Ignore messages sent from our webhooks
-	if d.whx.ContainsWebhook(m.Author.ID) {
+	if d.whx.ContainsWebhook(m.Author.ID) || d.transmitter.HasWebhook(m.Author.ID) {
 		return
 	}
 

@@ -124,6 +124,17 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 	return nil
 }
 
+// HasWebhook checks whether the transmitter is using a particular webhook
+func (t *Transmitter) HasWebhook(id string) bool {
+	for _, wh := range t.webhooks {
+		if wh.ID == id {
+			return true
+		}
+	}
+
+	return false
+}
+
 // createWebhook creates a webhook for a specific channel.
 func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 	wh, err := t.session.WebhookCreate(channel, t.prefix+" IRC", "")
