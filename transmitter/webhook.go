@@ -55,7 +55,7 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 		panic(errors.New("webhook limit has been reached"))
 	}
 
-	wh, err := t.session.WebhookCreate(channel, t.prefix, "")
+	wh, err := t.session.WebhookCreate(channel, t.prefix+time.Now().Format(" 3:04:05PM"), "")
 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create webhook")
