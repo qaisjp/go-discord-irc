@@ -22,7 +22,7 @@ type Transmitter struct {
 	prefix  string
 	limit   int // max number of webhooks
 
-	webhooks map[string]webhook
+	webhooks webhookHeap
 }
 
 // New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -55,7 +55,7 @@ func New(session *discordgo.Session, guild string, prefix string, limit int) (*T
 		prefix:  prefix,
 		limit:   limit,
 
-		webhooks: make(map[string]webhook),
+		webhooks: newWebhookHeap(),
 	}, nil
 }
 
@@ -64,7 +64,7 @@ func (t *Transmitter) Close() error {
 	var result error
 
 	// Delete all the webhooks
-	for _, wh := range t.webhooks {
+	for _, wh := range t.webhooks.list {
 		err := t.session.WebhookDelete(wh.ID)
 		if err != nil {
 			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", wh.ID)).ErrorOrNil()
@@ -125,7 +125,7 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 
 // HasWebhook checks whether the transmitter is using a particular webhook
 func (t *Transmitter) HasWebhook(id string) bool {
-	for _, wh := range t.webhooks {
+	for _, wh := range t.webhooks.list {
 		if wh.ID == id {
 			return true
 		}

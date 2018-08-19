@@ -16,8 +16,8 @@ type webhook *wrappedWebhook
 
 // executeWebhook executes a webhook for a specific channel, if it exists
 func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookParams) error {
-	wh, ok := t.webhooks[channel]
-	if !ok {
+	wh := t.webhooks.Get(channel)
+	if wh == nil {
 		return errors.New("webhook does not exist")
 	}
 
@@ -32,7 +32,7 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 //
 // If no webhook is available, the webhook returned will be nil.
 func (t *Transmitter) getWebhook(channel string) (webhook, error) {
-	if wh := t.webhooks[channel]; wh != nil {
+	if wh := t.webhooks.Get(channel); wh != nil {
 		return wh, nil
 	}
 
@@ -51,7 +51,7 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 
 // createWebhook creates a webhook for a specific channel.
 func (t *Transmitter) createWebhook(channel string) (webhook, error) {
-	if len(t.webhooks) == t.limit {
+	if t.webhooks.Len() == t.limit {
 		panic(errors.New("webhook limit has been reached"))
 	}
 
@@ -61,9 +61,10 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 		return nil, errors.Wrap(err, "could not create webhook")
 	}
 
-	t.webhooks[channel] = &wrappedWebhook{wh, time.Time{}}
+	wrapped := &wrappedWebhook{wh, time.Time{}}
+	t.webhooks.Push(wrapped)
 
-	return t.webhooks[channel], nil
+	return wrapped, nil
 }
 
 // checkAndDeleteWebhook checks to see if the webhook exists, and will delete accordingly.
@@ -74,7 +75,7 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 //		- true is returned if Discord does know it exists
 // If Discord returns an error, this function will return an error for the second argument.
 func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
-	wh := t.webhooks[channel]
+	wh := t.webhooks.Get(channel)
 
 	// If no webhook, return false
 	if wh == nil {
@@ -87,7 +88,7 @@ func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
 		err, ok := err.(*discordgo.RESTError)
 		if ok && err.Message != nil && err.Message.Code == 10015 { // todo: in next discordgo version use discordgo.ErrCodeUnknownWebhook
 			// Retry the message because the webhook is dead
-			delete(t.webhooks, channel)
+			t.webhooks.Remove(channel)
 			return false, nil
 		}
 
