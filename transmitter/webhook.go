@@ -86,7 +86,7 @@ func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
 	if err != nil {
 		// Check if the error is a known REST error (UnknownWebhook)
 		err, ok := err.(*discordgo.RESTError)
-		if ok && err.Message != nil && err.Message.Code == 10015 { // todo: in next discordgo version use discordgo.ErrCodeUnknownWebhook
+		if ok && err.Message != nil && err.Message.Code == discordgo.ErrCodeUnknownWebhook {
 			// Retry the message because the webhook is dead
 			t.webhooks.Remove(channel)
 			return false, nil
