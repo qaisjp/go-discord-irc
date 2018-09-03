@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/discordgo"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/discordgo"
 	log "github.com/sirupsen/logrus"
 )
 

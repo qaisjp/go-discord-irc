@@ -11,8 +11,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/discordgo"
 )
 
 // A Transmitter represents a message manager instance for a single guild.

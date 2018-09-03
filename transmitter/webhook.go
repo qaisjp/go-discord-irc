@@ -3,8 +3,8 @@ package transmitter
 import (
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/discordgo"
 )
 
 type wrappedWebhook struct {
