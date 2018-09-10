@@ -35,27 +35,41 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 // An error will be returned if webhook repurposing failed.
 //
 // If no webhook is available, the webhook returned will be nil.
+//
+// TODO: Check if this function breaks when you remove webhooks
+// TODO: Remove webhooks from heap automatically using the event
 func (t *Transmitter) getWebhook(channel string) (webhook, error) {
+	// Just stop if there are no webhooks
+	if t.webhooks.Len() == 0 {
+		return nil, nil
+	}
+
+	// Try and get a webhook that matches that channel
 	if wh := t.webhooks.Get(channel); wh != nil {
 		return wh, nil
 	}
 
-	// First check if there are any expired ones to use, and reuse those
-	// todo: do something
+	// Peek at the heap pop
+	wh := t.webhooks.Peak()
 
-	// Since there are no expired ones to use
-	// lets check if the webhook limit has been reached.
-	// If it has, we need to reuse the oldest one we can.
-	// todo: do something
-
-	// errors.Wrap(err, "failed to repurpose webhook")
+	// And repurpose if limit met OR is expired
+	if !t.checkLimitOK() || time.Now().After(wh.lastUse.Add(time.Second*5)) {
+		_, err := t.session.WebhookEdit(wh.ID, "", "", channel)
+		if err == nil {
+			// Webhooks don't maintain their own state, so we rely
+			// on the old ChannelID here, and we update it later.
+			t.webhooks.SwapChannel(wh.ChannelID, channel)
+			wh.ChannelID = channel
+		}
+		return wh, errors.Wrap(err, "could not repurpose webhook")
+	}
 
 	return nil, nil
 }
 
 // createWebhook creates a webhook for a specific channel.
 func (t *Transmitter) createWebhook(channel string) (webhook, error) {
-	if t.webhooks.Len() >= t.limit {
+	if !t.checkLimitOK() {
 		panic(errors.New("webhook limit has been reached"))
 	}
 
@@ -99,4 +113,9 @@ func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// checkLimitOK returns true if the webhook limit has not been reached
+func (t *Transmitter) checkLimitOK() bool {
+	return t.webhooks.Len() < t.limit
 }

@@ -4,6 +4,12 @@ import (
 	"container/heap"
 )
 
+// webhookHeap is a heap that will always give you
+// a webhook that has either expired or is closest to its expiry.
+//
+// To be more accurate, it returns the oldest webhook.
+//
+// This struct will never modify a webhook, so you need to do this yourself.
 type webhookHeap struct {
 	indices map[string]int
 	list    []webhook
@@ -75,4 +81,22 @@ func (h *webhookHeap) Fix(channel string) {
 	}
 
 	heap.Fix(h, i)
+}
+
+// Peak returns the soonest-to-expire webhook without popping it from the heap.
+//
+// This function will panic if there are no webhooks in the heap.
+func (h *webhookHeap) Peak() webhook {
+	return h.list[0]
+}
+
+// Swap must be called when changing a webhook's channel ID.
+//
+// This function will panic if the old channel does not exist.
+// Behaviour is undefined if the new channel already exists.
+//
+// This does not modify the webhook (does not change the webhook ChannelID)
+func (h *webhookHeap) SwapChannel(oldID, newID string) {
+	h.indices[newID] = h.indices[oldID]
+	delete(h.indices, oldID)
 }
