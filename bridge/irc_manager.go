@@ -168,6 +168,10 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 // Does not check IRC or Discord existence, so don't use this method
 // unless you're also checking IRC and Discord.
 func sanitiseNickname(nick string) string {
+	if nick == "" {
+		return "_"
+	}
+
 	// https://github.com/lp0/charybdis/blob/9ced2a7932dddd069636fe6fe8e9faa6db904703/ircd/client.c#L854-L884
 	if nick[0] == '-' {
 		nick = "_" + nick
