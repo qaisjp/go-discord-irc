@@ -51,7 +51,6 @@ func (h *webhookHeap) Pop() interface{} {
 
 func (h *webhookHeap) Remove(channel string) {
 	i := h.indices[channel]
-	// delete(h.indices, channel)
 	heap.Remove(h, i)
 }
 
