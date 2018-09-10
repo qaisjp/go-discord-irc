@@ -52,7 +52,7 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 	wh := t.webhooks.Peak()
 
 	// And repurpose if limit met OR is expired
-	if !t.checkLimitOK() || time.Now().After(wh.lastUse.Add(time.Second*5)) {
+	if !t.checkLimitOK() || time.Now().After(wh.lastUse.Add(time.Second*30)) {
 		_, err := t.session.WebhookEdit(wh.ID, "", "", channel)
 		if err == nil {
 			// Webhooks don't maintain their own state, so we rely
