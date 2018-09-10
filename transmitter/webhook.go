@@ -145,16 +145,12 @@ func (t *Transmitter) onWebhookUpdate(s *discordgo.Session, e *discordgo.Webhook
 
 OurWebhooks:
 	for _, ours := range t.webhooks.list {
-		oursExists := false
 
 		for _, theirs := range webhooks {
 			// Don't check for inconsistencies if our their webhook is not also our webhook
 			if theirs.ID != ours.ID {
 				continue
 			}
-
-			// Since the ID is the same, we can confirm they still have our webhook!
-			oursExists = true
 
 			// The webhook is consistent if the ChannelID matches.
 			// If it matches, then we continue the outerloop
@@ -173,10 +169,9 @@ OurWebhooks:
 			continue OurWebhooks
 		}
 
-		// Delete our webhook if they don't have the webhook
-		if !oursExists {
-			t.webhooks.Remove(ours.ChannelID)
-		}
+		// Since the outer loop (this loop) hasn't been `continue`d,
+		// we know that THEY don't have OUR webhook. Remove ours.
+		t.webhooks.Remove(ours.ChannelID)
 	}
 
 	// EVERYTHING BELOW THIS IS WRONG. COME BACK AND USE THIS INFORMATION WHEN THE EVENT IS UPDATED.
