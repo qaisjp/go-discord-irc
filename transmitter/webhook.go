@@ -9,6 +9,8 @@ import (
 	"github.com/qaisjp/discordgo"
 )
 
+var webhookExpiry = time.Second * 30
+
 type wrappedWebhook struct {
 	*discordgo.Webhook
 	lastUse time.Time
@@ -52,7 +54,7 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 	wh := t.webhooks.Peak()
 
 	// And repurpose if limit met OR is expired
-	if !t.checkLimitOK() || time.Now().After(wh.lastUse.Add(time.Second*30)) {
+	if !t.checkLimitOK() || time.Now().After(wh.lastUse.Add(webhookExpiry)) {
 		_, err := t.session.WebhookEdit(wh.ID, "", "", channel)
 		if err == nil {
 			// Webhooks don't maintain their own state, so we rely
