@@ -155,10 +155,10 @@ OurWebhooks:
 			// Since the ID is the same, we can confirm they still have our webhook!
 			oursExists = true
 
-			// The webhook is inconsistent if the channel does not match
-			inconsistent := (theirs.ChannelID != ours.ChannelID)
-			if !inconsistent {
-				continue
+			// The webhook is consistent if the ChannelID matches.
+			// If it matches, then we continue the outerloop
+			if theirs.ChannelID == ours.ChannelID {
+				continue OurWebhooks
 			}
 
 			// Remove the webhook from our side
@@ -168,8 +168,8 @@ OurWebhooks:
 			// We can't use an ignore flag here as we'll inevitably run into a race condition.
 			t.session.WebhookDelete(theirs.ID)
 
-			// Break the OUTER loop as Discord will not have another webhook with the same ID
-			break OurWebhooks
+			// Continue the OUTER loop as Discord will not have another webhook with the same ID
+			continue OurWebhooks
 		}
 
 		// Delete our webhook if they don't have the webhook
