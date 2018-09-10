@@ -21,7 +21,11 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 		return errors.New("webhook does not exist")
 	}
 
+	// Update the webhook's last use
+	// and subsequently fix the heap
 	wh.lastUse = time.Now()
+	t.webhooks.Fix(channel)
+
 	return t.session.WebhookExecute(wh.ID, wh.Token, true, params)
 }
 

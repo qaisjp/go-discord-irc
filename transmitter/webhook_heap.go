@@ -62,3 +62,17 @@ func (h *webhookHeap) Get(channel string) webhook {
 
 	return h.list[i]
 }
+
+// Fix must to be called when a webhook's
+// lastUse attribute is changed.
+//
+// This function will panic if no such
+// webhook for that channel exists.
+func (h *webhookHeap) Fix(channel string) {
+	i, ok := h.indices[channel]
+	if !ok {
+		panic("could not fix channel: " + channel)
+	}
+
+	heap.Fix(h, i)
+}
