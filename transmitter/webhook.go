@@ -33,21 +33,22 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 	return t.session.WebhookExecute(wh.ID, wh.Token, true, params)
 }
 
-// getWebhook attempts to return a webhook for the channel, or
+// freeWebhook attempts to free up a webhook for the channel, or
 // repurposes an existing webhook to be used with that channel.
 //
 // An error will be returned if webhook repurposing failed.
 //
-// If no webhook is available, the webhook returned will be nil.
-func (t *Transmitter) getWebhook(channel string) (webhook, error) {
+// If no webhook is available, this function will return false.
+// If there is a free webhook, this function will return true.
+func (t *Transmitter) freeWebhook(channel string) (bool, error) {
 	// Just stop if there are no webhooks
 	if t.webhooks.Len() == 0 {
-		return nil, nil
+		return false, nil
 	}
 
 	// Try and get a webhook that matches that channel
 	if wh := t.webhooks.Get(channel); wh != nil {
-		return wh, nil
+		return true, nil
 	}
 
 	// Peek at the heap pop
@@ -62,14 +63,14 @@ func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 			t.webhooks.SwapChannel(wh.ChannelID, channel)
 			wh.ChannelID = channel
 		}
-		return wh, errors.Wrap(err, "could not repurpose webhook")
+		return err == nil, errors.Wrap(err, "could not repurpose webhook")
 	}
 
-	return nil, nil
+	return false, nil
 }
 
 // createWebhook creates a webhook for a specific channel.
-func (t *Transmitter) createWebhook(channel string) (webhook, error) {
+func (t *Transmitter) createWebhook(channel string) error {
 	if !t.checkLimitOK() {
 		panic(errors.New("webhook limit has been reached"))
 	}
@@ -77,13 +78,13 @@ func (t *Transmitter) createWebhook(channel string) (webhook, error) {
 	wh, err := t.session.WebhookCreate(channel, t.prefix+time.Now().Format(" 3:04:05PM"), "")
 
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create webhook")
+		return errors.Wrap(err, "could not create webhook")
 	}
 
 	wrapped := &wrappedWebhook{wh, time.Time{}}
 	t.webhooks.Push(wrapped)
 
-	return wrapped, nil
+	return nil
 }
 
 // checkAndDeleteWebhook checks to see if the webhook exists, and will delete accordingly.

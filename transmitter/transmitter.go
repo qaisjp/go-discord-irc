@@ -86,14 +86,15 @@ func (t *Transmitter) Close() error {
 // If an existing webhook doesn't exist then it will try to repurpose a webhook.
 // If there is space to create a new webhook then it will do that.
 func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) (err error) {
-	wh, err := t.getWebhook(channel)
+	// Attempt to free up a webhook for the channel (or check for existing)
+	free, err := t.freeWebhook(channel)
 	if err != nil {
 		return err
 	}
 
-	// webhook will be nil if there was none to repurpose
-	if wh == nil {
-		wh, err = t.createWebhook(channel)
+	// Create a webhook if there is no free webhook
+	if !free {
+		err = t.createWebhook(channel)
 		if err != nil {
 			return err // this error is already wrapped by us
 		}
