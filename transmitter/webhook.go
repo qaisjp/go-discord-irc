@@ -163,7 +163,10 @@ OurWebhooks:
 
 			// Remove the webhook from Discord, thus triggering this event yet again.
 			// We can't use an ignore flag here as we'll inevitably run into a race condition.
-			t.session.WebhookDelete(theirs.ID)
+			err := t.session.WebhookDelete(theirs.ID)
+			if err != nil {
+				logrus.Warnln(errors.Wrap(err, "could not delete a webhook that has been edited"))
+			}
 
 			// Continue the OUTER loop as Discord will not have another webhook with the same ID
 			continue OurWebhooks
