@@ -3,6 +3,8 @@ package transmitter
 import (
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/pkg/errors"
 	"github.com/qaisjp/discordgo"
 )
@@ -35,9 +37,6 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 // An error will be returned if webhook repurposing failed.
 //
 // If no webhook is available, the webhook returned will be nil.
-//
-// TODO: Check if this function breaks when you remove webhooks
-// TODO: Remove webhooks from heap automatically using the event
 func (t *Transmitter) getWebhook(channel string) (webhook, error) {
 	// Just stop if there are no webhooks
 	if t.webhooks.Len() == 0 {
@@ -118,4 +117,74 @@ func (t *Transmitter) checkAndDeleteWebhook(channel string) (bool, error) {
 // checkLimitOK returns true if the webhook limit has not been reached
 func (t *Transmitter) checkLimitOK() bool {
 	return t.webhooks.Len() < t.limit
+}
+
+// onWebhookUpdate responds to webhook deletions and edits and responds accordingly
+// TODO: USES A NAIVE AND SLOW SOLUTION. WATCH OUT FOR UPDATES TO THIS EVENT.
+func (t *Transmitter) onWebhookUpdate(s *discordgo.Session, e *discordgo.WebhooksUpdate) {
+	// Important facts:
+	// - INFO: we are only told the guild and the (new) channel.
+	// - WHAT: we do not know if the webhook was created, deletion or edited
+	// - WHO: we do not know if we ordered the creation, deletion or edit
+	//
+	// EVERYTHING BELOW THIS IS NAIVE AND SLOW. WHEN THIS EVENT IS UPDATED, REWRITE AND USE INFO AT BOTTOM OF FUNC
+
+	// Naive solution:
+	// - Ask Discord for all the webhooks
+	// - Compare our state (of webhooks) with Discord's copy (using ID as pivot)
+	// - Remove any webhooks (on both sides) where the channel is not as expected.
+	// - Remove any webhooks (on our side) if it's not in their list.
+	webhooks, err := t.session.GuildWebhooks(t.guild)
+	if err != nil {
+		logrus.Warnln(errors.Wrap(err, "cannot get guild webhooks in response to edit"))
+		return
+	}
+
+OurWebhooks:
+	for _, ours := range t.webhooks.list {
+		oursExists := false
+
+		for _, theirs := range webhooks {
+			// Don't check for inconsistencies if our their webhook is not also our webhook
+			if theirs.ID != ours.ID {
+				continue
+			}
+
+			// Since the ID is the same, we can confirm they still have our webhook!
+			oursExists = true
+
+			// The webhook is inconsistent if the channel does not match
+			inconsistent := (theirs.ChannelID != ours.ChannelID)
+			if !inconsistent {
+				continue
+			}
+
+			// Remove the webhook from our side
+			t.webhooks.Remove(ours.ChannelID)
+
+			// Remove the webhook from Discord, thus triggering this event yet again.
+			// We can't use an ignore flag here as we'll inevitably run into a race condition.
+			t.session.WebhookDelete(theirs.ID)
+
+			// Break the OUTER loop as Discord will not have another webhook with the same ID
+			break OurWebhooks
+		}
+
+		// Delete our webhook if they don't have the webhook
+		if !oursExists {
+			t.webhooks.Remove(ours.ChannelID)
+		}
+	}
+
+	// EVERYTHING BELOW THIS IS WRONG. COME BACK AND USE THIS INFORMATION WHEN THE EVENT IS UPDATED.
+
+	// Syncing webhook deletions:
+	// - Ask discord if the webhook at that ID exists <<<CANT DO THIS, NO ID>>>
+	// - If the webhook does not exist, then we know it was deleted.
+	// 	- If the webhook was DELETED, sync the deletion on our side, and return.
+	// - If the webhook was NOT DELETED, it could have been a creation or edit.
+
+	// Syncing webhook edits:
+	// - We now know it was an edit or creation. We know the new channel and id.
+	// ...
 }

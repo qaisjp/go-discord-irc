@@ -49,14 +49,18 @@ func New(session *discordgo.Session, guild string, prefix string, limit int) (*T
 		}
 	}
 
-	return &Transmitter{
+	t := &Transmitter{
 		session: session,
 		guild:   guild,
 		prefix:  prefix,
 		limit:   limit,
 
 		webhooks: newWebhookHeap(),
-	}, nil
+	}
+
+	session.AddHandler(t.onWebhookUpdate)
+
+	return t, nil
 }
 
 // Close immediately stops all active webhook timers and deletes webhooks.
