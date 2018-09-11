@@ -39,6 +39,9 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 			if m.IsAction {
 				i.innerCon.Action(m.IRCChannel, m.Message)
 			} else {
+				if !strings.HasPrefix(m.IRCChannel, "#") {
+					i.experimentalNotice(m.IRCChannel)
+				}
 				i.innerCon.Privmsg(m.IRCChannel, m.Message)
 			}
 		}
@@ -77,6 +80,17 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 
 func (i *ircConnection) experimentalNotice(nick string) {
 	d := i.manager.bridge.discord
+
+	if i.pmDiscordChannel == "" {
+		c, err := d.UserChannelCreate(i.discord.ID)
+		if err != nil {
+			// todo: sentry
+			log.Warnln("Could not create private message room", i.discord, err)
+			return
+		}
+		i.pmDiscordChannel = c.ID
+	}
+
 	if !i.pmNoticed {
 		i.pmNoticed = true
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, "**Private messaging is still in dev. Proceed with caution.**")
@@ -104,16 +118,6 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		}
 
 		d := i.manager.bridge.discord
-
-		if i.pmDiscordChannel == "" {
-			c, err := d.UserChannelCreate(i.discord.ID)
-			if err != nil {
-				// todo: sentry
-				log.Warnln("Could not create private message room", i.discord, err)
-				return
-			}
-			i.pmDiscordChannel = c.ID
-		}
 
 		i.experimentalNotice(e.Nick)
 
