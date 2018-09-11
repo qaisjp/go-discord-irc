@@ -22,6 +22,9 @@ type ircConnection struct {
 
 	manager *IRCManager
 
+	// channel ID for their discord channel for PMs
+	pmDiscordChannel string
+
 	// Tell users this feature is in beta
 	pmNoticed        bool
 	pmNoticedSenders map[string]struct{}
@@ -84,16 +87,20 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		}
 
 		d := i.manager.bridge.discord
-		c, err := d.UserChannelCreate(i.discord.ID)
-		if err != nil {
-			// todo: sentry
-			log.Warnln("Could not create private message room", i.discord, err)
-			return
+
+		if i.pmDiscordChannel == "" {
+			c, err := d.UserChannelCreate(i.discord.ID)
+			if err != nil {
+				// todo: sentry
+				log.Warnln("Could not create private message room", i.discord, err)
+				return
+			}
+			i.pmDiscordChannel = c.ID
 		}
 
 		if !i.pmNoticed {
 			i.pmNoticed = true
-			_, err := d.ChannelMessageSend(c.ID, "**Private messaging is still in dev. Proceed with caution.**")
+			_, err := d.ChannelMessageSend(i.pmDiscordChannel, "**Private messaging is still in dev. Proceed with caution.**")
 			if err != nil {
 				log.Warnln("Could not send pmNotice", i.discord, err)
 				return
@@ -106,7 +113,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		}
 
 		msg := fmt.Sprintf("%s,%s: %s", e.Connection.Server, e.Source, e.Message())
-		_, err = d.ChannelMessageSend(c.ID, msg)
+		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
 		if err != nil {
 			log.Warnln("Could not send PM", i.discord, err)
 			return
