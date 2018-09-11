@@ -40,6 +40,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 	// These events are all fired in separate goroutines
 	discord.AddHandler(discord.OnReady)
 	discord.AddHandler(discord.onMessageCreate)
+	discord.AddHandler(discord.onMessageUpdate)
 
 	if !bridge.Config.SimpleMode {
 		discord.AddHandler(discord.onMemberListChunk)
@@ -73,6 +74,14 @@ func (d *discordBot) Close() error {
 }
 
 func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	d.publishMessage(s, m.Message, false)
+}
+
+func (d *discordBot) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
+	d.publishMessage(s, m.Message, true)
+}
+
+func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -91,7 +100,7 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		}
 	}
 
-	content := d.ParseText(m.Message)
+	content := d.ParseText(m)
 
 	// Special Mee6 behaviour
 	if m.Author.ID == "159985870458322944" {
@@ -113,15 +122,24 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 		content = content[1 : len(m.Content)-1]
 	}
 
+	if wasEdit {
+		if isAction {
+			content = "/me " + content
+		}
+
+		isAction = true
+		content = "meant to say \"" + content + "\""
+	}
+
 	d.bridge.discordMessageEventsChan <- &DiscordMessage{
-		Message:  m.Message,
+		Message:  m,
 		Content:  content,
 		IsAction: isAction,
 	}
 
 	for _, attachment := range m.Attachments {
 		d.bridge.discordMessageEventsChan <- &DiscordMessage{
-			Message:  m.Message,
+			Message:  m,
 			Content:  attachment.URL,
 			IsAction: isAction,
 		}
