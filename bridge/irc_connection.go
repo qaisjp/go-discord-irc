@@ -75,6 +75,23 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	go i.innerCon.Nick(i.nick)
 }
 
+func (i *ircConnection) experimentalNotice(user, nick string) {
+	d := i.manager.bridge.discord
+	if !i.pmNoticed {
+		i.pmNoticed = true
+		_, err := d.ChannelMessageSend(i.pmDiscordChannel, "**Private messaging is still in dev. Proceed with caution.**")
+		if err != nil {
+			log.Warnln("Could not send pmNotice", i.discord, err)
+			return
+		}
+	}
+
+	if _, ok := i.pmNoticedSenders[user]; !ok {
+		i.pmNoticedSenders[user] = struct{}{}
+		i.innerCon.Privmsg(nick, "Private messaging is still in dev. Proceed with caution.")
+	}
+}
+
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
@@ -98,19 +115,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 			i.pmDiscordChannel = c.ID
 		}
 
-		if !i.pmNoticed {
-			i.pmNoticed = true
-			_, err := d.ChannelMessageSend(i.pmDiscordChannel, "**Private messaging is still in dev. Proceed with caution.**")
-			if err != nil {
-				log.Warnln("Could not send pmNotice", i.discord, err)
-				return
-			}
-		}
-
-		if _, ok := i.pmNoticedSenders[e.User]; !ok {
-			i.pmNoticedSenders[e.User] = struct{}{}
-			i.innerCon.Privmsg(e.Nick, "Private messaging is still in dev. Proceed with caution.")
-		}
+		i.experimentalNotice(e.User, e.Nick)
 
 		msg := fmt.Sprintf("%s,%s: %s", e.Connection.Server, e.Source, e.Message())
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
