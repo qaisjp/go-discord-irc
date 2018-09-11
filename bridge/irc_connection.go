@@ -75,7 +75,7 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	go i.innerCon.Nick(i.nick)
 }
 
-func (i *ircConnection) experimentalNotice(user, nick string) {
+func (i *ircConnection) experimentalNotice(nick string) {
 	d := i.manager.bridge.discord
 	if !i.pmNoticed {
 		i.pmNoticed = true
@@ -86,8 +86,8 @@ func (i *ircConnection) experimentalNotice(user, nick string) {
 		}
 	}
 
-	if _, ok := i.pmNoticedSenders[user]; !ok {
-		i.pmNoticedSenders[user] = struct{}{}
+	if _, ok := i.pmNoticedSenders[nick]; !ok {
+		i.pmNoticedSenders[nick] = struct{}{}
 		i.innerCon.Privmsg(nick, "Private messaging is still in dev. Proceed with caution.")
 	}
 }
@@ -115,7 +115,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 			i.pmDiscordChannel = c.ID
 		}
 
-		i.experimentalNotice(e.User, e.Nick)
+		i.experimentalNotice(e.Nick)
 
 		msg := fmt.Sprintf("%s,%s: %s", e.Connection.Server, e.Source, e.Message())
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
