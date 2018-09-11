@@ -100,6 +100,7 @@ func (i *ircConnection) experimentalNotice(nick string) {
 		}
 	}
 
+	nick = strings.ToLower(nick)
 	if _, ok := i.pmNoticedSenders[nick]; !ok {
 		i.pmNoticedSenders[nick] = struct{}{}
 		i.innerCon.Privmsg(nick, "Private messaging is still in dev. Proceed with caution.")
