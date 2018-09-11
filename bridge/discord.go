@@ -82,6 +82,12 @@ func (d *discordBot) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageU
 }
 
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
+	// Fix crash if these fields don't exist
+	if !m.Author || !s.State.User {
+		// todo: add sentry logging
+		return
+	}
+
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
