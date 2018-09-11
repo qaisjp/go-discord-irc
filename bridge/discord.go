@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/qaisjp/go-discord-irc/ircnick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
 	"github.com/pkg/errors"
@@ -137,10 +138,25 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		content = "meant to say \"" + content + "\""
 	}
 
+	pmTarget := ""
+	for _, channel := range d.State.PrivateChannels {
+		if channel.ID == m.ChannelID {
+			pmTarget, content = pmTargetFromContent(content)
+
+			// if the target could not be deduced. tell them this.
+			if pmTarget == "" {
+				d.ChannelMessageSend(m.ChannelID, "Don't know who that is. Can't PM. Try 'name, message here'")
+				return
+			}
+			break
+		}
+	}
+
 	d.bridge.discordMessageEventsChan <- &DiscordMessage{
 		Message:  m,
 		Content:  content,
 		IsAction: isAction,
+		PmTarget: pmTarget,
 	}
 
 	for _, attachment := range m.Attachments {
@@ -148,6 +164,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			Message:  m,
 			Content:  attachment.URL,
 			IsAction: isAction,
+			PmTarget: pmTarget,
 		}
 	}
 }
@@ -401,4 +418,30 @@ func GetMemberNick(m *discordgo.Member) string {
 	}
 
 	return m.Nick
+}
+
+// pmTargetFromContent returns an irc nick given a message sent to an IRC user via Discord
+//
+// Returns empty string if the nick could not be deduced.
+// Also returns the content without the nick
+func pmTargetFromContent(content string) (nick, newContent string) {
+	// Pull out substrings
+	// "qais,come on, i need this!" gives []string{"qais", "come on, i need this!"}
+	subs := strings.SplitN(content, ",", 2)
+
+	if len(subs) != 2 {
+		return "", ""
+	}
+
+	nick = subs[0]
+	newContent = strings.TrimPrefix(subs[1], " ")
+
+	// check if name is a valid nick
+	for _, c := range []byte(nick) {
+		if !ircnick.IsNickChar(c) {
+			return "", ""
+		}
+	}
+
+	return
 }

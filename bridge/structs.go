@@ -9,6 +9,7 @@ type DiscordMessage struct {
 	*discordgo.Message
 	Content  string
 	IsAction bool
+	PmTarget string // target username, for PMs
 }
 
 // IRCMessage is a chat message sent to Discord (from IRCListener)

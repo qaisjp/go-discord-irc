@@ -358,13 +358,18 @@ func (b *Bridge) loop() {
 		case msg := <-b.discordMessageEventsChan:
 			mapping := b.GetMappingByDiscord(msg.ChannelID)
 
-			// Do not do anything if we do not have a mapping for the channel
-			if mapping == nil {
+			// Do not do anything if we do not have a mapping for the PUBLIC channel
+			if mapping == nil && msg.PmTarget == "" {
 				// log.Warnln("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
 
-			b.ircManager.SendMessage(mapping.IRCChannel, msg)
+			target := msg.PmTarget
+			if target == "" {
+				target = mapping.IRCChannel
+			}
+
+			b.ircManager.SendMessage(target, msg)
 
 		// Notification to potentially update, or create, a user
 		// We should not receive anything on this channel if we're in Simple Mode
