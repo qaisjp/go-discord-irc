@@ -148,6 +148,8 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		cooldownTimer: nil,
 
 		manager: m,
+
+		pmNoticedSenders: make(map[string]struct{}),
 	}
 
 	con.innerCon.AddCallback("001", con.OnWelcome)

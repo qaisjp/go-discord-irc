@@ -21,6 +21,10 @@ type ircConnection struct {
 	cooldownTimer *time.Timer
 
 	manager *IRCManager
+
+	// Tell users this feature is in beta
+	pmNoticed        bool
+	pmNoticedSenders map[string]struct{}
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
@@ -76,12 +80,42 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		} else if e.Message() == "who" {
 			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
 		} else {
-			i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
+			// i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
+		}
+
+		d := i.manager.bridge.discord
+		c, err := d.UserChannelCreate(i.discord.ID)
+		if err != nil {
+			// todo: sentry
+			log.Warnln("Could not create private message room", i.discord, err)
+			return
+		}
+
+		if !i.pmNoticed {
+			i.pmNoticed = true
+			_, err := d.ChannelMessageSend(c.ID, "**Private messaging is still in dev. Proceed with caution.**")
+			if err != nil {
+				log.Warnln("Could not send pmNotice", i.discord, err)
+				return
+			}
+		}
+
+		if _, ok := i.pmNoticedSenders[e.User]; !ok {
+			i.pmNoticedSenders[e.User] = struct{}{}
+			i.innerCon.Privmsg(e.Nick, "Private messaging is still in dev. Proceed with caution.")
+		}
+
+		msg := fmt.Sprintf("%s,%s: %s", e.Connection.Server, e.Source, e.Message())
+		_, err = d.ChannelMessageSend(c.ID, msg)
+		if err != nil {
+			log.Warnln("Could not send PM", i.discord, err)
+			return
 		}
 		return
 	}
 
-	log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
+	// GTANet does not support deafness so the below logmsg has been disabled
+	// log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
 }
 
 func (i *ircConnection) SetAway(status string) {
