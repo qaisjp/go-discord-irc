@@ -50,8 +50,8 @@ func (i *ircListener) DoesUserExist(user string) bool {
 }
 
 func (i *ircListener) SetDebugMode(debug bool) {
-	i.VerboseCallbackHandler = debug
-	i.Debug = debug
+	// i.VerboseCallbackHandler = debug
+	// i.Debug = debug
 }
 
 func (i *ircListener) OnWelcome(e *irc.Event) {

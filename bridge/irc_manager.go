@@ -114,7 +114,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	nick := m.generateNickname(user)
 
 	innerCon := irc.IRC(nick, "discord")
-	innerCon.Debug = m.bridge.Config.Debug
+	// innerCon.Debug = m.bridge.Config.Debug
 	innerCon.RealName = user.Username
 	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", cooldownDuration)
 
