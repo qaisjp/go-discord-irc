@@ -152,9 +152,9 @@ func main() {
 			}
 
 			if err := dib.SetChannelMappings(chans); err != nil {
-				channelMappings = chans
-			} else {
 				log.WithField("error", err).Errorln("could not set channel mappings")
+			} else {
+				channelMappings = chans
 			}
 		}
 	})
