@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/qaisjp/go-discord-irc/ircnick"
+	"github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
 	"github.com/pkg/errors"

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qaisjp/go-discord-irc/ircnick"
+	"github.com/qaisjp/go-discord-irc/irc/nick"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
