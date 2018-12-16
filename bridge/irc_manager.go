@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/qaisjp/go-discord-irc/ircnick"
@@ -278,12 +279,14 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
 		length := len(msg.Author.Username)
-		m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
-			"<%s#%s> %s",
-			msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
-			msg.Author.Discriminator,
-			content,
-		))
+		for _, line := range strings.Split(content, "\n") {
+			m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
+				"<%s#%s> %s",
+				msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
+				msg.Author.Discriminator,
+				line,
+			))
+		}
 		return
 	}
 
@@ -292,20 +295,22 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 		m.SetConnectionCooldown(con)
 	}
 
-	ircMessage := IRCMessage{
-		IRCChannel: channel,
-		Message:    content,
-		IsAction:   msg.IsAction,
-	}
+	for _, line := range strings.Split(content, "\n") {
+		ircMessage := IRCMessage{
+			IRCChannel: channel,
+			Message:    line,
+			IsAction:   msg.IsAction,
+		}
 
-	select {
-	// Try to send the message immediately
-	case con.messages <- ircMessage:
-	// If it can't after 5ms, do it in a separate goroutine
-	case <-time.After(time.Millisecond * 5):
-		go func() {
-			con.messages <- ircMessage
-		}()
+		select {
+		// Try to send the message immediately
+		case con.messages <- ircMessage:
+		// If it can't after 5ms, do it in a separate goroutine
+		case <-time.After(time.Millisecond * 5):
+			go func() {
+				con.messages <- ircMessage
+			}()
+		}
 	}
 }
 

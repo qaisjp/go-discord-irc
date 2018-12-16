@@ -247,10 +247,9 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 		return "#" + channel.Name
 	})
 
-	// Sanitise multiple lines in a single message
+	// Break down malformed newlines
 	content = strings.Replace(content, "\r\n", "\n", -1) // replace CRLF with LF
 	content = strings.Replace(content, "\r", "\n", -1)   // replace CR with LF
-	content = strings.Replace(content, "\n", " ", -1)    // replace LF with " "
 
 	// Replace <#xxxxx> channel mentions
 	content = channelMention.ReplaceAllStringFunc(content, func(str string) string {
