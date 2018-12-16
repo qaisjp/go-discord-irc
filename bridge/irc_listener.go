@@ -1,11 +1,15 @@
 package bridge
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
+
+//LineFrom https://github.com/fent/irc-colors.js/blob/ec113439110aad2e7ecd653095d46f99c1d417fc/lib/irc-colors.js#L104
+var colorRegex = regexp.MustCompile(`\x03\d{0,2}(,\d{0,2}|\x02\x02)?`)
 
 type ircListener struct {
 	*irc.Connection
@@ -109,6 +113,8 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	if e.Code == "CTCP_ACTION" {
 		msg = "_" + msg + "_"
 	}
+
+	msg = colorRegex.ReplaceAllString(msg, "")
 
 	go func(e *irc.Event) {
 		i.bridge.discordMessagesChan <- IRCMessage{
