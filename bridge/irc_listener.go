@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/qaisjp/go-discord-irc/irc/format"
 	"github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -114,7 +115,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		msg = "_" + msg + "_"
 	}
 
-	msg = colorRegex.ReplaceAllString(msg, "")
+	msg = ircf.IRCToMarkdown(colorRegex.ReplaceAllString(msg, ""))
 
 	go func(e *irc.Event) {
 		i.bridge.discordMessagesChan <- IRCMessage{
