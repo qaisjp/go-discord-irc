@@ -64,7 +64,7 @@ irc_server: localhost:6697
 guild_id: 315277951597936640
 nickserv_identify: password123
 channel_mappings:
-  "#bottest": 316038111811600387
+  "#bottest chanKey": 316038111811600387
   "#bottest2": 318327329044561920
 suffix: "_d2"
 irc_listener_name: "_d2"
