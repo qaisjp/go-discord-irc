@@ -277,11 +277,29 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
+func (b *Bridge) GetJoinCommand() string {
+	channels := b.GetIRCChannels() //i.manager.RequestChannels(i.discord.ID)
+
+	cs := []string{}
+	ps := []string{}
+	for c, p := range channels {
+		cs = append(cs, c)
+		ps = append(ps, p)
+	}
+	return "JOIN " + strings.Join(cs, ",") + " " + strings.Join(ps, ",")
+}
+
 // GetIRCChannels returns a list of irc channels in no particular order.
-func (b *Bridge) GetIRCChannels() []string {
-	channels := make([]string, len(b.mappings))
-	for i, mapping := range b.mappings {
-		channels[i] = mapping.IRCChannel
+func (b *Bridge) GetIRCChannels() map[string]string {
+	channels := make(map[string]string)
+	for _, mapping := range b.mappings {
+		pair := strings.Split(mapping.IRCChannel, " ")
+		c := pair[0]
+		p := ""
+		if len(pair) > 1 {
+			p = pair[1]
+		}
+		channels[c] = p
 	}
 
 	return channels
@@ -291,7 +309,7 @@ func (b *Bridge) GetIRCChannels() []string {
 // Returns nil if a Mapping does not exist.
 func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
 	for _, mapping := range b.mappings {
-		if mapping.IRCChannel == channel {
+		if strings.Split(mapping.IRCChannel, " ")[0] == channel {
 			return mapping
 		}
 	}

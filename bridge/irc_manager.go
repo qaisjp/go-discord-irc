@@ -276,6 +276,8 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 	content := msg.Content
 
+	channel = strings.Split(channel, " ")[0]
+
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
 		length := len(msg.Author.Username)
@@ -318,6 +320,6 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels
 // TODO (?)
-func (m *IRCManager) RequestChannels(userID string) []string {
+func (m *IRCManager) RequestChannels(userID string) map[string]string {
 	return m.bridge.GetIRCChannels()
 }

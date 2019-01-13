@@ -72,7 +72,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 }
 
 func (i *ircListener) JoinChannels() {
-	i.SendRaw("JOIN " + strings.Join(i.bridge.GetIRCChannels(), ","))
+	i.SendRaw(i.bridge.GetJoinCommand())
 }
 
 func (i *ircListener) OnJoinChannel(e *irc.Event) {
