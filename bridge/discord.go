@@ -134,7 +134,6 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			content = "/me " + content
 		}
 
-		isAction = true
 		content = "[edit]: " + content
 	}
 
