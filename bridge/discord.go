@@ -135,7 +135,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		}
 
 		isAction = true
-		content = "meant to say \"" + content + "\""
+		content = "[edit]: " + content
 	}
 
 	pmTarget := ""
