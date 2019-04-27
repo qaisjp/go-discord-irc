@@ -108,9 +108,9 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	}
 
 	// If they are not online, do not create a connection.
-	if !user.Online {
-		return
-	}
+	// if !user.Online {
+	// 	return
+	// }
 
 	nick := m.generateNickname(user)
 

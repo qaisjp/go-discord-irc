@@ -48,6 +48,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 		discord.AddHandler(discord.onMemberUpdate)
 		discord.AddHandler(discord.OnPresencesReplace)
 		discord.AddHandler(discord.OnPresenceUpdate)
+		discord.AddHandler(discord.OnTypingStart)
 	}
 
 	return discord, nil
@@ -285,47 +286,62 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 
 func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildMembersChunk) {
 	for _, m := range m.Members {
-		d.handleMemberUpdate(m)
+		d.handleMemberUpdate(m, false)
 	}
 }
 
 func (d *discordBot) onMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
-	d.handleMemberUpdate(m.Member)
+	d.handleMemberUpdate(m.Member, false)
 }
 
 // What does this do? Probably what it sounds like.
 func (d *discordBot) OnPresencesReplace(s *discordgo.Session, m *discordgo.PresencesReplace) {
 	for _, p := range *m {
-		d.handlePresenceUpdate(p)
+		d.handlePresenceUpdate(p.User.ID, p.Status, false)
 	}
 }
 
 // Handle when presence is updated
 func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.PresenceUpdate) {
-	d.handlePresenceUpdate(&m.Presence)
+	d.handlePresenceUpdate(m.Presence.User.ID, m.Presence.Status, false)
 }
 
-func (d *discordBot) handlePresenceUpdate(p *discordgo.Presence) {
+func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, forceOnline bool) {
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
-	if p.Status == "offline" {
-		log.WithField("id", p.User.ID).Debugln("PRESENCE offline")
+	if !forceOnline && (status == discordgo.StatusOffline) {
+		log.WithField("id", uid).Debugln("PRESENCE offline")
 		d.bridge.updateUserChan <- DiscordUser{
-			ID:     p.User.ID,
+			ID:     uid,
 			Online: false,
 		}
 		return
 	}
-	log.WithField("id", p.User.ID).Debugln("PRESENCE " + p.Status)
+	log.WithField("id", uid).Debugln("PRESENCE " + status)
 
 	// Otherwise get their GuildMember object...
-	user, err := d.State.Member(d.guildID, p.User.ID)
+	user, err := d.State.Member(d.guildID, uid)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(errors.Wrap(err, "get member from state in handlePresenceUpdate failed"))
 		return
 	}
 
 	// .. and handle as per usual
-	d.handleMemberUpdate(user)
+	d.handleMemberUpdate(user, forceOnline)
+}
+
+func (d *discordBot) OnTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
+	status := discordgo.StatusOffline
+
+	p, err := d.State.Presence(d.guildID, m.UserID)
+	if err != nil {
+		log.Println(errors.Wrap(err, "get presence from in OnTypingStart failed"))
+		// return
+	} else {
+		status = p.Status
+	}
+
+	// .. and handle as per usual
+	d.handlePresenceUpdate(m.UserID, status, true)
 }
 
 func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
@@ -336,18 +352,24 @@ func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 	}
 }
 
-func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
-	presence, err := d.State.Presence(d.guildID, m.User.ID)
-	if err != nil {
-		// This error is usually triggered on first run because it represents offline
-		if err != discordgo.ErrStateNotFound {
-			log.WithField("error", err).Errorln("presence retrieval failed")
-		}
-		return
-	}
+func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
+	status := discordgo.StatusOnline
 
-	if presence.Status == "offline" {
-		return
+	if !forceOnline {
+		presence, err := d.State.Presence(d.guildID, m.User.ID)
+		if err != nil {
+			// This error is usually triggered on first run because it represents offline
+			if err != discordgo.ErrStateNotFound {
+				log.WithField("error", err).Errorln("presence retrieval failed")
+			}
+			return
+		}
+
+		if presence.Status == discordgo.StatusOffline {
+			return
+		}
+
+		status = presence.Status
 	}
 
 	d.bridge.updateUserChan <- DiscordUser{
@@ -356,7 +378,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member) {
 		Discriminator: m.User.Discriminator,
 		Nick:          GetMemberNick(m),
 		Bot:           m.User.Bot,
-		Online:        presence.Status != "offline",
+		Online:        status != discordgo.StatusOffline,
 	}
 }
 
