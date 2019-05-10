@@ -43,6 +43,8 @@ The binary takes three flags:
 The config file is a yaml formatted file with the following fields:
 
 - `discord_token`, [the bot user token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
+- `irc_server`, IRC server address
+- `irc_pass`, optional password for connecting to the IRC server
 - `channel_mappings`, a dict with irc channel as key (prefixed with `#`) and Discord channel ID as value
 - `suffix`, appended to each Discord user's nickname when they are connected to IRC
 - `irc_listener_name`, the name of the irc listener

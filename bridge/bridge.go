@@ -18,6 +18,7 @@ type Config struct {
 	ChannelMappings map[string]string
 
 	IRCServer        string
+	IRCServerPass    string
 	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
@@ -271,6 +272,8 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	con.AddCallback("KICK", func(e *irc.Event) {
 		rejoinIRC(con, e)
 	})
+
+	con.Password = b.Config.IRCServerPass
 
 	if b.Config.WebIRCPass != "" {
 		con.WebIRC = fmt.Sprintf("%s discord %s %s", b.Config.WebIRCPass, hostname, ip)
