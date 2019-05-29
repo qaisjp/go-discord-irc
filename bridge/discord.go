@@ -9,7 +9,7 @@ import (
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
 	"github.com/pkg/errors"
-	"github.com/qaisjp/discordgo"
+	"github.com/bwmarrin/discordgo"
 	log "github.com/sirupsen/logrus"
 )
 

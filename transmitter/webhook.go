@@ -5,8 +5,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
-	"github.com/qaisjp/discordgo"
 )
 
 var webhookExpiry = time.Second * 30
