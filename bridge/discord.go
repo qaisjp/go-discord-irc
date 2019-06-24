@@ -190,9 +190,9 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
   }
 
   originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
-  if err != nil {
-    log.Errorln(err)
-    return
+  reactionTarget := ""
+  if err == nil {
+    reactionTarget = fmt.Sprint(" to ", originalMessage.Author.Username)
   }
 
   content := ""
@@ -201,7 +201,7 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
     // Custom emoji
     emoji = fmt.Sprint(":", emoji, ":")
   }
-  content = fmt.Sprint("reacted with ", emoji, " to ", originalMessage.Author.Username)
+  content = fmt.Sprint("reacted with ", emoji, reactionTarget)
 
   d.bridge.discordMessageEventsChan <- &DiscordMessage{
     Message:  m,
