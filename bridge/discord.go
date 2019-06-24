@@ -1,6 +1,7 @@
 package bridge
 
 import (
+  "fmt"
 	"regexp"
 	"strings"
 
@@ -49,6 +50,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 		discord.AddHandler(discord.OnPresencesReplace)
 		discord.AddHandler(discord.OnPresenceUpdate)
 		discord.AddHandler(discord.OnTypingStart)
+		discord.AddHandler(discord.OnMessageReactionAdd)
 	}
 
 	return discord, nil
@@ -81,6 +83,10 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 
 func (d *discordBot) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	d.publishMessage(s, m.Message, true)
+}
+
+func (d *discordBot) OnMessageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+	d.publishReaction(s, m.MessageReaction)
 }
 
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
@@ -167,6 +173,42 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			PmTarget: pmTarget,
 		}
 	}
+}
+
+func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageReaction) {
+  user, err := s.User(r.UserID)
+  if err != nil {
+    log.Errorln(err)
+    return
+  }
+
+  // Bridge needs these for mapping
+  m := &discordgo.Message{
+    ChannelID: r.ChannelID,
+    Author: user,
+    GuildID: r.GuildID,
+  }
+
+  originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
+  if err != nil {
+    log.Errorln(err)
+    return
+  }
+
+  content := ""
+  emoji := r.Emoji.Name
+  if r.Emoji.ID != "" {
+    // Custom emoji
+    emoji = fmt.Sprint(":", emoji, ":")
+  }
+  content = fmt.Sprint("reacted with ", emoji, " to ", originalMessage.Author.Username)
+
+  d.bridge.discordMessageEventsChan <- &DiscordMessage{
+    Message:  m,
+    Content:  content,
+    IsAction: true,
+    PmTarget: "",
+  }
 }
 
 // Up to date as of https://git.io/v5kJg
