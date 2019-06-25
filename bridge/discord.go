@@ -1,7 +1,7 @@
 package bridge
 
 import (
-  "fmt"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -9,8 +9,8 @@ import (
 	"github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
-	"github.com/pkg/errors"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -176,42 +176,42 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 }
 
 func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageReaction) {
-  if s.State.User == nil {
-    return
-  }
+	if s.State.User == nil {
+		return
+	}
 
-  user, err := s.User(r.UserID)
-  if err != nil {
-    log.Errorln(err)
-    return
-  }
+	user, err := s.User(r.UserID)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
 
-  // Bridge needs these for mapping
-  m := &discordgo.Message{
-    ChannelID: r.ChannelID,
-    Author: user,
-    GuildID: r.GuildID,
-  }
+	// Bridge needs these for mapping
+	m := &discordgo.Message{
+		ChannelID: r.ChannelID,
+		Author:    user,
+		GuildID:   r.GuildID,
+	}
 
-  originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
-  reactionTarget := ""
-  if err == nil {
-    reactionTarget = fmt.Sprint(" to ", originalMessage.Author.Username)
-  }
+	originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
+	reactionTarget := ""
+	if err == nil {
+		reactionTarget = fmt.Sprint(" to ", originalMessage.Author.Username)
+	}
 
-  emoji := r.Emoji.Name
-  if r.Emoji.ID != "" {
-    // Custom emoji
-    emoji = fmt.Sprint(":", emoji, ":")
-  }
-  content := fmt.Sprint("reacted with ", emoji, reactionTarget)
+	emoji := r.Emoji.Name
+	if r.Emoji.ID != "" {
+		// Custom emoji
+		emoji = fmt.Sprint(":", emoji, ":")
+	}
+	content := fmt.Sprint("reacted with ", emoji, reactionTarget)
 
-  d.bridge.discordMessageEventsChan <- &DiscordMessage{
-    Message:  m,
-    Content:  content,
-    IsAction: true,
-    PmTarget: "",
-  }
+	d.bridge.discordMessageEventsChan <- &DiscordMessage{
+		Message:  m,
+		Content:  content,
+		IsAction: true,
+		PmTarget: "",
+	}
 }
 
 // Up to date as of https://git.io/v5kJg
