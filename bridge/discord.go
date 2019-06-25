@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -8,8 +9,8 @@ import (
 	"github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
-	"github.com/pkg/errors"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,6 +50,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 		discord.AddHandler(discord.OnPresencesReplace)
 		discord.AddHandler(discord.OnPresenceUpdate)
 		discord.AddHandler(discord.OnTypingStart)
+		discord.AddHandler(discord.OnMessageReactionAdd)
 	}
 
 	return discord, nil
@@ -81,6 +83,10 @@ func (d *discordBot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageC
 
 func (d *discordBot) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	d.publishMessage(s, m.Message, true)
+}
+
+func (d *discordBot) OnMessageReactionAdd(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+	d.publishReaction(s, m.MessageReaction)
 }
 
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
@@ -166,6 +172,45 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			IsAction: isAction,
 			PmTarget: pmTarget,
 		}
+	}
+}
+
+func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageReaction) {
+	if s.State.User == nil {
+		return
+	}
+
+	user, err := s.User(r.UserID)
+	if err != nil {
+		log.Errorln(err)
+		return
+	}
+
+	// Bridge needs these for mapping
+	m := &discordgo.Message{
+		ChannelID: r.ChannelID,
+		Author:    user,
+		GuildID:   r.GuildID,
+	}
+
+	originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
+	reactionTarget := ""
+	if err == nil {
+		reactionTarget = fmt.Sprint(" to ", originalMessage.Author.Username)
+	}
+
+	emoji := r.Emoji.Name
+	if r.Emoji.ID != "" {
+		// Custom emoji
+		emoji = fmt.Sprint(":", emoji, ":")
+	}
+	content := fmt.Sprint("reacted with ", emoji, reactionTarget)
+
+	d.bridge.discordMessageEventsChan <- &DiscordMessage{
+		Message:  m,
+		Content:  content,
+		IsAction: true,
+		PmTarget: "",
 	}
 }
 
