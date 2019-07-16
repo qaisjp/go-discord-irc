@@ -2,8 +2,6 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/qaisjp/go-discord-irc)](https://goreportcard.com/report/github.com/qaisjp/go-discord-irc)
 [![GoDoc](https://godoc.org/github.com/qaisjp/go-discord-irc?status.svg)](https://godoc.org/github.com/qaisjp/go-discord-irc)
-[![Build Status](https://travis-ci.org/qaisjp/go-discord-irc.svg?branch=master)](https://travis-ci.org/qaisjp/go-discord-irc)
-[![Coverage Status](https://coveralls.io/repos/github/qaisjp/go-discord-irc/badge.svg?branch=master)](https://coveralls.io/github/qaisjp/go-discord-irc?branch=master)
 
 [![Preview](https://i.imgur.com/YpCqzdn.gif)](https://i.imgur.com/YpCqzdn.webm)
 
