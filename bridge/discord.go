@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/qaisjp/go-discord-irc/irc/nick"
+	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
 	"github.com/bwmarrin/discordgo"
@@ -219,6 +219,7 @@ var channelMention = regexp.MustCompile(`<#(\d+)>`)
 var roleMention = regexp.MustCompile(`<@&(\d+)>`)
 
 var patternChannels = regexp.MustCompile("<#[^>]*>")
+var emoteRegex = regexp.MustCompile(`<a?(:\w+:)\d+>`)
 
 // Up to date as of https://git.io/v5kJg
 func (d *discordBot) ParseText(m *discordgo.Message) string {
@@ -325,6 +326,9 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 
 		panic(errors.Wrap(err, "Channel mention failed for "+str))
 	})
+
+	// Replace emotes
+	content = emoteRegex.ReplaceAllString(content, "$1")
 
 	return content
 }
