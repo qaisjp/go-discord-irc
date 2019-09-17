@@ -79,3 +79,10 @@ This bot needs permissions to manage webhooks as it creates webhooks on the go.
 ```
 https://discordapp.com/oauth2/authorize?&client_id=<YOUR_CLIENT_ID_HERE>&scope=bot&permissions=0x20000000
 ```
+
+## Docker
+
+First edit `config.yml` file to your needs.
+Then launch `docker build -t go-discord-irc .` in the repository root folder.
+And then `docker run -d go-discord-irc` to run the bot in background.
+
