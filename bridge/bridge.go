@@ -22,6 +22,9 @@ type Config struct {
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
 
+	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
+	NoTLS bool
+
 	// InsecureSkipVerify controls whether a client verifies the
 	// server's certificate chain and host name.
 	// If InsecureSkipVerify is true, TLS accepts any certificate
@@ -264,9 +267,11 @@ func rejoinIRC(con *irc.Connection, event *irc.Event) {
 // SetupIRCConnection sets up an IRC connection with config settings like
 // UseTLS, InsecureSkipVerify, and WebIRCPass.
 func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
-	con.UseTLS = true
-	con.TLSConfig = &tls.Config{
-		InsecureSkipVerify: b.Config.InsecureSkipVerify,
+	if !b.Config.NoTLS {
+		con.UseTLS = true
+		con.TLSConfig = &tls.Config{
+			InsecureSkipVerify: b.Config.InsecureSkipVerify,
+		}
 	}
 	con.AddCallback("KICK", func(e *irc.Event) {
 		rejoinIRC(con, e)
