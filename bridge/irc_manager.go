@@ -6,7 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/qaisjp/go-discord-irc/irc/nick"
+	"github.com/pkg/errors"
+
+	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -74,6 +76,16 @@ func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 
 // HandleUser deals with messages sent from a DiscordUser
 func (m *IRCManager) HandleUser(user DiscordUser) {
+	if user.Username == "" || user.Discriminator == "" {
+		log.WithFields(log.Fields{
+			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")),
+			"user.Username":      user.Username,
+			"user.Discriminator": user.Discriminator,
+			"user.ID":            user.ID,
+		}).Println("ignoring a HandleUser")
+		return
+	}
+
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
 		// Close the connection if they are not
