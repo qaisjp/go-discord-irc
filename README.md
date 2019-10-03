@@ -5,7 +5,7 @@
 
 [![Preview](https://i.imgur.com/YpCqzdn.gif)](https://i.imgur.com/YpCqzdn.webm)
 
-
+**Is this being maintained?** Sort of. I'm here. I'll read your issues & accept pull requests. But eventually I want to merge all this functionality into the much superior [matterbridge by 42wim](https://github.com/42wim/matterbridge).
 
 This is an IRC to Discord bridge built just for [@compsoc-edinburgh](http://github.com/compsoc-edinburgh) and
 [ImaginaryNet](http://imaginarynet.uk/).
@@ -20,8 +20,8 @@ and spawn additional connections for each online person in the Discord.
 
 Things to keep in mind in terms of functionality:
 
-- This does not work with private IRC/Discord channels (yet)
-- **DO NOT USE THE SAME DISCORD BOT (API KEY) ACROSS MULTIPLE GUILDS (SERVERS). SUPPORT FOR THIS WILL COME SOON. YOU RISK PMs BEING LEAKED**
+- This does not work with private Discord channels properly (all discord users are added to the channel)
+- **DO NOT USE THE SAME DISCORD BOT (API KEY) ACROSS MULTIPLE GUILDS (SERVERS). SUPPORT FOR THIS WILL COME SOME DAY. YOU RISK PMs BEING LEAKED**
 
 It's built with configuration in mind, but may need a little bit of tweaking for it to work for you:
 
