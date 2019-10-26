@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mozillazg/go-unidecode"
 	"github.com/pkg/errors"
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
@@ -184,7 +185,13 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 // unless you're also checking IRC and Discord.
 func sanitiseNickname(nick string) string {
 	if nick == "" {
+		fmt.Println(errors.WithStack(errors.New("trying to sanitise an empty nick")))
 		return "_"
+	}
+
+	// Unidecode the nickname — we make sure it's not empty to prevent "🔴🔴" becoming ""
+	if newnick := unidecode.Unidecode(nick); newnick != "" {
+		nick = newnick
 	}
 
 	// https://github.com/lp0/charybdis/blob/9ced2a7932dddd069636fe6fe8e9faa6db904703/ircd/client.c#L854-L884
