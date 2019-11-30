@@ -361,12 +361,18 @@ func (b *Bridge) loop() {
 				username += `.` // <- zero width space in here, ayylmao
 			}
 
+			content := msg.Message
+
+			// Replace everyone and here - https://git.io/Je1yi
+			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
+			content = strings.ReplaceAll(content, "@here", "@\u200bhere")
+
 			go func() {
 				err := b.discord.transmitter.Message(
 					mapping.DiscordChannel,
 					username,
 					avatar,
-					msg.Message,
+					content,
 				)
 
 				if err != nil {
@@ -375,7 +381,7 @@ func (b *Bridge) loop() {
 						"msg.channel":  mapping.DiscordChannel,
 						"msg.username": username,
 						"msg.avatar":   avatar,
-						"msg.content":  msg.Message,
+						"msg.content":  content,
 					}).Errorln("could not transmit message to discord")
 				}
 			}()
