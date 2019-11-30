@@ -79,7 +79,7 @@ func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 func (m *IRCManager) HandleUser(user DiscordUser) {
 	if user.Username == "" || user.Discriminator == "" {
 		log.WithFields(log.Fields{
-			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")),
+			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")).Error(),
 			"user.Username":      user.Username,
 			"user.Discriminator": user.Discriminator,
 			"user.ID":            user.ID,
