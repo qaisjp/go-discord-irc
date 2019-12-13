@@ -30,7 +30,8 @@ func (t *Transmitter) executeWebhook(channel string, params *discordgo.WebhookPa
 	wh.lastUse = time.Now()
 	t.webhooks.Fix(channel)
 
-	return t.session.WebhookExecute(wh.ID, wh.Token, true, params)
+	_, err := t.session.WebhookExecute(wh.ID, wh.Token, true, params)
+	return err
 }
 
 // freeWebhook attempts to free up a webhook for the channel, or
