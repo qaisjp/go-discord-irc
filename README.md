@@ -14,7 +14,6 @@ This is an IRC to Discord bridge built just for [@compsoc-edinburgh](http://gith
 as per usual.
 - The `Discord -> IRC` side of things is a little different. On connect, this bot will join the server with the `~d`,
 and spawn additional connections for each online person in the Discord.
-- Supports bidirectional PMs
 
 ## Gotchas
 
