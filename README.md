@@ -21,7 +21,7 @@ and spawn additional connections for each online person in the Discord.
 Things to keep in mind in terms of functionality:
 
 - This does not work with private Discord channels properly (all discord users are added to the channel)
-- **DO NOT USE THE SAME DISCORD BOT (API KEY) ACROSS MULTIPLE GUILDS (SERVERS). SUPPORT FOR THIS WILL COME SOME DAY. YOU RISK PMs BEING LEAKED**
+- **DO NOT USE THE SAME DISCORD BOT (API KEY) ACROSS MULTIPLE GUILDS (SERVERS).**
 
 It's built with configuration in mind, but may need a little bit of tweaking for it to work for you:
 
