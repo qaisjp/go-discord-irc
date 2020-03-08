@@ -196,7 +196,9 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
 	originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
 	reactionTarget := ""
 	if err == nil {
-		reactionTarget = fmt.Sprint(" to ", originalMessage.Author.Username)
+		// TODO 1: could add extra logic to figure out what length is needed to disambiguate
+		// TODO 2: length should not cause command to exceed the max command length
+		reactionTarget = fmt.Sprintf(" to <%s> %s", originalMessage.Author.Username, TruncateString(40, originalMessage.Content))
 	}
 
 	emoji := r.Emoji.Name
