@@ -198,7 +198,10 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
 	if err == nil {
 		// TODO 1: could add extra logic to figure out what length is needed to disambiguate
 		// TODO 2: length should not cause command to exceed the max command length
-		reactionTarget = fmt.Sprintf(" to <%s> %s", originalMessage.Author.Username, TruncateString(40, originalMessage.Content))
+		content, err := originalMessage.ContentWithMoreMentionsReplaced(s)
+		if err == nil {
+			reactionTarget = fmt.Sprintf(" to <%s> %s", originalMessage.Author.Username, TruncateString(40, content))
+		}
 	}
 
 	emoji := r.Emoji.Name
