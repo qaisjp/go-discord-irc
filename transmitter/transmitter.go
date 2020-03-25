@@ -11,8 +11,8 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/pkg/errors"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 )
 
 // A Transmitter represents a message manager instance for a single guild.
@@ -20,9 +20,8 @@ type Transmitter struct {
 	session *discordgo.Session
 	guild   string
 	prefix  string
-	limit   int // max number of webhooks
 
-	webhooks webhookHeap
+	webhook *discordgo.Webhook
 }
 
 // New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
@@ -53,12 +52,9 @@ func New(session *discordgo.Session, guild string, prefix string, limit int) (*T
 		session: session,
 		guild:   guild,
 		prefix:  prefix,
-		limit:   limit,
 
-		webhooks: newWebhookHeap(),
+		webhook: nil,
 	}
-
-	session.AddHandler(t.onWebhookUpdate)
 
 	return t, nil
 }
@@ -68,7 +64,7 @@ func (t *Transmitter) Close() error {
 	var result error
 
 	// Delete all the webhooks
-	for _, wh := range t.webhooks.list {
+	if wh := t.webhook; wh != nil {
 		err := t.session.WebhookDelete(wh.ID)
 		if err != nil {
 			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", wh.ID)).ErrorOrNil()
@@ -81,19 +77,9 @@ func (t *Transmitter) Close() error {
 // Message transmits a message to the given channel with the given username, avatarURL, and content.
 //
 // Note that this function will wait until Discord responds with an answer.
-//
-// This will use an existing webhook if it exists.
-// If an existing webhook doesn't exist then it will try to repurpose a webhook.
-// If there is space to create a new webhook then it will do that.
 func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) (err error) {
-	// Attempt to free up a webhook for the channel (or check for existing)
-	free, err := t.freeWebhook(channel)
-	if err != nil {
-		return err
-	}
-
 	// Create a webhook if there is no free webhook
-	if !free {
+	if t.webhook == nil {
 		err = t.createWebhook(channel)
 		if err != nil {
 			return err // this error is already wrapped by us
@@ -106,7 +92,9 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 		Content:   content,
 	}
 
-	err = t.executeWebhook(channel, &params)
+	wh := t.webhook
+
+	_, err = t.session.WebhookEdit(wh.ID, "", "", channel)
 	if err != nil {
 		exists, checkErr := t.checkAndDeleteWebhook(channel)
 
@@ -118,23 +106,24 @@ func (t *Transmitter) Message(channel string, username string, avatarURL string,
 		// If the webhook exists OR there was an error performing the check
 		// return the error to the caller
 		if exists || checkErr != nil {
-			return errors.Wrap(err, "could not execute existing webhook")
+			return errors.Wrap(err, "could not edit existing webhook")
 		}
 
 		// Otherwise just try and send the message again
 		return t.Message(channel, username, avatarURL, content)
 	}
 
+	_, err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
+	if err != nil {
+		return errors.Wrap(err, "could not execute existing webhook")
+	}
+
 	return nil
 }
 
-// HasWebhook checks whether the transmitter is using a particular webhook
-func (t *Transmitter) HasWebhook(id string) bool {
-	for _, wh := range t.webhooks.list {
-		if wh.ID == id {
-			return true
-		}
+func (t *Transmitter) GetID() string {
+	if t.webhook == nil {
+		return ""
 	}
-
-	return false
+	return t.webhook.ID
 }

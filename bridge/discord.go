@@ -102,7 +102,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 	}
 
 	// Ignore messages sent from our webhooks
-	if d.transmitter.HasWebhook(m.Author.ID) {
+	if d.transmitter.GetID() == m.Author.ID {
 		return
 	}
 
