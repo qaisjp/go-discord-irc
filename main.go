@@ -20,7 +20,7 @@ func main() {
 	config := flag.String("config", "", "Config file to read configuration stuff from")
 	simple := flag.Bool("simple", false, "When in simple mode, the bridge will only spawn one IRC connection for listening and speaking")
 	debugMode := flag.Bool("debug", false, "Debug mode? (false = use value from settings)")
-	no_tls := flag.Bool("no-tls", false, "Avoids using TLS att all when connecting to IRC server ")
+	notls := flag.Bool("no-tls", false, "Avoids using TLS att all when connecting to IRC server ")
 	insecure := flag.Bool("insecure", false, "Skip TLS certificate verification? (INSECURE MODE) (false = use value from settings)")
 
 	flag.Parse()
@@ -66,8 +66,8 @@ func main() {
 		*debugMode = viper.GetBool("debug")
 	}
 	//
-	if !*no_tls {
-		*no_tls = viper.GetBool("no_tls")
+	if !*notls {
+		*notls = viper.GetBool("no_tls")
 	}
 	if !*insecure {
 		*insecure = viper.GetBool("insecure")
@@ -104,7 +104,7 @@ func main() {
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
 		Debug:              *debugMode,
-		NoTLS:              *no_tls,
+		NoTLS:              *notls,
 		InsecureSkipVerify: *insecure,
 		Suffix:             suffix,
 		SimpleMode:         *simple,
