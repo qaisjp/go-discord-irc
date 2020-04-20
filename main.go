@@ -79,6 +79,9 @@ func main() {
 	viper.SetDefault("suffix", "~d")
 	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
 	//
+	viper.SetDefault("separator", "~")
+	separator := viper.GetString("separator")
+	//
 	webhookPrefix := viper.GetString("webhook_prefix") // the unique prefix for this bottiful bot
 	//
 	viper.SetDefault("webhook_limit", 2)
@@ -107,6 +110,7 @@ func main() {
 		NoTLS:              *notls,
 		InsecureSkipVerify: *insecure,
 		Suffix:             suffix,
+		Separator:          separator,
 		SimpleMode:         *simple,
 		ChannelMappings:    channelMappings,
 		WebhookPrefix:      webhookPrefix,
