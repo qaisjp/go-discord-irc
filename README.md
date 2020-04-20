@@ -37,6 +37,7 @@ The binary takes three flags:
 - `--simple`: to only spawn one connection (the listener will send across messages from Discord) instead of a connection per online Discord user
 - `--debug`: provide this flag to print extra debug info. Setting this flag to false (or not providing this flag) will take the value from the config file instead
 - `--insecure`: used to skip TLS verification (false = use value from settings)
+- `--no-tls`: turns off TLS
 
 The config file is a yaml formatted file with the following fields:
 
@@ -49,7 +50,8 @@ The config file is a yaml formatted file with the following fields:
 - `guild_id`, the Discord guild (server) id
 - `webirc_pass`, optional, but recommended for regular (non-simple) usage. this must be obtained by the IRC sysops
 - `debug`, debug mode
-- `insecure`, insecure mode
+- `insecure`, TLS will skip verification (but still uses TLS)
+- `no_tls`, turns off TLS
 - `webhook_prefix`, a prefix for webhooks, so we know which ones to keep and which ones to delete
 - `webhook_limit`, integer limit for the maximum number of webhooks to create
 - `nickserv_identify`, optional, on connect this message will be sent: `PRIVMSG nickserv IDENTIFY <value>`, you can provide both a username and password if your ircd supports it
@@ -70,6 +72,7 @@ suffix: "_d2"
 irc_listener_name: "_d2"
 webirc_pass: abcdef.ghijk.lmnop
 insecure: true # this requires restart
+no_tls: false # requires restart
 debug: false
 webhook_prefix: "(auto-test)" # this probably requires restart
 webhook_limit: 3
