@@ -45,7 +45,8 @@ The config file is a yaml formatted file with the following fields:
 - `irc_server`, IRC server address
 - `irc_pass`, optional password for connecting to the IRC server
 - `channel_mappings`, a dict with irc channel as key (prefixed with `#`) and Discord channel ID as value
-- `suffix`, appended to each Discord user's nickname when they are connected to IRC
+- `suffix`, appended to each Discord user's nickname when they are connected to IRC. If set to `_d2`, if the name will be `bob_d2`
+- `separator`, used in fallback situations. If set to `-`, the **fallback name** will be like `bob-7247_d2` (where `7247` is the discord user's discriminator, and `_d2` is the suffix)
 - `irc_listener_name`, the name of the irc listener
 - `guild_id`, the Discord guild (server) id
 - `webirc_pass`, optional, but recommended for regular (non-simple) usage. this must be obtained by the IRC sysops
@@ -69,6 +70,7 @@ channel_mappings:
   "#bottest chanKey": 316038111811600387
   "#bottest2": 318327329044561920
 suffix: "_d2"
+separator: "_"
 irc_listener_name: "_d2"
 webirc_pass: abcdef.ghijk.lmnop
 insecure: true # this requires restart

@@ -44,7 +44,8 @@ type Config struct {
 	// WebhookLimit is the max number of webhooks to create
 	WebhookLimit int
 
-	Suffix string // Suffix is the suffix to append to Discord users on the IRC side.
+	Suffix    string // Suffix is the suffix to append to IRC puppets
+	Separator string // Separator is used in IRC puppets' username, in fallback situations, between the discriminator and username.
 
 	Debug bool
 }

@@ -262,7 +262,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	if useFallback {
 		discriminator := discord.Discriminator
 		username := sanitiseNickname(discord.Username)
-		suffix = "~" + discriminator + suffix
+		suffix = m.bridge.Config.Separator + discriminator + suffix
 
 		// Maximum length of a username but without the suffix
 		length := ircnick.MAXLENGTH - len(suffix)
