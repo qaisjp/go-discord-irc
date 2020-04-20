@@ -26,7 +26,7 @@ Things to keep in mind in terms of functionality:
 It's built with configuration in mind, but may need a little bit of tweaking for it to work for you:
 
 - **Hardcoded**: Hostnames are hardcoded to follow the IPv6 IPs listed [here](https://github.com/qaisjp/go-discord-irc/issues/2).
-- **Server mod**: Discord usernames will have `~d` tacked on at the end. This usually invalid nickname character required custom modifications to the IRC server code. This is configurable.
+- **Defaults aren't usable**: You should set the `suffix` and `separator` config options. The default options require custom modifications to the IRC server.
 - **Server config**: This uses `WEBIRC` to give Discord users on IRC a distinct hostname. [See here](https://kiwiirc.com/docs/webirc).
 
 ## Configuration
