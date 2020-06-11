@@ -2,9 +2,12 @@ package ircf
 
 import (
 	"regexp"
+	"strings"
 )
 
-// This file is a subset of https://www.npmjs.com/package/irc-formatting 1.0.0-rc3
+// This file is based on https://www.npmjs.com/package/irc-formatting 1.0.0-rc3
+//
+// The main difference is that the regex follows Daniel Oaks' IRC Formatting specification.
 
 // Chars includes all the codes defined in https://modern.ircdocs.horse/formatting.html
 const (
@@ -19,8 +22,18 @@ const (
 	CharReset              = '\x0F'
 )
 
-var colorRegex = regexp.MustCompile(`\x03(\d\d?)(,(\d\d?))?/g`)
-var colorRegexStrip = regexp.MustCompile(`\x03\d{0,2}(,\d{0,2}|\x02\x02)?`)
+var colorRegex = regexp.MustCompile(`\x03(\d\d?)?(?:,(\d\d?))?`)
+var replacer = strings.NewReplacer(
+	string(CharBold), "",
+	string(CharItalics), "",
+	string(CharUnderline), "",
+	string(CharStrikethrough), "",
+	string(CharMonospace), "",
+	string(CharColor), "",
+	string(CharHex), "",
+	string(CharReverseColor), "",
+	string(CharReset), "",
+)
 
 var Keys = map[rune]string{
 	CharBold:      "bold",
@@ -28,8 +41,12 @@ var Keys = map[rune]string{
 	CharUnderline: "underline",
 }
 
+func StripCodes(text string) string {
+	return replacer.Replace(colorRegex.ReplaceAllString(text, ""))
+}
+
 func StripColor(text string) string {
-	return colorRegexStrip.ReplaceAllString(text, "")
+	return colorRegex.ReplaceAllString(text, "")
 }
 
 func Parse(text string) (result []Block) {
