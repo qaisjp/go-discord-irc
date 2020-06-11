@@ -23,15 +23,15 @@ func TestAllBlocks(t *testing.T) {
 
 	expected := []Block{
 		NewBlock("Hello, "),
-		NewBlock("Wor", CharacterBold),
-		NewBlock("ld", CharacterBold, CharacterItalics),
-		NewBlock("!", CharacterBold),
+		NewBlock("Wor", CharBold),
+		NewBlock("ld", CharBold, CharItalics),
+		NewBlock("!", CharBold),
 		NewBlock(" My name is "),
-		NewBlock("qais", CharacterUnderline),
+		NewBlock("qais", CharUnderline),
 		NewBlock(" patankar. Testing reset"),
-		NewBlock("ONETWO", CharacterBold, CharacterItalics, CharacterUnderline, CharacterReverseColor),
+		NewBlock("ONETWO", CharBold, CharItalics, CharUnderline, CharReverseColor),
 		NewBlock("THREE. And "),
-		NewBlock("reverse", CharacterReverseColor),
+		NewBlock("reverse", CharReverseColor),
 		NewBlock("!"),
 	}
 

@@ -6,26 +6,26 @@ import (
 
 // This file is a subset of https://www.npmjs.com/package/irc-formatting 1.0.0-rc3
 
-// Characters includes all the codes defined in https://modern.ircdocs.horse/formatting.html
+// Chars includes all the codes defined in https://modern.ircdocs.horse/formatting.html
 const (
-	CharacterBold          rune = '\x02'
-	CharacterItalics            = '\x1D'
-	CharacterUnderline          = '\x1F'
-	CharacterStrikethrough      = '\x1E'
-	CharacterMonospace          = '\x11'
-	CharacterColor              = '\x03'
-	CharacterHex                = '\x04'
-	CharacterReverseColor       = '\x16'
-	CharacterReset              = '\x0F'
+	CharBold          rune = '\x02'
+	CharItalics            = '\x1D'
+	CharUnderline          = '\x1F'
+	CharStrikethrough      = '\x1E'
+	CharMonospace          = '\x11'
+	CharColor              = '\x03'
+	CharHex                = '\x04'
+	CharReverseColor       = '\x16'
+	CharReset              = '\x0F'
 )
 
 var colorRegex = regexp.MustCompile(`\x03(\d\d?)(,(\d\d?))?/g`)
 var colorRegexStrip = regexp.MustCompile(`\x03\d{0,2}(,\d{0,2}|\x02\x02)?`)
 
 var Keys = map[rune]string{
-	CharacterBold:      "bold",
-	CharacterItalics:   "italic",
-	CharacterUnderline: "underline",
+	CharBold:      "bold",
+	CharItalics:   "italic",
+	CharUnderline: "underline",
 }
 
 const TagBold = "b"
@@ -50,7 +50,7 @@ func Parse(text string) (result []Block) {
 	startIndex := 0
 
 	// Append a resetter to simplify code a bit
-	text += string(CharacterReset)
+	text += string(CharReset)
 
 	for i, ch := range text {
 		var current Block
@@ -60,22 +60,22 @@ func Parse(text string) (result []Block) {
 
 		switch ch {
 		// bold, italic, underline
-		case CharacterBold:
+		case CharBold:
 			fallthrough
-		case CharacterItalics:
+		case CharItalics:
 			fallthrough
-		case CharacterUnderline:
+		case CharUnderline:
 			current = prev.Extend("")
 
 			// Toggle style
 			current.SetField(ch, !prev.GetField(ch))
 
 		// color
-		case CharacterColor:
+		case CharColor:
 			panic("Colors not supported")
 
 		// reverse
-		case CharacterReverseColor:
+		case CharReverseColor:
 			current = prev.Extend("")
 
 			if prev.Color != -1 {
@@ -90,7 +90,7 @@ func Parse(text string) (result []Block) {
 			current.Reverse = !prev.Reverse
 
 		// reset
-		case CharacterReset:
+		case CharReset:
 			current = NewBlock("")
 
 		default:

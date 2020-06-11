@@ -74,13 +74,13 @@ func (this Block) GetColorString() string {
 }
 
 func (this *Block) codeToField(code rune) (field *bool) {
-	if code == CharacterBold {
+	if code == CharBold {
 		field = &this.Bold
-	} else if code == CharacterItalics {
+	} else if code == CharItalics {
 		field = &this.Italic
-	} else if code == CharacterUnderline {
+	} else if code == CharUnderline {
 		field = &this.Underline
-	} else if code == CharacterReverseColor {
+	} else if code == CharReverseColor {
 		field = &this.Reverse
 	}
 	return field
