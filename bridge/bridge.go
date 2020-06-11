@@ -364,6 +364,11 @@ func (b *Bridge) loop() {
 
 			content := msg.Message
 
+			// No content = zero width space
+			if content == "" {
+				content = "\u200B"
+			}
+
 			// Replace everyone and here - https://git.io/Je1yi
 			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
 			content = strings.ReplaceAll(content, "@here", "@\u200bhere")
