@@ -28,18 +28,6 @@ var Keys = map[rune]string{
 	CharUnderline: "underline",
 }
 
-const TagBold = "b"
-const TagItalic = "i"
-const TagUnderline = "u"
-const TagBlock = "span"
-const TagLine = "p"
-
-const ClassReverse = "ircf-reverse"
-const ClassColorPref = "ircf-fg-"
-const ClassHighlightPref = "ircf-bg-"
-const ClassNoColor = "ircf-no-color"
-const ClassLine = "ircf-line"
-
 func StripColor(text string) string {
 	return colorRegexStrip.ReplaceAllString(text, "")
 }
