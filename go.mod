@@ -12,6 +12,7 @@ require (
 	github.com/qaisjp/go-ircevent v0.0.0-20180911155239-e71f5fec2a8d
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.4.0
+	github.com/stretchr/testify v1.2.2
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59 // indirect
 	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd // indirect
 )

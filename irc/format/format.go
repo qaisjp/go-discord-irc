@@ -4,21 +4,28 @@ import (
 	"regexp"
 )
 
-// Subset of https://www.npmjs.com/package/irc-formatting 1.0.0-rc3
+// This file is a subset of https://www.npmjs.com/package/irc-formatting 1.0.0-rc3
 
-const B = "\x02"
-const I = "\x1d"
-const U = "\x1f"
-const C = "\x03"
-const R = "\x16"
-const O = "\x0f"
+// Characters includes all the codes defined in https://modern.ircdocs.horse/formatting.html
+const (
+	CharacterBold          rune = '\x02'
+	CharacterItalics            = '\x1D'
+	CharacterUnderline          = '\x1F'
+	CharacterStrikethrough      = '\x1E'
+	CharacterMonospace          = '\x11'
+	CharacterColor              = '\x03'
+	CharacterHex                = '\x04'
+	CharacterReverseColor       = '\x16'
+	CharacterReset              = '\x0F'
+)
 
 var colorRegex = regexp.MustCompile(`\x03(\d\d?)(,(\d\d?))?/g`)
+var colorRegexStrip = regexp.MustCompile(`\x03\d{0,2}(,\d{0,2}|\x02\x02)?`)
 
-var Keys = map[string]string{
-	"\x02": "bold",
-	"\x1d": "italic",
-	"\x1f": "underline",
+var Keys = map[rune]string{
+	CharacterBold:      "bold",
+	CharacterItalics:   "italic",
+	CharacterUnderline: "underline",
 }
 
 const TagBold = "b"
@@ -33,68 +40,64 @@ const ClassHighlightPref = "ircf-bg-"
 const ClassNoColor = "ircf-no-color"
 const ClassLine = "ircf-line"
 
-func Parse(text string) (result []*Block) {
-	result = []*Block{}
-	current := NewBlock(nil, "")
+func StripColor(text string) string {
+	return colorRegexStrip.ReplaceAllString(text, "")
+}
+
+func Parse(text string) (result []Block) {
+	result = []Block{}
+	prev := NewBlock("")
 	startIndex := 0
 
 	// Append a resetter to simplify code a bit
-	text += R
+	text += string(CharacterReset)
 
-	for i := 0; i < len(text); i++ {
-		ch := text[i]
-		var prev *Block
+	for i, ch := range text {
+		var current Block
+		updated := true
 		skip := 0
 		nextStart := -1
 
 		switch ch {
 		// bold, italic, underline
-		case '\x02':
+		case CharacterBold:
 			fallthrough
-		case '\x1d':
+		case CharacterItalics:
 			fallthrough
-		case '\x1f':
-			{
-				prev = current
-				current = NewBlock(prev, "")
+		case CharacterUnderline:
+			current = prev.Extend("")
 
-				// Toggle style
-				current.SetField(string(ch), !prev.GetField(string(ch)))
-			}
+			// Toggle style
+			current.SetField(ch, !prev.GetField(ch))
 
 		// color
-		case '\x03':
-			{
-				panic("Colors not supported")
-			}
+		case CharacterColor:
+			panic("Colors not supported")
 
 		// reverse
-		case '\x16':
-			{
-				prev = current
-				current = NewBlock(prev, "")
+		case CharacterReverseColor:
+			current = prev.Extend("")
 
-				if prev.Color != -1 {
-					current.Color = prev.Highlight
-					current.Highlight = prev.Color
+			if prev.Color != -1 {
+				current.Color = prev.Highlight
+				current.Highlight = prev.Color
 
-					if current.Color == -1 {
-						current.Color = 0
-					}
+				if current.Color == -1 {
+					current.Color = 0
 				}
-
-				current.Reverse = !prev.Reverse
 			}
+
+			current.Reverse = !prev.Reverse
 
 		// reset
-		case '\x0f':
-			{
-				prev = current
-				current = NewBlock(nil, "")
-			}
+		case CharacterReset:
+			current = NewBlock("")
+
+		default:
+			updated = false
 		}
 
-		if prev != nil {
+		if updated {
 			prev.Text = text[startIndex:i]
 
 			if nextStart != -1 {
@@ -106,6 +109,8 @@ func Parse(text string) (result []*Block) {
 			if len(prev.Text) > 0 {
 				result = append(result, prev)
 			}
+
+			prev = current
 		}
 
 		i += skip

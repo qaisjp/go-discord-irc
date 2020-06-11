@@ -10,32 +10,31 @@ type Block struct {
 	Text                             string
 }
 
-var Empty = NewBlock(nil, "")
+var Empty = NewBlock("")
 
-func NewBlock(prev *Block, text string) *Block {
-	this := &Block{}
+func NewBlock(text string, fields ...rune) (this Block) {
+	this.Text = text
 	this.Color = -1
 	this.Highlight = -1
-	this.Text = text
 
-	if prev != nil {
-		this.Bold = prev.Bold
-		this.Italic = prev.Italic
-		this.Underline = prev.Underline
-		this.Reverse = prev.Reverse
-		this.Color = prev.Color
-		this.Highlight = prev.Highlight
+	for _, code := range fields {
+		this.SetField(code, true)
 	}
 
-	if this.Color > 99 {
-		this.Color = 99
+	return
+}
+
+func (this Block) Extend(text string) (ret Block) {
+	ret = this
+	ret.Text = text
+	if ret.Color > 99 {
+		ret.Color = 99
 	}
 
-	if this.Highlight > 99 {
-		this.Highlight = 99
+	if ret.Highlight > 99 {
+		ret.Highlight = 99
 	}
-
-	return this
+	return
 }
 
 func (this Block) Equals(other Block) bool {
@@ -74,26 +73,30 @@ func (this Block) GetColorString() string {
 	return str
 }
 
-func (this *Block) SetField(code string, val bool) {
-	if code == B {
-		this.Bold = val
-	} else if code == I {
-		this.Italic = val
-	} else if code == U {
-		this.Underline = val
-	} else {
-		panic("Unknown code " + code)
+func (this *Block) codeToField(code rune) (field *bool) {
+	if code == CharacterBold {
+		field = &this.Bold
+	} else if code == CharacterItalics {
+		field = &this.Italic
+	} else if code == CharacterUnderline {
+		field = &this.Underline
+	} else if code == CharacterReverseColor {
+		field = &this.Reverse
 	}
+	return field
 }
 
-func (this Block) GetField(code string) bool {
-	if code == B {
-		return this.Bold
-	} else if code == I {
-		return this.Italic
-	} else if code == U {
-		return this.Underline
-	} else {
-		panic("Unknown code " + code)
+func (this *Block) SetField(code rune, val bool) {
+	if field := this.codeToField(code); field != nil {
+		*field = val
+		return
 	}
+	panic(fmt.Sprintf(`Unknown code \x%x`, code))
+}
+
+func (this Block) GetField(code rune) bool {
+	if field := this.codeToField(code); field != nil {
+		return *field
+	}
+	panic(fmt.Sprintf(`Unknown code \x%x`, code))
 }

@@ -4,10 +4,10 @@ package ircf
 
 func IRCToMarkdown(text string) string {
 	blocks := Parse(text)
-	for _, b := range blocks {
+	for i, b := range blocks {
 		// Consider reverse as italic, some IRC clients use that
 		if b.Reverse {
-			b.Italic = true
+			blocks[i].Italic = true
 		}
 	}
 
@@ -15,11 +15,11 @@ func IRCToMarkdown(text string) string {
 
 	for i := 0; i <= len(blocks); i++ {
 		// Default to unstyled blocks when index out of range
-		block := &Block{}
+		var block Block
 		if i < len(blocks) {
 			block = blocks[i]
 		}
-		prevBlock := &Block{}
+		var prevBlock Block
 		if i > 0 {
 			prevBlock = blocks[i-1]
 		}
