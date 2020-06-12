@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var msgWithColor = "Hello, \x02Wor\x1dld\x0304,07\x1d!\x0f My name is \x1fFirst\x1f Last. Testing reset\x1f\x1d\x02\x16ONETWO\x0fTHREE. And \x16reverse\x16!"
-var msgWithoutColor = "Hello, \x02Wor\x1dld\x1d!\x0f My name is \x1fFirst\x1f Last. Testing reset\x1f\x1d\x02\x16ONETWO\x0fTHREE. And \x16reverse\x16!"
-var msgWithoutCodes = "Hello, World! My name is First Last. Testing resetONETWOTHREE. And reverse!"
+var msgWithColor = "Hello, \x02Wor\x1dld\x0304,07\x1d! \x1dMy name is\x1d\x0f... \x1fFirst\x1f Last. Testing reset\x1f\x1d\x02\x16ONETWO\x0fTHREE. And \x16reverse\x16!"
+var msgWithoutColor = "Hello, \x02Wor\x1dld\x1d! \x1dMy name is\x1d\x0f... \x1fFirst\x1f Last. Testing reset\x1f\x1d\x02\x16ONETWO\x0fTHREE. And \x16reverse\x16!"
+var msgWithoutCodes = "Hello, World! My name is... First Last. Testing resetONETWOTHREE. And reverse!"
 
 func TestStrip(t *testing.T) {
 	assert.Equal(t, msgWithoutColor, StripColor(msgWithColor))
@@ -20,8 +20,9 @@ func TestAllBlocks(t *testing.T) {
 		NewBlock("Hello, "),
 		NewBlock("Wor", CharBold),
 		NewBlock("ld", CharBold, CharItalics),
-		NewColorBlock("!", 4, 7, CharBold),
-		NewBlock(" My name is "),
+		NewColorBlock("! ", 4, 7, CharBold),
+		NewColorBlock("My name is", 4, 7, CharBold, CharItalics),
+		NewBlock("... "),
 		NewBlock("First", CharUnderline),
 		NewBlock(" Last. Testing reset"),
 		NewBlock("ONETWO", CharBold, CharItalics, CharUnderline, CharReverseColor),
@@ -34,7 +35,7 @@ func TestAllBlocks(t *testing.T) {
 }
 
 func TestMarkdown(t *testing.T) {
-	msgMarkdown := `Hello, **Wor*ld*!** My name is __First__ Last. Testing reset***__ONETWO__***THREE. And *reverse*!`
+	msgMarkdown := `Hello, **Wor*ld*! *My name is***... __First__ Last. Testing reset***__ONETWO__***THREE. And *reverse*!`
 	assert.Equal(t,
 		msgMarkdown,
 		BlocksToMarkdown(Parse(msgWithoutColor)),
