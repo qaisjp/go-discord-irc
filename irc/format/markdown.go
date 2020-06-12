@@ -2,30 +2,22 @@ package ircf
 
 // From https://github.com/reactiflux/discord-irc/blob/87a3458bdde48290960405f2bf0cf53b7ff17b5e/lib/formatting.js#L25
 
-func IRCToMarkdown(text string) string {
-	blocks := Parse(text)
-	for i, b := range blocks {
-		// Consider reverse as italic, some IRC clients use that
-		if b.Reverse {
-			blocks[i].Italic = true
-		}
-	}
-
+func BlocksToMarkdown(blocks []Block) string {
 	mdText := ""
 
-	for i := 0; i <= len(blocks); i++ {
+	for i, block := range blocks {
 		// Default to unstyled blocks when index out of range
-		var block Block
-		if i < len(blocks) {
-			block = blocks[i]
-		}
-		var prevBlock Block
+		prevBlock := Empty
 		if i > 0 {
 			prevBlock = blocks[i-1]
 		}
 
+		// Consider reverse as italic, some IRC clients use that
+		prevItalic := prevBlock.Italic || prevBlock.Reverse
+		italic := block.Italic || block.Reverse
+
 		// Add start markers when style turns from false to true
-		if !prevBlock.Italic && block.Italic {
+		if !prevItalic && italic {
 			mdText += "*"
 		}
 		if !prevBlock.Bold && block.Bold {
@@ -43,7 +35,7 @@ func IRCToMarkdown(text string) string {
 		if prevBlock.Bold && !block.Bold {
 			mdText += "**"
 		}
-		if prevBlock.Italic && !block.Italic {
+		if prevItalic && !italic {
 			mdText += "*"
 		}
 

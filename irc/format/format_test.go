@@ -43,7 +43,7 @@ func TestAllBlocks(t *testing.T) {
 func TestMarkdown(t *testing.T) {
 	assert.Equal(t,
 		`Hello, **Wor*ld*!** My name is __First__ Last. Testing reset***__ONETWO__***THREE. And *reverse*!`,
-		IRCToMarkdown(msgWithoutColor),
+		BlocksToMarkdown(Parse(msgWithoutColor)),
 	)
 }
 
