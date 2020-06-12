@@ -24,6 +24,13 @@ func NewBlock(text string, fields ...rune) (this Block) {
 	return
 }
 
+func NewColorBlock(text string, fg int, bg int, fields ...rune) Block {
+	b := NewBlock(text, fields...)
+	b.Color = fg
+	b.Highlight = bg
+	return b
+}
+
 func (this Block) Extend(text string) (ret Block) {
 	ret = this
 	ret.Text = text

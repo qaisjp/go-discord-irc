@@ -2,6 +2,7 @@ package ircf
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -49,10 +50,45 @@ func StripColor(text string) string {
 	return colorRegex.ReplaceAllString(text, "")
 }
 
+type color struct {
+	foreground int
+	background int
+	strSize    int
+}
+
+func getIndexToColorMap(text string) map[int]color {
+	indexToColor := make(map[int]color)
+	matches := colorRegex.FindAllStringSubmatchIndex(text, -1)
+	for _, match := range matches {
+		// The index where the entire colour submatch starts/ends
+		startIndex := match[0]
+		endIndex := match[1]
+
+		c := color{
+			foreground: -1,
+			background: -1,
+			strSize:    endIndex - startIndex,
+		}
+
+		// Errors are impossible, our regex only matches numbers
+		if match[2] != -1 {
+			c.foreground, _ = strconv.Atoi(text[match[2]:match[3]])
+
+			if match[4] != -1 {
+				c.background, _ = strconv.Atoi(text[match[4]:match[5]])
+			}
+		}
+
+		indexToColor[startIndex] = c
+	}
+	return indexToColor
+}
+
 func Parse(text string) (result []Block) {
 	result = []Block{}
 	prev := NewBlock("")
 	startIndex := 0
+	indexToColor := getIndexToColorMap(text)
 
 	// Append a resetter to simplify code a bit
 	text += string(CharReset)
@@ -72,7 +108,11 @@ func Parse(text string) (result []Block) {
 
 		// color
 		case CharColor:
-			panic("Colors not supported")
+			current = prev.Extend("")
+			color := indexToColor[i]
+			current.Color = color.foreground
+			current.Highlight = color.background
+			nextStart = i + color.strSize
 
 		// reverse
 		case CharReverseColor:
@@ -91,7 +131,7 @@ func Parse(text string) (result []Block) {
 
 		// reset
 		case CharReset:
-			current = NewBlock("")
+			current = Empty
 
 		default:
 			updated = false
