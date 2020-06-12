@@ -16,6 +16,10 @@ func BlocksToMarkdown(blocks []Block) string {
 		prevItalic := prevBlock.Italic || prevBlock.Reverse
 		italic := block.Italic || block.Reverse
 
+		// If foreground == background, then spoiler
+		prevSpoiler := prevBlock.Color != -1 && prevBlock.Color == prevBlock.Highlight
+		spoiler := block.Color != -1 && block.Color == block.Highlight
+
 		// Add start markers when style turns from false to true
 		if !prevItalic && italic {
 			mdText += "*"
@@ -25,6 +29,11 @@ func BlocksToMarkdown(blocks []Block) string {
 		}
 		if !prevBlock.Underline && block.Underline {
 			mdText += "__"
+		}
+
+		// NOTE: non-standard discord spoilers
+		if !prevSpoiler && spoiler {
+			mdText += "||"
 		}
 
 		// Add end markers when style turns from true to false
@@ -37,6 +46,11 @@ func BlocksToMarkdown(blocks []Block) string {
 		}
 		if prevItalic && !italic {
 			mdText += "*"
+		}
+
+		// NOTE: non-standard discord spoilers
+		if prevSpoiler && !spoiler {
+			mdText += "||"
 		}
 
 		mdText += block.Text

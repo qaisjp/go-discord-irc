@@ -44,3 +44,9 @@ func TestMarkdown(t *testing.T) {
 		BlocksToMarkdown(Parse(msgWithColor)),
 	)
 }
+
+func TestMarkdownSpoilers(t *testing.T) {
+	msgIRC := "In Game of Thrones, everyone\x031,1 dies\x03!"
+	msgMarkdown := "In Game of Thrones, everyone|| dies||!"
+	assert.Equal(t, msgMarkdown, BlocksToMarkdown(Parse(msgIRC)))
+}
