@@ -101,14 +101,14 @@ func Parse(text string) (result []Block) {
 
 		switch ch {
 		case CharBold, CharItalics, CharUnderline:
-			current = prev.Extend("")
+			current = prev
 
 			// Toggle style
 			current.SetField(ch, !prev.GetField(ch))
 
 		// color
 		case CharColor:
-			current = prev.Extend("")
+			current = prev
 			color := indexToColor[i]
 			current.Color = color.foreground
 			current.Highlight = color.background
@@ -116,7 +116,7 @@ func Parse(text string) (result []Block) {
 
 		// reverse
 		case CharReverseColor:
-			current = prev.Extend("")
+			current = prev
 
 			if prev.Color != -1 {
 				current.Color = prev.Highlight

@@ -31,19 +31,6 @@ func NewColorBlock(text string, fg int, bg int, fields ...rune) Block {
 	return b
 }
 
-func (this Block) Extend(text string) (ret Block) {
-	ret = this
-	ret.Text = text
-	if ret.Color > 99 {
-		ret.Color = 99
-	}
-
-	if ret.Highlight > 99 {
-		ret.Highlight = 99
-	}
-	return
-}
-
 func (this Block) Equals(other Block) bool {
 	return this.Bold == other.Bold &&
 		this.Italic == other.Italic &&
