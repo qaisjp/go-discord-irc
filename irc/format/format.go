@@ -94,30 +94,24 @@ func Parse(text string) (result []Block) {
 	text += string(CharReset)
 
 	for i, ch := range text {
-		var current Block
+		current := prev
 		updated := true
-		skip := 0
 		nextStart := -1
 
 		switch ch {
+		// toggle style
 		case CharBold, CharItalics, CharUnderline:
-			current = prev
-
-			// Toggle style
 			current.SetField(ch, !prev.GetField(ch))
 
-		// color
+		// set the colors
 		case CharColor:
-			current = prev
 			color := indexToColor[i]
 			current.Color = color.foreground
 			current.Highlight = color.background
 			nextStart = i + color.strSize
 
-		// reverse
+		// reverse the colors
 		case CharReverseColor:
-			current = prev
-
 			if prev.Color != -1 {
 				current.Color = prev.Highlight
 				current.Highlight = prev.Color
@@ -129,7 +123,7 @@ func Parse(text string) (result []Block) {
 
 			current.Reverse = !prev.Reverse
 
-		// reset
+		// reset all formatting
 		case CharReset:
 			current = Empty
 
@@ -152,8 +146,6 @@ func Parse(text string) (result []Block) {
 
 			prev = current
 		}
-
-		i += skip
 	}
 
 	return result
