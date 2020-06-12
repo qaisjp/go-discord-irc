@@ -64,12 +64,7 @@ func Parse(text string) (result []Block) {
 		nextStart := -1
 
 		switch ch {
-		// bold, italic, underline
-		case CharBold:
-			fallthrough
-		case CharItalics:
-			fallthrough
-		case CharUnderline:
+		case CharBold, CharItalics, CharUnderline:
 			current = prev.Extend("")
 
 			// Toggle style
