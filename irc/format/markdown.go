@@ -5,8 +5,12 @@ package ircf
 func BlocksToMarkdown(blocks []Block) string {
 	mdText := ""
 
-	for i, block := range blocks {
+	for i := 0; i < len(blocks)+1; i++ {
 		// Default to unstyled blocks when index out of range
+		block := Empty
+		if i < len(blocks) {
+			block = blocks[i]
+		}
 		prevBlock := Empty
 		if i > 0 {
 			prevBlock = blocks[i-1]
