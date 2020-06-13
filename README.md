@@ -5,10 +5,10 @@
 
 [![Preview](https://i.imgur.com/YpCqzdn.gif)](https://i.imgur.com/YpCqzdn.webm)
 
-**Is this being maintained?** Sort of. I'm here. I'll read your issues & accept pull requests. But eventually I want to merge all this functionality into the much superior [matterbridge by 42wim](https://github.com/42wim/matterbridge).
+**Is this being maintained?** Yes. But I want to merge all this functionality into the much superior [matterbridge by 42wim](https://github.com/42wim/matterbridge).
 
-This is an IRC to Discord bridge built just for [@compsoc-edinburgh](http://github.com/compsoc-edinburgh) and
-[ImaginaryNet](http://imaginarynet.uk/).
+This is IRC to Discord bridge was originally built for [@compsoc-edinburgh](http://github.com/compsoc-edinburgh) and
+[ImaginaryNet](http://imaginarynet.uk/), but now it looks like more people are using it!
 
 - The `IRC -> Discord` side of things work as you would expect it to: messages on IRC send to Discord as the bot user,
 as per usual.
