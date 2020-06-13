@@ -21,8 +21,8 @@ func BlocksToMarkdown(blocks []Block) string {
 		italic := block.Italic || block.Reverse
 
 		// If foreground == background, then spoiler
-		prevSpoiler := prevBlock.Color != -1 && prevBlock.Color == prevBlock.Highlight
-		spoiler := block.Color != -1 && block.Color == block.Highlight
+		prevSpoiler := prevBlock.Foreground != -1 && prevBlock.Foreground == prevBlock.Background
+		spoiler := block.Foreground != -1 && block.Foreground == block.Background
 
 		// Add start markers when style turns from false to true
 		if !prevItalic && italic {

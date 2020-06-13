@@ -106,18 +106,18 @@ func Parse(text string) (result []Block) {
 		// set the colors
 		case CharColor:
 			color := indexToColor[i]
-			current.Color = color.foreground
-			current.Highlight = color.background
+			current.Foreground = color.foreground
+			current.Background = color.background
 			nextStart = i + color.strSize
 
 		// reverse the colors
 		case CharReverseColor:
-			if prev.Color != -1 {
-				current.Color = prev.Highlight
-				current.Highlight = prev.Color
+			if prev.Foreground != -1 {
+				current.Foreground = prev.Background
+				current.Background = prev.Foreground
 
-				if current.Color == -1 {
-					current.Color = 0
+				if current.Foreground == -1 {
+					current.Foreground = 0
 				}
 			}
 
