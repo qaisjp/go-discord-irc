@@ -47,6 +47,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 	if !bridge.Config.SimpleMode {
 		discord.AddHandler(discord.onMemberListChunk)
 		discord.AddHandler(discord.onMemberUpdate)
+		discord.AddHandler(discord.onMemberLeave)
 		discord.AddHandler(discord.OnPresencesReplace)
 		discord.AddHandler(discord.OnPresenceUpdate)
 		discord.AddHandler(discord.OnTypingStart)
@@ -346,6 +347,11 @@ func (d *discordBot) onMemberListChunk(s *discordgo.Session, m *discordgo.GuildM
 
 func (d *discordBot) onMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	d.handleMemberUpdate(m.Member, false)
+}
+
+// onMemberLeave is triggered when a user is removed from a guild (leave/kick/ban).
+func (d *discordBot) onMemberLeave(s *discordgo.Session, m *discordgo.GuildMemberRemove) {
+	d.bridge.removeUserChan <- m.User.ID
 }
 
 // What does this do? Probably what it sounds like.

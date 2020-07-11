@@ -65,6 +65,7 @@ type Bridge struct {
 	discordMessagesChan      chan IRCMessage
 	discordMessageEventsChan chan *DiscordMessage
 	updateUserChan           chan DiscordUser
+	removeUserChan           chan string // user id
 }
 
 // Close the Bridge
@@ -203,6 +204,7 @@ func New(conf *Config) (*Bridge, error) {
 		discordMessagesChan:      make(chan IRCMessage),
 		discordMessageEventsChan: make(chan *DiscordMessage),
 		updateUserChan:           make(chan DiscordUser),
+		removeUserChan:           make(chan string),
 	}
 
 	if err := dib.load(conf); err != nil {
@@ -413,6 +415,9 @@ func (b *Bridge) loop() {
 		// We should not receive anything on this channel if we're in Simple Mode
 		case user := <-b.updateUserChan:
 			b.ircManager.HandleUser(user)
+
+		case userID := <-b.removeUserChan:
+			b.ircManager.DisconnectUser(userID)
 
 		// Done!
 		case <-b.done:

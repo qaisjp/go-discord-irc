@@ -75,6 +75,15 @@ func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 	log.WithField("nick", con.nick).Println("IRC connection cooldownTimer created...")
 }
 
+// DisconnectUser immediately disconnects a Discord user if it exists
+func (m *IRCManager) DisconnectUser(userID string) {
+	con, ok := m.ircConnections[userID]
+	if !ok {
+		return
+	}
+	m.CloseConnection(con)
+}
+
 // HandleUser deals with messages sent from a DiscordUser
 func (m *IRCManager) HandleUser(user DiscordUser) {
 	if user.Username == "" || user.Discriminator == "" {
