@@ -78,13 +78,8 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	// Ignore private messages
 	if string(e.Arguments[0][0]) != "#" {
-		if e.Message() == "help" {
-			i.Privmsg(e.Nick, "Commands: help, who")
-		} else if e.Message() == "who" {
-			i.Privmsg(e.Nick, "I am the bot listener.")
-		} else {
-			i.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
-		}
+		// If you decide to extend this to respond to PMs, make sure
+		// you do not respond to NOTICEs, see issue #50.
 		return
 	}
 
