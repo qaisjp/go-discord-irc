@@ -85,17 +85,9 @@ func (m *IRCManager) DisconnectUser(userID string) {
 }
 
 // HandleUser deals with messages sent from a DiscordUser
+//
+// When `user.Online == false`, we make `user.ID` the only other data present in discord.handlePresenceUpdate
 func (m *IRCManager) HandleUser(user DiscordUser) {
-	if user.Username == "" || user.Discriminator == "" {
-		log.WithFields(log.Fields{
-			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")).Error(),
-			"user.Username":      user.Username,
-			"user.Discriminator": user.Discriminator,
-			"user.ID":            user.ID,
-		}).Println("ignoring a HandleUser")
-		return
-	}
-
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
 		// Close the connection if they are not
@@ -133,6 +125,16 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	// if !user.Online {
 	// 	return
 	// }
+
+	if user.Username == "" || user.Discriminator == "" {
+		log.WithFields(log.Fields{
+			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")).Error(),
+			"user.Username":      user.Username,
+			"user.Discriminator": user.Discriminator,
+			"user.ID":            user.ID,
+		}).Println("ignoring a HandleUser (in irc_manager.go)")
+		return
+	}
 
 	nick := m.generateNickname(user)
 
