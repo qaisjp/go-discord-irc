@@ -368,8 +368,8 @@ func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.Presenc
 
 func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, forceOnline bool) {
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
-	if !forceOnline && (status == discordgo.StatusOffline) {
-		log.WithField("id", uid).Debugln("PRESENCE offline")
+	if !forceOnline && !isStatusOnline(status) {
+		log.WithField("id", uid).Debugln("PRESENCE ", status)
 		d.bridge.updateUserChan <- DiscordUser{
 			ID:     uid,
 			Online: false,
@@ -412,6 +412,10 @@ func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 	}
 }
 
+func isStatusOnline(status discordgo.Status) bool {
+	return !(status == discordgo.StatusOffline || status == discordgo.StatusIdle)
+}
+
 func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
 	status := discordgo.StatusOnline
 
@@ -425,7 +429,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
 			return
 		}
 
-		if presence.Status == discordgo.StatusOffline {
+		if !isStatusOnline(presence.Status) {
 			return
 		}
 
@@ -438,7 +442,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
 		Discriminator: m.User.Discriminator,
 		Nick:          GetMemberNick(m),
 		Bot:           m.User.Bot,
-		Online:        status != discordgo.StatusOffline,
+		Online:        isStatusOnline(status),
 	}
 }
 

@@ -16,6 +16,14 @@ as per usual.
 and spawn additional connections for each online person in the Discord.
 - Supports bidirectional PMs. (Not user friendly, but it works.)
 
+
+**Features**
+
+(not a full list)
+
+- When a Discord user's presence is "offline" or "idle", their irc puppet will have their AWAY status set.
+- IRC puppets offline for 24 hours will disconnect.
+
 ## Gotchas
 
 Things to keep in mind in terms of functionality:
@@ -98,4 +106,3 @@ Make sure you also give the bot application these intents too:
 First edit `config.yml` file to your needs.
 Then launch `docker build -t go-discord-irc .` in the repository root folder.
 And then `docker run -d go-discord-irc` to run the bot in background.
-
