@@ -369,7 +369,6 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels
 // TODO (?)
-func (m *IRCManager) RequestChannels(userID string) map[string]string {
-
-	return m.bridge.GetIRCChannels(m.bridge.mappings)
+func (m *IRCManager) RequestChannels(userID string) []Mapping {
+	return m.bridge.mappings
 }

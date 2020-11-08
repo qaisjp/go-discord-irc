@@ -59,7 +59,8 @@ type Bridge struct {
 	ircListener *ircListener
 	ircManager  *IRCManager
 
-	mappings []Mapping
+	mappings       []Mapping
+	ircChannelKeys map[string]string // From "#test" to "password"
 
 	done chan bool
 
@@ -102,10 +103,20 @@ func (b *Bridge) load(opts *Config) error {
 // add or remove IRC bots accordingly.
 func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 	var mappings []Mapping
+	ircChannelKeys := make(map[string]string, len(mappings))
 	for irc, discord := range inMappings {
+		ircParts := strings.Split(irc, " ")
+		ircChannel := ircParts[0]
+		if parts := len(ircParts); parts != 1 && parts > 2 {
+			log.Errorf("IRC channel irc %+v (to discord %+v) is invalid. Expected 0 or 1 spaces in the string. Ignoring.", irc, discord)
+			continue
+		} else if parts == 2 {
+			ircChannelKeys[ircChannel] = ircParts[1]
+		}
+
 		mappings = append(mappings, Mapping{
 			DiscordChannel: discord,
-			IRCChannel:     irc,
+			IRCChannel:     ircChannel,
 		})
 	}
 
@@ -122,6 +133,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 
 	oldMappings := b.mappings
 	b.mappings = mappings
+	b.ircChannelKeys = ircChannelKeys
 
 	// If doing some changes mid-bot
 	if oldMappings != nil {
@@ -289,37 +301,32 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
-func (b *Bridge) GetJoinCommand(ircChansToPassword map[string]string) string {
-	cs := []string{}
-	ps := []string{}
-	for c, p := range ircChansToPassword {
-		cs = append(cs, c)
-		ps = append(ps, p)
-	}
-	return "JOIN " + strings.Join(cs, ",") + " " + strings.Join(ps, ",")
-}
+func (b *Bridge) GetJoinCommand(mappings []Mapping) string {
+	var channels, keyedChannels, keys []string
 
-// GetIRCChannels returns, for the given mappings, a mapping of irc channels to channel passwords
-func (b *Bridge) GetIRCChannels(mappings []Mapping) map[string]string {
-	channels := make(map[string]string)
 	for _, mapping := range mappings {
-		pair := strings.Split(mapping.IRCChannel, " ")
-		c := pair[0]
-		p := ""
-		if len(pair) > 1 {
-			p = pair[1]
+		channel := mapping.IRCChannel
+		key, keyed := b.ircChannelKeys[channel]
+
+		if keyed {
+			keyedChannels = append(keyedChannels, channel)
+			keys = append(keys, key)
+		} else {
+			channels = append(channels, channel)
 		}
-		channels[c] = p
 	}
 
-	return channels
+	// Just append normal channels to the end of keyed channels
+	keyedChannels = append(keyedChannels, channels...)
+
+	return "JOIN " + strings.Join(keyedChannels, ",") + " " + strings.Join(keys, ",")
 }
 
 // GetMappingByIRC returns a Mapping for a given IRC channel.
 // Returns nil if a Mapping does not exist.
 func (b *Bridge) GetMappingByIRC(channel string) (Mapping, bool) {
 	for _, mapping := range b.mappings {
-		if strings.Split(mapping.IRCChannel, " ")[0] == channel {
+		if mapping.IRCChannel == channel {
 			return mapping, true
 		}
 	}
