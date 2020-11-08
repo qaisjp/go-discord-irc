@@ -59,7 +59,7 @@ type Bridge struct {
 	ircListener *ircListener
 	ircManager  *IRCManager
 
-	mappings []*Mapping
+	mappings []Mapping
 
 	done chan bool
 
@@ -101,9 +101,9 @@ func (b *Bridge) load(opts *Config) error {
 // Calling this function whilst the bot is running will
 // add or remove IRC bots accordingly.
 func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
-	mappings := []*Mapping{}
+	var mappings []Mapping
 	for irc, discord := range inMappings {
-		mappings = append(mappings, &Mapping{
+		mappings = append(mappings, Mapping{
 			DiscordChannel: discord,
 			IRCChannel:     irc,
 		})
@@ -125,15 +125,15 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 
 	// If doing some changes mid-bot
 	if oldMappings != nil {
-		newMappings := []*Mapping{}
-		removedMappings := []*Mapping{}
+		var newMappings []Mapping
+		var removedMappings []Mapping
 
 		// Find positive difference
 		// These are the items in the new mappings list, but not the oldMappings
 		for _, mapping := range mappings {
 			found := false
 			for _, curr := range oldMappings {
-				if *curr == *mapping {
+				if curr == mapping {
 					found = true
 					break
 				}
@@ -149,7 +149,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 		for _, mapping := range oldMappings {
 			found := false
 			for _, curr := range mappings {
-				if *curr == *mapping {
+				if curr == mapping {
 					found = true
 					break
 				}
@@ -300,7 +300,7 @@ func (b *Bridge) GetJoinCommand(ircChansToPassword map[string]string) string {
 }
 
 // GetIRCChannels returns, for the given mappings, a mapping of irc channels to channel passwords
-func (b *Bridge) GetIRCChannels(mappings []*Mapping) map[string]string {
+func (b *Bridge) GetIRCChannels(mappings []Mapping) map[string]string {
 	channels := make(map[string]string)
 	for _, mapping := range mappings {
 		pair := strings.Split(mapping.IRCChannel, " ")
@@ -317,24 +317,24 @@ func (b *Bridge) GetIRCChannels(mappings []*Mapping) map[string]string {
 
 // GetMappingByIRC returns a Mapping for a given IRC channel.
 // Returns nil if a Mapping does not exist.
-func (b *Bridge) GetMappingByIRC(channel string) *Mapping {
+func (b *Bridge) GetMappingByIRC(channel string) (Mapping, bool) {
 	for _, mapping := range b.mappings {
 		if strings.Split(mapping.IRCChannel, " ")[0] == channel {
-			return mapping
+			return mapping, true
 		}
 	}
-	return nil
+	return Mapping{}, false
 }
 
 // GetMappingByDiscord returns a Mapping for a given Discord channel.
 // Returns nil if a Mapping does not exist.
-func (b *Bridge) GetMappingByDiscord(channel string) *Mapping {
+func (b *Bridge) GetMappingByDiscord(channel string) (Mapping, bool) {
 	for _, mapping := range b.mappings {
 		if mapping.DiscordChannel == channel {
-			return mapping
+			return mapping, true
 		}
 	}
-	return nil
+	return Mapping{}, false
 }
 
 func (b *Bridge) loop() {
@@ -343,9 +343,9 @@ func (b *Bridge) loop() {
 
 		// Messages from IRC to Discord
 		case msg := <-b.discordMessagesChan:
-			mapping := b.GetMappingByIRC(msg.IRCChannel)
+			mapping, ok := b.GetMappingByIRC(msg.IRCChannel)
 
-			if mapping == nil {
+			if !ok {
 				log.Warnln("Ignoring message sent from an unhandled IRC channel.")
 				continue
 			}
@@ -395,10 +395,10 @@ func (b *Bridge) loop() {
 
 		// Messages from Discord to IRC
 		case msg := <-b.discordMessageEventsChan:
-			mapping := b.GetMappingByDiscord(msg.ChannelID)
+			mapping, ok := b.GetMappingByDiscord(msg.ChannelID)
 
 			// Do not do anything if we do not have a mapping for the PUBLIC channel
-			if mapping == nil && msg.PmTarget == "" {
+			if !ok && msg.PmTarget == "" {
 				// log.Warnln("Ignoring message sent from an unhandled Discord channel.")
 				continue
 			}
