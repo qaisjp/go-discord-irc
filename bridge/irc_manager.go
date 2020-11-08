@@ -131,12 +131,12 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		return
 	}
 
-	// If they are not online, do not create a connection.
-	// if !user.Online {
-	// 	return
-	// }
-
 	if user.Username == "" || user.Discriminator == "" {
+		// If they are not online, we don't care, because this was likely an offline event
+		if !user.Online {
+			return
+		}
+
 		log.WithFields(log.Fields{
 			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")).Error(),
 			"user.Username":      user.Username,
