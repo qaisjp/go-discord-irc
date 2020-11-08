@@ -1,7 +1,6 @@
 package bridge
 
 import (
-	"fmt"
 	"strings"
 
 	ircf "github.com/qaisjp/go-discord-irc/irc/format"
@@ -128,7 +127,6 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 				continue
 			}
 			if _, ok := channelObj.Users[who]; !ok {
-				fmt.Printf("%s not in %s\n", who, channel)
 				continue
 			}
 			msg.IRCChannel = channel
