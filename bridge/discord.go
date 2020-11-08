@@ -59,14 +59,15 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 }
 
 func (d *discordBot) Open() error {
-	err := d.Session.Open()
-	if err != nil {
-		return errors.Wrap(err, "discord, could not open session")
-	}
-
+	var err error
 	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
 	if err != nil {
 		return errors.Wrap(err, "could not create transmitter")
+	}
+
+	err = d.Session.Open()
+	if err != nil {
+		return errors.Wrap(err, "discord, could not open session")
 	}
 
 	return nil
