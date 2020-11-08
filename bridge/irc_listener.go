@@ -118,7 +118,7 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 	}
 
 	if event.Code == "QUIT" {
-		// Notify all channels
+		// Notify channels that the user is in
 		for _, m := range i.bridge.mappings {
 			channel := m.IRCChannel
 			channelObj, ok := i.Connection.Channels[channel]
