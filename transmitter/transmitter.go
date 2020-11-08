@@ -25,7 +25,7 @@ type Transmitter struct {
 }
 
 // New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
-func New(session *discordgo.Session, guild string, prefix string, limit int) (*Transmitter, error) {
+func New(session *discordgo.Session, guild string, prefix string) (*Transmitter, error) {
 	// Get all existing webhooks
 	hooks, err := session.GuildWebhooks(guild)
 

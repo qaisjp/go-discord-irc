@@ -64,7 +64,7 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "discord, could not open session")
 	}
 
-	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix, d.bridge.Config.WebhookLimit)
+	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
 	if err != nil {
 		return errors.Wrap(err, "could not create transmitter")
 	}

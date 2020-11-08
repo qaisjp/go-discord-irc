@@ -83,9 +83,6 @@ func main() {
 	separator := viper.GetString("separator")
 	//
 	webhookPrefix := viper.GetString("webhook_prefix") // the unique prefix for this bottiful bot
-	//
-	viper.SetDefault("webhook_limit", 2)
-	webhookLimit := viper.GetInt("webhook_limit")
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -114,7 +111,6 @@ func main() {
 		SimpleMode:         *simple,
 		ChannelMappings:    channelMappings,
 		WebhookPrefix:      webhookPrefix,
-		WebhookLimit:       webhookLimit,
 	})
 
 	if err != nil {
