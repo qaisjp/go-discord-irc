@@ -15,6 +15,7 @@ import (
 )
 
 var cooldownDuration = time.Hour * 24
+var indev = false
 
 // IRCManager should only be used from one thread.
 type IRCManager struct {
@@ -31,6 +32,8 @@ func newIRCManager(bridge *Bridge) *IRCManager {
 	}
 }
 
+var totalConnections = 0
+
 // CloseConnection shuts down a particular connection and its channels.
 func (m *IRCManager) CloseConnection(i *ircConnection) {
 	log.WithField("nick", i.nick).Println("Closing connection.")
@@ -42,6 +45,11 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 
 	delete(m.ircConnections, i.discord.ID)
 	close(i.messages)
+
+	if indev {
+		totalConnections--
+		fmt.Println("Decrementing total connections. It's now", totalConnections)
+	}
 
 	if i.innerCon.Connected() {
 		i.innerCon.Quit()
@@ -83,6 +91,8 @@ func (m *IRCManager) DisconnectUser(userID string) {
 	}
 	m.CloseConnection(con)
 }
+
+var connectionsIgnored = 0
 
 // HandleUser deals with messages sent from a DiscordUser
 //
@@ -136,6 +146,15 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		return
 	}
 
+	// DEV MODE: Only create a connection if it sounds like qaisjp or if we have 10 connections
+	if indev {
+		if totalConnections > 4 && !strings.Contains(user.Username, "qais") {
+			connectionsIgnored++
+			fmt.Println("Not letting", user.Username, "connect. We have", totalConnections, "connections. Ignored", connectionsIgnored, "connections.")
+			return
+		}
+	}
+
 	nick := m.generateNickname(user)
 
 	innerCon := irc.IRC(nick, "discord")
@@ -181,6 +200,11 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	con.innerCon.AddCallback("PRIVMSG", con.OnPrivateMessage)
 
 	m.ircConnections[user.ID] = con
+
+	if indev {
+		totalConnections++
+		fmt.Println("Incrementing total connections. It's now", totalConnections)
+	}
 
 	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
 	if err != nil {
