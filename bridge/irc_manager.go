@@ -31,8 +31,6 @@ func newIRCManager(bridge *Bridge) *IRCManager {
 	}
 }
 
-var totalConnections = 0
-
 // CloseConnection shuts down a particular connection and its channels.
 func (m *IRCManager) CloseConnection(i *ircConnection) {
 	log.WithField("nick", i.nick).Println("Closing connection.")
@@ -46,8 +44,7 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 	close(i.messages)
 
 	if indev {
-		totalConnections--
-		fmt.Println("Decrementing total connections. It's now", totalConnections)
+		fmt.Println("Decrementing total connections. It's now", len(m.ircConnections))
 	}
 
 	if i.innerCon.Connected() {
@@ -147,9 +144,9 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	// DEV MODE: Only create a connection if it sounds like qaisjp or if we have 10 connections
 	if indev {
-		if totalConnections > 4 && !strings.Contains(user.Username, "qais") {
+		if len(m.ircConnections) > 4 && !strings.Contains(user.Username, "qais") {
 			connectionsIgnored++
-			fmt.Println("Not letting", user.Username, "connect. We have", totalConnections, "connections. Ignored", connectionsIgnored, "connections.")
+			fmt.Println("Not letting", user.Username, "connect. We have", len(m.ircConnections), "connections. Ignored", connectionsIgnored, "connections.")
 			return
 		}
 	}
@@ -201,8 +198,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	m.ircConnections[user.ID] = con
 
 	if indev {
-		totalConnections++
-		fmt.Println("Incrementing total connections. It's now", totalConnections)
+		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
 	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
