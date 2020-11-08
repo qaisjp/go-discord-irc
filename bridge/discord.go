@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strings"
 
 	"github.com/hashicorp/go-multierror"
@@ -370,10 +371,10 @@ func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, f
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
 	if !forceOnline && !isStatusOnline(status) {
 		log.WithField("id", uid).Debugln("PRESENCE ", status)
-		d.bridge.updateUserChan <- DiscordUser{
+		d.sendUpdateUserChan(DiscordUser{
 			ID:     uid,
 			Online: false,
-		}
+		})
 		return
 	}
 	log.WithField("id", uid).Debugln("PRESENCE " + status)
@@ -436,14 +437,30 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
 		status = presence.Status
 	}
 
-	d.bridge.updateUserChan <- DiscordUser{
+	d.sendUpdateUserChan(DiscordUser{
 		ID:            m.User.ID,
 		Username:      m.User.Username,
 		Discriminator: m.User.Discriminator,
 		Nick:          GetMemberNick(m),
 		Bot:           m.User.Bot,
 		Online:        isStatusOnline(status),
+	})
+}
+
+func (d *discordBot) sendUpdateUserChan(user DiscordUser) bool {
+	// Only log this for online events, because offline events won't have this
+	if (user.Username == "" || user.Discriminator == "") && user.Online {
+		log.WithFields(log.Fields{
+			"err":                errors.WithStack(errors.New("Username or Discriminator is empty")).Error(),
+			"user.Username":      user.Username,
+			"user.Discriminator": user.Discriminator,
+			"user.ID":            user.ID,
+		}).Println("sendUpdateUserChan called with empty Username and Discriminator (see stack below)")
+		debug.PrintStack()
 	}
+
+	d.bridge.updateUserChan <- user
+	return true
 }
 
 // See https://github.com/reactiflux/discord-irc/pull/230/files#diff-7202bb7fb017faefd425a2af32df2f9dR357
