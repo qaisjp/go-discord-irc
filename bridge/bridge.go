@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
@@ -43,6 +44,9 @@ type Config struct {
 
 	Suffix    string // Suffix is the suffix to append to IRC puppets
 	Separator string // Separator is used in IRC puppets' username, in fallback situations, between the discriminator and username.
+
+	// CooldownDuration is the duration in seconds for an IRC puppet to stay online before being disconnected
+	CooldownDuration time.Duration
 
 	Debug bool
 }

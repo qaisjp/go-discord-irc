@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
@@ -83,6 +84,9 @@ func main() {
 	separator := viper.GetString("separator")
 	//
 	webhookPrefix := viper.GetString("webhook_prefix") // the unique prefix for this bottiful bot
+	//
+	viper.SetDefault("cooldown_duration", int64((time.Hour * 24).Seconds()))
+	cooldownDuration := viper.GetInt64("cooldown_duration")
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -111,7 +115,10 @@ func main() {
 		SimpleMode:         *simple,
 		ChannelMappings:    channelMappings,
 		WebhookPrefix:      webhookPrefix,
+		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
 	})
+
+	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)
 
 	if err != nil {
 		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to initialise.")

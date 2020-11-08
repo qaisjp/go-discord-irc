@@ -22,7 +22,7 @@ and spawn additional connections for each online person in the Discord.
 (not a full list)
 
 - When a Discord user's presence is "offline" or "idle", their irc puppet will have their AWAY status set.
-- IRC puppets offline for 24 hours will disconnect.
+- A Discord user offline for will disconnect from IRC after 24 hours (or whatever `cooldown_duration` you set).
 
 ## Gotchas
 
@@ -63,6 +63,7 @@ The config file is a yaml formatted file with the following fields:
 - `no_tls`, turns off TLS
 - `webhook_prefix`, a prefix for webhooks, so we know which ones to keep and which ones to delete
 - `nickserv_identify`, optional, on connect this message will be sent: `PRIVMSG nickserv IDENTIFY <value>`, you can provide both a username and password if your ircd supports it
+- `cooldown_duration`, optional, default 86400 (24 hours), time in seconds for a discord user to be offline before it's puppet disconnects from irc
 
 **The filename.yaml file is continuously read from and many changes will automatically update on the bridge. This means you can add or remove channels without restarting the bot.**
 

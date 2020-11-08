@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var cooldownDuration = time.Hour * 24
 var indev = false
 
 // IRCManager should only be used from one thread.
@@ -73,7 +72,7 @@ func (m *IRCManager) SetConnectionCooldown(con *ircConnection) {
 	}
 
 	con.cooldownTimer = time.AfterFunc(
-		cooldownDuration,
+		m.bridge.Config.CooldownDuration,
 		func() {
 			log.WithField("nick", con.nick).Println("IRC connection expired by cooldownTimer...")
 			m.CloseConnection(con)
@@ -160,7 +159,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	innerCon := irc.IRC(nick, "discord")
 	// innerCon.Debug = m.bridge.Config.Debug
 	innerCon.RealName = user.Username
-	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", cooldownDuration)
+	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration)
 
 	var ip string
 	{
