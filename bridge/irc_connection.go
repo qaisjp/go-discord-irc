@@ -49,7 +49,7 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 }
 
 func (i *ircConnection) JoinChannels() {
-	i.innerCon.SendRaw(i.manager.bridge.GetJoinCommand())
+	i.innerCon.SendRaw(i.manager.bridge.GetJoinCommand(i.manager.RequestChannels(i.discord.ID)))
 }
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {

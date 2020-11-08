@@ -375,5 +375,6 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // Currently just returns all participating IRC channels
 // TODO (?)
 func (m *IRCManager) RequestChannels(userID string) map[string]string {
-	return m.bridge.GetIRCChannels()
+
+	return m.bridge.GetIRCChannels(m.bridge.mappings)
 }

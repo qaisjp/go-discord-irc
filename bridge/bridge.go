@@ -285,22 +285,20 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
-func (b *Bridge) GetJoinCommand() string {
-	channels := b.GetIRCChannels() //i.manager.RequestChannels(i.discord.ID)
-
+func (b *Bridge) GetJoinCommand(ircChansToPassword map[string]string) string {
 	cs := []string{}
 	ps := []string{}
-	for c, p := range channels {
+	for c, p := range ircChansToPassword {
 		cs = append(cs, c)
 		ps = append(ps, p)
 	}
 	return "JOIN " + strings.Join(cs, ",") + " " + strings.Join(ps, ",")
 }
 
-// GetIRCChannels returns a list of irc channels in no particular order.
-func (b *Bridge) GetIRCChannels() map[string]string {
+// GetIRCChannels returns, for the given mappings, a mapping of irc channels to channel passwords
+func (b *Bridge) GetIRCChannels(mappings []*Mapping) map[string]string {
 	channels := make(map[string]string)
-	for _, mapping := range b.mappings {
+	for _, mapping := range mappings {
 		pair := strings.Split(mapping.IRCChannel, " ")
 		c := pair[0]
 		p := ""
