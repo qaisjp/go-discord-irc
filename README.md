@@ -73,18 +73,23 @@ discord_token: abc.def.ghi
 irc_server: localhost:6697
 guild_id: 315277951597936640
 nickserv_identify: password123
+
+# Updating this will automatically add or remove puppets from channels
 channel_mappings:
   "#bottest chanKey": 316038111811600387
   "#bottest2": 318327329044561920
+
 suffix: "_d2"
 separator: "_"
 irc_listener_name: "_d2"
 webirc_pass: abcdef.ghijk.lmnop
-insecure: true # this requires restart
-no_tls: false # requires restart
+
+# You definitely should restart the bridge after changing these:
+insecure: true
+no_tls: false
 debug: false
-webhook_prefix: "(auto-test)" # this probably requires restart
-#simple: true # this requires restart
+webhook_prefix: "(auto-test)"
+#simple: true
 ```
 
 This bot needs permissions to manage webhooks as it creates webhooks on the go.
