@@ -39,8 +39,6 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 		listener.JoinChannels()
 	})
 
-	listener.VerboseCallbackHandler = true
-
 	// Note that this might override SetupNickTrack!
 	listener.OnJoinQuitSettingChange()
 
