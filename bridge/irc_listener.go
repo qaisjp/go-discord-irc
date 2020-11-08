@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"strings"
 
 	ircf "github.com/qaisjp/go-discord-irc/irc/format"
@@ -11,11 +12,13 @@ import (
 type ircListener struct {
 	*irc.Connection
 	bridge *Bridge
+
+	joinQuitCallbacks map[string]int
 }
 
 func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	listener := &ircListener{irccon, dib}
+	listener := &ircListener{irccon, dib, nil}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
 	listener.SetDebugMode(dib.Config.Debug)
@@ -37,7 +40,107 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 		listener.JoinChannels()
 	})
 
+	listener.VerboseCallbackHandler = true
+
+	// Note that this might override SetupNickTrack!
+	listener.OnJoinQuitSettingChange()
+
 	return listener
+}
+
+// From irc_nicktrack.go.
+func (i *ircListener) nickTrackQuit(e *irc.Event) {
+	for k := range i.Connection.Channels {
+		delete(i.Channels[k].Users, e.Nick)
+	}
+}
+
+func (i *ircListener) OnJoinQuitSettingChange() {
+	// Clear Nicktrack QUIT callback as it races with this
+	i.ClearCallback("QUIT")
+
+	// If remove callbacks...
+	if !i.bridge.Config.ShowJoinQuit {
+		for event, id := range i.joinQuitCallbacks {
+			i.RemoveCallback(event, id) // note that QUIT was already removed above
+		}
+
+		// Add back Nicktrack QUIT since it was removed
+		i.AddCallback("QUIT", i.nickTrackQuit)
+		return
+	}
+
+	callbacks := []string{"JOIN", "PART", "QUIT", "KICK"}
+	cbs := make(map[string]int, len(callbacks))
+	for _, cb := range callbacks {
+		i.AddCallback(cb, i.OnJoinQuitCallback)
+	}
+
+	i.joinQuitCallbacks = cbs
+}
+
+func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
+	// This checks if the source of the event was from a puppet.
+	// It won't work correctly for KICK, as the source is always the person that
+	// performed the kick. But that's okay because puppets aren't supposed to be kicked.
+	if i.isPuppetNick(event.Nick) {
+		return
+	}
+
+	who := event.Nick
+	message := event.Nick
+	id := " (" + event.User + "@" + event.Host + ") "
+
+	switch event.Code {
+	case "JOIN":
+		message += " joined" + id
+	case "PART":
+		message += " left" + id
+		if len(event.Arguments) > 1 {
+			message += ": " + event.Arguments[1]
+		}
+	case "QUIT":
+		message += " quit" + id
+
+		reason := event.Nick
+		if len(event.Arguments) == 1 {
+			reason = event.Arguments[0]
+		}
+		message += "Quit: " + reason
+	case "KICK":
+		who = event.Arguments[1]
+		message = event.Arguments[1] + " was kicked by " + event.Nick + ": " + event.Arguments[2]
+	}
+
+	msg := IRCMessage{
+		// IRCChannel: set on the fly
+		Username: "",
+		Message:  message,
+	}
+
+	if event.Code == "QUIT" {
+		// Notify all channels
+		for _, m := range i.bridge.mappings {
+			channel := m.IRCChannel
+			channelObj, ok := i.Connection.Channels[channel]
+			if !ok {
+				log.WithField("channel", channel).WithField("who", who).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
+				continue
+			}
+			if _, ok := channelObj.Users[who]; !ok {
+				fmt.Printf("%s not in %s\n", who, channel)
+				continue
+			}
+			msg.IRCChannel = channel
+			i.bridge.discordMessagesChan <- msg
+		}
+
+		// Call nicktrack QUIT now (this avoids a race)
+		i.nickTrackQuit(event)
+	} else {
+		msg.IRCChannel = event.Arguments[0]
+		i.bridge.discordMessagesChan <- msg
+	}
 }
 
 func (i *ircListener) DoesUserExist(user string) bool {
@@ -75,6 +178,10 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 	log.Infof("Listener has joined IRC channel %s.", e.Arguments[1])
 }
 
+func (i *ircListener) isPuppetNick(nick string) bool {
+	return nick == i.bridge.Config.IRCListenerName || strings.HasSuffix(strings.TrimRight(nick, "_"), i.bridge.Config.Suffix)
+}
+
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	// Ignore private messages
 	if string(e.Arguments[0][0]) != "#" {
@@ -89,7 +196,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	}
 
 	// Ignore messages from Discord bots
-	if strings.HasSuffix(strings.TrimRight(e.Nick, "_"), i.bridge.Config.Suffix) {
+	if i.isPuppetNick(e.Nick) {
 		return
 	}
 

@@ -48,6 +48,9 @@ type Config struct {
 	// CooldownDuration is the duration in seconds for an IRC puppet to stay online before being disconnected
 	CooldownDuration time.Duration
 
+	// ShowJoinQuit determines whether or not to show JOIN, QUIT, KICK messages on Discord
+	ShowJoinQuit bool
+
 	Debug bool
 }
 
@@ -357,17 +360,22 @@ func (b *Bridge) loop() {
 				continue
 			}
 
-			avatar := b.discord.GetAvatar(b.Config.GuildID, msg.Username)
-			if avatar == "" {
-				// If we don't have a Discord avatar, generate an adorable avatar
-				avatar = "https://api.adorable.io/avatars/128/" + msg.Username
-			}
-
+			var avatar string
 			username := msg.Username
-			if len(username) == 1 {
-				// Append usernames with 1 character
-				// This is because Discord doesn't accept single character usernames
-				username += `.` // <- zero width space in here, ayylmao
+
+			// System messages have no username
+			if username != "" {
+				avatar := b.discord.GetAvatar(b.Config.GuildID, msg.Username)
+				if avatar == "" {
+					// If we don't have a Discord avatar, generate an adorable avatar
+					avatar = "https://api.adorable.io/avatars/128/" + msg.Username
+				}
+
+				if len(username) == 1 {
+					// Append usernames with 1 character
+					// This is because Discord doesn't accept single character usernames
+					username += `.` // <- zero width space in here, ayylmao
+				}
 			}
 
 			content := msg.Message
@@ -381,24 +389,35 @@ func (b *Bridge) loop() {
 			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
 			content = strings.ReplaceAll(content, "@here", "@\u200bhere")
 
-			go func() {
-				err := b.discord.transmitter.Message(
-					mapping.DiscordChannel,
-					username,
-					avatar,
-					content,
-				)
-
-				if err != nil {
-					log.WithFields(log.Fields{
-						"error":        err,
+			if username == "" {
+				// System messages come straight from the bot
+				if _, err := b.discord.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
+					log.WithError(err).WithFields(log.Fields{
 						"msg.channel":  mapping.DiscordChannel,
 						"msg.username": username,
-						"msg.avatar":   avatar,
 						"msg.content":  content,
-					}).Errorln("could not transmit message to discord")
+					}).Errorln("could not transmit SYSTEM message to discord")
 				}
-			}()
+			} else {
+				go func() {
+					err := b.discord.transmitter.Message(
+						mapping.DiscordChannel,
+						username,
+						avatar,
+						content,
+					)
+
+					if err != nil {
+						log.WithFields(log.Fields{
+							"error":        err,
+							"msg.channel":  mapping.DiscordChannel,
+							"msg.username": username,
+							"msg.avatar":   avatar,
+							"msg.content":  content,
+						}).Errorln("could not transmit message to discord")
+					}
+				}()
+			}
 
 		// Messages from Discord to IRC
 		case msg := <-b.discordMessageEventsChan:

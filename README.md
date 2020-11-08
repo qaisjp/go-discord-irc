@@ -23,6 +23,7 @@ and spawn additional connections for each online person in the Discord.
 
 - When a Discord user's presence is "offline" or "idle", their irc puppet will have their AWAY status set.
 - A Discord user offline for will disconnect from IRC after 24 hours (or whatever `cooldown_duration` you set).
+- Join/Quit/Part/Kick messages are sent to Discord (configurable)
 
 ## Gotchas
 
@@ -64,6 +65,7 @@ The config file is a yaml formatted file with the following fields:
 - `webhook_prefix`, a prefix for webhooks, so we know which ones to keep and which ones to delete
 - `nickserv_identify`, optional, on connect this message will be sent: `PRIVMSG nickserv IDENTIFY <value>`, you can provide both a username and password if your ircd supports it
 - `cooldown_duration`, optional, default 86400 (24 hours), time in seconds for a discord user to be offline before it's puppet disconnects from irc
+- `show_joinquit`, optional, default true, displays JOIN, PART, QUIT, KICK on discord
 
 **The filename.yaml file is continuously read from and many changes will automatically update on the bridge. This means you can add or remove channels without restarting the bot.**
 
@@ -84,6 +86,9 @@ suffix: "_d2"
 separator: "_"
 irc_listener_name: "_d2"
 webirc_pass: abcdef.ghijk.lmnop
+
+show_joinquit: true # displays JOIN, PART, QUIT, KICK on discord
+cooldown_duration: 86400 # optional, default 86400 (24 hours), time in seconds for a discord user to be offline before it's puppet disconnects from irc
 
 # You definitely should restart the bridge after changing these:
 insecure: true

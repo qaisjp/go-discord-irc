@@ -87,6 +87,9 @@ func main() {
 	//
 	viper.SetDefault("cooldown_duration", int64((time.Hour * 24).Seconds()))
 	cooldownDuration := viper.GetInt64("cooldown_duration")
+	//
+	viper.SetDefault("show_joinquit", true)
+	showJoinQuit := viper.GetBool("show_joinquit")
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -116,6 +119,7 @@ func main() {
 		ChannelMappings:    channelMappings,
 		WebhookPrefix:      webhookPrefix,
 		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
+		ShowJoinQuit:       showJoinQuit,
 	})
 
 	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)
