@@ -255,7 +255,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	suffix := m.bridge.Config.Suffix
 	newNick := nick + suffix
 
-	useFallback := len(newNick) > m.nickLength || m.bridge.ircListener.DoesUserExist(newNick)
+	useFallback := len(newNick) > b.bridge.Config.MaxNickLength || m.bridge.ircListener.DoesUserExist(newNick)
 	// log.WithFields(log.Fields{
 	// 	"length":      len(newNick) > ircnick.MAXLENGTH,
 	// 	"useFallback": useFallback,
