@@ -13,6 +13,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
+	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -91,6 +92,9 @@ func main() {
 	viper.SetDefault("show_joinquit", true)
 	showJoinQuit := viper.GetBool("show_joinquit")
 
+	viper.SetDefault("max_nick_length", ircnick.MAXLENGTH)
+	maxNickLength := viper.GetInt("max_nick_length")
+
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
 	}
@@ -120,6 +124,7 @@ func main() {
 		WebhookPrefix:      webhookPrefix,
 		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
 		ShowJoinQuit:       showJoinQuit,
+		MaxNickLength:      maxNickLength,
 	})
 
 	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)

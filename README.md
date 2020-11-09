@@ -66,6 +66,7 @@ The config file is a yaml formatted file with the following fields:
 - `nickserv_identify`, optional, on connect this message will be sent: `PRIVMSG nickserv IDENTIFY <value>`, you can provide both a username and password if your ircd supports it
 - `cooldown_duration`, optional, default 86400 (24 hours), time in seconds for a discord user to be offline before it's puppet disconnects from irc
 - `show_joinquit`, optional, default true, displays JOIN, PART, QUIT, KICK on discord
+- `max_nick_length`, optional, default 30, Maximum allowed nick length
 
 **The filename.yaml file is continuously read from and many changes will automatically update on the bridge. This means you can add or remove channels without restarting the bot.**
 

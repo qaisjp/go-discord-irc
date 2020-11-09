@@ -52,6 +52,9 @@ type Config struct {
 	ShowJoinQuit bool
 
 	Debug bool
+
+	// Maximum Nicklength for irc server
+	MaxNickLength int
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -235,7 +238,7 @@ func New(conf *Config) (*Bridge, error) {
 	}
 
 	dib.ircListener = newIRCListener(dib, conf.WebIRCPass)
-	dib.ircManager = newIRCManager(dib)
+	dib.ircManager = newIRCManager(dib, conf.MaxNickLength)
 
 	go dib.loop()
 
