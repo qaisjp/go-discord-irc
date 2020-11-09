@@ -2,16 +2,19 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/qaisjp/go-discord-irc/bridge"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	log "github.com/sirupsen/logrus"
@@ -34,6 +37,7 @@ func main() {
 
 	if *config == "" {
 		log.Fatalln("--config argument is required!")
+
 		return
 	}
 
@@ -46,6 +50,7 @@ func main() {
 	configName := strings.TrimSuffix(filepath.Base(*config), ext)
 	configType := ext[1:]
 	configPath := filepath.Dir(*config)
+
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
 	viper.AddConfigPath(configPath)
@@ -61,13 +66,20 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discordBotToken := viper.GetString("discord_token")             // Discord Bot User Token
-	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
-	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
-	ircPassword := viper.GetString("irc_pass")                      // Optional password for connecting to the IRC server
-	guildID := viper.GetString("guild_id")                          // Guild to use
-	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
+	// Discord Bot User Token
+	discordBotToken := viper.GetString("discord_token")
+	// Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
+	channelMappings := viper.GetStringMapString("channel_mappings")
+	// Server address to use, example `irc.freenode.net:7000`.
+	ircServer := viper.GetString("irc_server")
+	// Optional password for connecting to the IRC server
+	ircPassword := viper.GetString("irc_pass")
+	// Guild to use
+	guildID := viper.GetString("guild_id")
+	// Password for WEBIRC
+	webIRCPass := viper.GetString("webirc_pass")
+	// NickServ IDENTIFY for Listener
+	identify := viper.GetString("nickserv_identify")
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -76,6 +88,7 @@ func main() {
 	if !*notls {
 		*notls = viper.GetBool("no_tls")
 	}
+	//
 	if !*insecure {
 		*insecure = viper.GetBool("insecure")
 	}
@@ -103,6 +116,11 @@ func main() {
 	viper.SetDefault("max_nick_length", ircnick.MAXLENGTH)
 	maxNickLength := viper.GetInt("max_nick_length")
 
+	viper.SetDefault("prometheus.enabled", false)
+	viper.SetDefault("prometheus.port", 2112)
+	promEnabled := viper.GetBool("prometheus.enabled")
+	metricsPort := viper.GetInt("prometheus.port")
+
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
 	}
@@ -112,7 +130,11 @@ func main() {
 		log.Warnln("Channel mappings are missing!")
 	}
 
-	SetLogDebug(*debugMode)
+	setLogDebug(*debugMode)
+
+	if promEnabled {
+		enableMetrics(metricsPort)
+	}
 
 	dib, err := bridge.New(&bridge.Config{
 		DiscordBotToken:    discordBotToken,
@@ -140,6 +162,7 @@ func main() {
 
 	if err != nil {
 		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to initialise.")
+
 		return
 	}
 
@@ -153,6 +176,7 @@ func main() {
 	err = dib.Open()
 	if err != nil {
 		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to start.")
+
 		return
 	}
 
@@ -174,7 +198,7 @@ func main() {
 			log.Printf("Debug changed from %+v to %+v", *debugMode, debug)
 			*debugMode = debug
 			dib.SetDebugMode(debug)
-			SetLogDebug(debug)
+			setLogDebug(debug)
 		}
 
 		chans := viper.GetStringMapString("channel_mappings")
@@ -202,11 +226,29 @@ func main() {
 	dib.Close()
 }
 
-func SetLogDebug(debug bool) {
+func setLogDebug(debug bool) {
 	logger := log.StandardLogger()
+
 	if debug {
 		logger.SetLevel(log.DebugLevel)
 	} else {
 		logger.SetLevel(log.InfoLevel)
 	}
+}
+
+func enableMetrics(port int) {
+	http.Handle("/metrics", promhttp.Handler())
+
+	portStr := strconv.Itoa(port)
+	address := ":" + portStr
+
+	go func() {
+		if err := http.ListenAndServe(address, nil); err != nil {
+			log.WithFields(log.Fields{
+				"error":   err,
+				"address": address,
+			}).Error("could not start prometheus metric endpoint")
+		}
+	}()
+	log.WithField("address", address).Info("prometheus metric endpoint started")
 }

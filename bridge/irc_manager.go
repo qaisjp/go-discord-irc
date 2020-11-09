@@ -8,13 +8,22 @@ import (
 
 	"github.com/mozillazg/go-unidecode"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
 
-var DevMode = false
+var (
+	DevMode        = false
+	usersConnected = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "discord_irc",
+		Name:      "users_total",
+		Help:      "The total number of users connected from discord to irc",
+	})
+)
 
 // IRCManager should only be used from one thread.
 type IRCManager struct {
@@ -36,6 +45,7 @@ func newIRCManager(bridge *Bridge) *IRCManager {
 // CloseConnection shuts down a particular connection and its channels.
 func (m *IRCManager) CloseConnection(i *ircConnection) {
 	log.WithField("nick", i.nick).Println("Closing connection.")
+	usersConnected.Dec()
 	// Destroy the cooldown timer
 	if i.cooldownTimer != nil {
 		i.cooldownTimer.Stop()
@@ -204,6 +214,8 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	if DevMode {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
+
+	usersConnected.Inc()
 
 	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
 	if err != nil {

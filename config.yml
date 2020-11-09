@@ -25,3 +25,7 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
+
+prometheus:
+  enabled: false  # Disabled by default
+  # port: 2112
