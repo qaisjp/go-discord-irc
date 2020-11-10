@@ -20,16 +20,14 @@ var indev = false
 type IRCManager struct {
 	ircConnections map[string]*ircConnection
 
-	bridge     *Bridge
-	nickLength int
+	bridge *Bridge
 }
 
 // NewIRCManager creates a new IRCManager
-func newIRCManager(bridge *Bridge, nickLength int) *IRCManager {
+func newIRCManager(bridge *Bridge) *IRCManager {
 	return &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
 		bridge:         bridge,
-		nickLength:     nickLength,
 	}
 }
 
@@ -154,8 +152,9 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	}
 
 	nick := m.generateNickname(user)
+	username := m.generateUsername(user)
 
-	innerCon := irc.IRC(nick, user.Username)
+	innerCon := irc.IRC(nick, username)
 	// innerCon.Debug = m.bridge.Config.Debug
 	innerCon.RealName = user.Username
 	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration)
@@ -255,7 +254,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	suffix := m.bridge.Config.Suffix
 	newNick := nick + suffix
 
-	useFallback := len(newNick) > b.bridge.Config.MaxNickLength || m.bridge.ircListener.DoesUserExist(newNick)
+	useFallback := len(newNick) > m.bridge.Config.MaxNickLength || m.bridge.ircListener.DoesUserExist(newNick)
 	// log.WithFields(log.Fields{
 	// 	"length":      len(newNick) > ircnick.MAXLENGTH,
 	// 	"useFallback": useFallback,
@@ -373,4 +372,11 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // TODO (?)
 func (m *IRCManager) RequestChannels(userID string) []Mapping {
 	return m.bridge.mappings
+}
+
+func (m *IRCManager) generateUsername(discordUser DiscordUser) string {
+	if len(m.bridge.Config.PuppetUsername) > 0 {
+		return m.bridge.Config.PuppetUsername
+	}
+	return sanitiseNickname(discordUser.Username)
 }

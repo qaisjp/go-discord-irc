@@ -77,6 +77,9 @@ func main() {
 	//
 	viper.SetDefault("irc_listener_name", "~d")
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
+	// Name to Connect to IRC puppet account with
+	viper.SetDefault("puppet_username", "")
+	puppetUsername := viper.GetString("puppet_username")
 	//
 	viper.SetDefault("suffix", "~d")
 	suffix := viper.GetString("suffix") // The suffix to append to IRC connections (not in use when simple mode is on)
@@ -91,7 +94,7 @@ func main() {
 	//
 	viper.SetDefault("show_joinquit", true)
 	showJoinQuit := viper.GetBool("show_joinquit")
-
+	// Maximum length of user nicks aloud
 	viper.SetDefault("max_nick_length", ircnick.MAXLENGTH)
 	maxNickLength := viper.GetInt("max_nick_length")
 
@@ -112,6 +115,7 @@ func main() {
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
+		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
 		Debug:              *debugMode,
