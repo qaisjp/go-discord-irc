@@ -23,6 +23,7 @@ type Config struct {
 	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
+	PuppetUsername   string // Username to connect to IRC with
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
@@ -52,6 +53,9 @@ type Config struct {
 	ShowJoinQuit bool
 
 	Debug bool
+
+	// Maximum Nicklength for irc server
+	MaxNickLength int
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
