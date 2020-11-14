@@ -372,7 +372,7 @@ func (b *Bridge) loop() {
 				avatar := b.discord.GetAvatar(b.Config.GuildID, msg.Username)
 				if avatar == "" {
 					// If we don't have a Discord avatar, generate an adorable avatar
-					avatar = "https://api.adorable.io/avatars/128/" + msg.Username
+					avatar = "https://avatars.dicebear.com/api/gridy/" + msg.Username + ".svg"
 				}
 
 				if len(username) == 1 {
