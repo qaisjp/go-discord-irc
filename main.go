@@ -25,7 +25,11 @@ func main() {
 	notls := flag.Bool("no-tls", false, "Avoids using TLS att all when connecting to IRC server ")
 	insecure := flag.Bool("insecure", false, "Skip TLS certificate verification? (INSECURE MODE) (false = use value from settings)")
 
+	// Secret devmode
+	devMode := flag.Bool("dev", false, "")
+
 	flag.Parse()
+	bridge.DevMode = *devMode
 
 	if *config == "" {
 		log.Fatalln("--config argument is required!")

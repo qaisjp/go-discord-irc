@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var indev = false
+var DevMode = false
 
 // IRCManager should only be used from one thread.
 type IRCManager struct {
@@ -43,7 +43,7 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 	delete(m.ircConnections, i.discord.ID)
 	close(i.messages)
 
-	if indev {
+	if DevMode {
 		fmt.Println("Decrementing total connections. It's now", len(m.ircConnections))
 	}
 
@@ -143,7 +143,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	}
 
 	// DEV MODE: Only create a connection if it sounds like qaisjp or if we have 10 connections
-	if indev {
+	if DevMode {
 		if len(m.ircConnections) > 4 && !strings.Contains(user.Username, "qais") {
 			connectionsIgnored++
 			fmt.Println("Not letting", user.Username, "connect. We have", len(m.ircConnections), "connections. Ignored", connectionsIgnored, "connections.")
@@ -198,7 +198,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 
 	m.ircConnections[user.ID] = con
 
-	if indev {
+	if DevMode {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
