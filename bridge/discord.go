@@ -65,6 +65,7 @@ func (d *discordBot) Open() error {
 		return errors.Wrap(err, "could not create transmitter")
 	}
 
+	d.Session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 	err = d.Session.Open()
 	if err != nil {
 		return errors.Wrap(err, "discord, could not open session")
@@ -407,7 +408,7 @@ func (d *discordBot) OnTypingStart(s *discordgo.Session, m *discordgo.TypingStar
 }
 
 func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
-	err := d.RequestGuildMembers(d.guildID, "", 0)
+	err := d.RequestGuildMembers(d.guildID, "", 0, true)
 	if err != nil {
 		log.Warningln(errors.Wrap(err, "could not request guild members").Error())
 		return
