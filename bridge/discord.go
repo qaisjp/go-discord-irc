@@ -350,7 +350,7 @@ func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, f
 }
 
 func isStatusOnline(status discordgo.Status) bool {
-	return !(status == discordgo.StatusOffline || status == discordgo.StatusIdle)
+	return status != discordgo.StatusOffline
 }
 
 func (d *discordBot) sendUpdateUserChan(user DiscordUser) bool {
