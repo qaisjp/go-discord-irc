@@ -6,7 +6,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
@@ -60,7 +59,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 
 func (d *discordBot) Open() error {
 	var err error
-	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix)
+	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix, true)
 	if err != nil {
 		return errors.Wrap(err, "could not create transmitter")
 	}
@@ -75,10 +74,7 @@ func (d *discordBot) Open() error {
 }
 
 func (d *discordBot) Close() error {
-	return multierror.Append(
-		d.transmitter.Close(),
-		d.Session.Close(),
-	).ErrorOrNil()
+	return errors.Wrap(d.Session.Close(), "closing discord session")
 }
 
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
@@ -94,7 +90,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 	}
 
 	// Ignore messages sent from our webhooks
-	if d.transmitter.GetID() == m.Author.ID {
+	if d.transmitter.HasWebhook(m.Author.ID) {
 		return
 	}
 
@@ -384,12 +380,13 @@ func (d *discordBot) GetAvatar(guildID, username string) (_ string) {
 	// Matching members
 	var foundMember *discordgo.Member
 
-	// First check an exact match, aborting on multiple
+	// Try and find an exact case-sensitive match
 	for _, member := range guild.Members {
 		if (username != member.Nick) && (username != member.User.Username) {
 			continue
 		}
 
+		// If there are multiple matches, return an empty string
 		if foundMember == nil {
 			foundMember = member
 		} else {
@@ -404,6 +401,7 @@ func (d *discordBot) GetAvatar(guildID, username string) (_ string) {
 				continue
 			}
 
+			// If there are multiple matches, return an empty string
 			if foundMember == nil {
 				foundMember = member
 			} else {
@@ -412,9 +410,7 @@ func (d *discordBot) GetAvatar(guildID, username string) (_ string) {
 		}
 	}
 
-	// Do not provide an avatar if:
-	// - no matching user OR
-	// - multiple matching users
+	// Do not provide an avatar if there is no matching user
 	if foundMember == nil {
 		return
 	}

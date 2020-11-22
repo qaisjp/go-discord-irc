@@ -146,7 +146,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	if DevMode {
 		if len(m.ircConnections) > 4 && !strings.Contains(user.Username, "qais") {
 			connectionsIgnored++
-			fmt.Println("Not letting", user.Username, "connect. We have", len(m.ircConnections), "connections. Ignored", connectionsIgnored, "connections.")
+			// fmt.Println("Not letting", user.Username, "connect. We have", len(m.ircConnections), "connections. Ignored", connectionsIgnored, "connections.")
 			return
 		}
 	}

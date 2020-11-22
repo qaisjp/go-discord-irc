@@ -1,129 +1,149 @@
 // Package transmitter provides functionality for transmitting
-// arbitrary webhook messages on Discord.
+// arbitrary webhook messages to Discord.
 //
-// Existing webhooks are used for messages sent, and if necessary,
-// new webhooks are created to ensure messages in multiple popular channels
-// don't cause messages to be registered as new users.
+// The package provides the following functionality:
+// - Creating new webhooks, whenever necessary
+// - Loading webhooks that we have previously created
+// - Sending new messages
+// - Editing messages, via message ID
+// - Deleting messages, via message ID
+//
+// The package has been designed for matterbridge, but with other
+// Go bots in mind. The public API should be matterbridge-agnostic.
 package transmitter
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
-// A Transmitter represents a message manager instance for a single guild.
+// A Transmitter represents a message manager for a single guild.
 type Transmitter struct {
-	session *discordgo.Session
-	guild   string
-	prefix  string
+	session    *discordgo.Session
+	guild      string
+	prefix     string
+	autoCreate bool
 
-	webhook *discordgo.Webhook
+	// channelWebhooks maps from a channel ID to a webhook instance
+	channelWebhooks map[string]*discordgo.Webhook
 }
 
+// ErrWebhookNotFound is returned when a valid webhook for this channel/message combination does not exist
+var ErrWebhookNotFound = errors.New("webhook for this channel and message does not exist")
+
 // New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
-func New(session *discordgo.Session, guild string, prefix string) (*Transmitter, error) {
+func New(session *discordgo.Session, guild string, prefix string, autoCreate bool) (*Transmitter, error) {
+	channelWebhooks := make(map[string]*discordgo.Webhook)
+
 	// Get all existing webhooks
 	hooks, err := session.GuildWebhooks(guild)
 
 	// Check to make sure we have permissions
 	if err != nil {
 		restErr := err.(*discordgo.RESTError)
-		if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeMissingPermissions {
-			return nil, errors.Wrap(err, "the 'Manage Webhooks' permission is required")
-		}
 
-		return nil, errors.Wrap(err, "could not get webhooks")
+		if restErr.Message != nil && restErr.Message.Code == discordgo.ErrCodeMissingPermissions {
+			// Only propagate the error if we are in autoCreate mode
+			if autoCreate {
+				return nil, errors.Wrap(err, "the 'Manage Webhooks' permission is required")
+			}
+		} else {
+			return nil, errors.Wrap(err, "could not get webhooks")
+		}
 	}
 
-	// Delete existing webhooks with the same prefix
+	// Pick up existing webhooks with the same name, created by us
+	// This is still used when autoCreate is disabled
 	for _, wh := range hooks {
-		if strings.HasPrefix(wh.Name, prefix) {
-			if err := session.WebhookDelete(wh.ID); err != nil {
-				return nil, errors.Wrapf(err, "could not remove hook %s", wh.ID)
-			}
+		chosen := strings.HasPrefix(wh.Name, prefix)
+		if chosen {
+			channelWebhooks[wh.ChannelID] = wh
+			log.WithFields(log.Fields{
+				"id":      wh.ID,
+				"name":    wh.Name,
+				"channel": wh.ChannelID,
+			}).Println("Picking up webhook")
 		}
 	}
 
 	t := &Transmitter{
-		session: session,
-		guild:   guild,
-		prefix:  prefix,
+		session:    session,
+		guild:      guild,
+		prefix:     prefix,
+		autoCreate: autoCreate,
 
-		webhook: nil,
+		channelWebhooks: channelWebhooks,
 	}
 
 	return t, nil
 }
 
-// Close immediately stops all active webhook timers and deletes webhooks.
-func (t *Transmitter) Close() error {
-	var result error
-
-	// Delete all the webhooks
-	if wh := t.webhook; wh != nil {
-		err := t.session.WebhookDelete(wh.ID)
-		if err != nil {
-			result = multierror.Append(result, errors.Wrapf(err, "could not remove hook %s", wh.ID)).ErrorOrNil()
-		}
-	}
-
-	return result
-}
-
-// Message transmits a message to the given channel with the given username, avatarURL, and content.
+// Message transmits a message to the given channel with the provided webhook data.
 //
 // Note that this function will wait until Discord responds with an answer.
-func (t *Transmitter) Message(channel string, username string, avatarURL string, content string) (err error) {
-	// Create a webhook if there is no free webhook
-	if t.webhook == nil {
-		err = t.createWebhook(channel)
+func (t *Transmitter) Message(channelID string, params *discordgo.WebhookParams) (msg *discordgo.Message, err error) {
+	wh := t.getWebhook(channelID)
+
+	// If we don't have a webhook for this channel...
+	if wh == nil {
+		// Early exit, if we don't want to automatically create one
+		if !t.autoCreate {
+			return nil, ErrWebhookNotFound
+		}
+
+		// Try and create one
+		fmt.Printf("Creating a webhook for %s\n", channelID)
+		wh, err = t.createWebhook(channelID)
 		if err != nil {
-			return err // this error is already wrapped by us
+			return
 		}
 	}
 
-	params := discordgo.WebhookParams{
-		Username:  username,
-		AvatarURL: avatarURL,
-		Content:   content,
-	}
-
-	wh := t.webhook
-
-	_, err = t.session.WebhookEdit(wh.ID, "", "", channel)
+	msg, err = t.session.WebhookExecute(wh.ID, wh.Token, true, params)
 	if err != nil {
-		exists, checkErr := t.checkAndDeleteWebhook(channel)
-
-		// If there was error performing the check, compose the list
-		if checkErr != nil {
-			err = multierror.Append(err, checkErr).ErrorOrNil()
-		}
-
-		// If the webhook exists OR there was an error performing the check
-		// return the error to the caller
-		if exists || checkErr != nil {
-			return errors.Wrap(err, "could not edit existing webhook")
-		}
-
-		// Otherwise just try and send the message again
-		return t.Message(channel, username, avatarURL, content)
+		err = errors.Wrap(err, "could not execute existing webhook")
+		return nil, err
 	}
 
-	_, err = t.session.WebhookExecute(wh.ID, wh.Token, true, &params)
-	if err != nil {
-		return errors.Wrap(err, "could not execute existing webhook")
-	}
-
-	return nil
+	return msg, nil
 }
 
-func (t *Transmitter) GetID() string {
-	if t.webhook == nil {
-		return ""
+// Edit will edit a message in a channel, if possible.
+func (t *Transmitter) Edit(channelID string, messageID string, params *discordgo.WebhookParams) (err error) {
+	wh := t.getWebhook(channelID)
+
+	if wh == nil {
+		err = ErrWebhookNotFound
+		return
 	}
-	return t.webhook.ID
+
+	uri := discordgo.EndpointWebhookToken(wh.ID, wh.Token) + "/messages/" + messageID
+	_, err = t.session.RequestWithBucketID("PATCH", uri, params, discordgo.EndpointWebhookToken("", ""))
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// HasWebhook checks whether the transmitter is using a particular webhook.
+func (t *Transmitter) HasWebhook(id string) bool {
+	for _, wh := range t.channelWebhooks {
+		if wh.ID == id {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AddWebhook allows you to register a channel's webhook with the transmitter.
+func (t *Transmitter) AddWebhook(channelID string, webhook *discordgo.Webhook) (replaced bool) {
+	_, replaced = t.channelWebhooks[channelID]
+	t.channelWebhooks[channelID] = webhook
+	return
 }

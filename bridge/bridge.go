@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -404,11 +405,13 @@ func (b *Bridge) loop() {
 				}
 			} else {
 				go func() {
-					err := b.discord.transmitter.Message(
+					_, err := b.discord.transmitter.Message(
 						mapping.DiscordChannel,
-						username,
-						avatar,
-						content,
+						&discordgo.WebhookParams{
+							Username:  username,
+							AvatarURL: avatar,
+							Content:   content,
+						},
 					)
 
 					if err != nil {
