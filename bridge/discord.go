@@ -329,14 +329,19 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, forceOnline bool) {
 	// If they are offline, just deliver a mostly empty struct with the ID and online state
 	if !forceOnline && !isStatusOnline(status) {
-		log.WithField("id", uid).Debugln("PRESENCE", status, "(handlePresenceUpdate - Online: false)")
+		if d.bridge.Config.DebugPresence {
+			log.WithField("id", uid).Debugln("PRESENCE", status, "(handlePresenceUpdate - Online: false)")
+		}
 		d.sendUpdateUserChan(DiscordUser{
 			ID:     uid,
 			Online: false,
 		})
 		return
 	}
-	log.WithField("id", uid).Debugln("PRESENCE " + status + "(handlePresenceUpdate)")
+
+	if d.bridge.Config.DebugPresence {
+		log.WithField("id", uid).Debugln("PRESENCE", status, "(handlePresenceUpdate)")
+	}
 
 	// Otherwise get their GuildMember object...
 	user, err := d.State.Member(d.guildID, uid)

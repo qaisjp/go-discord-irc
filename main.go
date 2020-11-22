@@ -27,6 +27,7 @@ func main() {
 
 	// Secret devmode
 	devMode := flag.Bool("dev", false, "")
+	debugPresence := flag.Bool("debug-presence", false, "Include presence in debug output")
 
 	flag.Parse()
 	bridge.DevMode = *devMode
@@ -122,7 +123,6 @@ func main() {
 		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
-		Debug:              *debugMode,
 		NoTLS:              *notls,
 		InsecureSkipVerify: *insecure,
 		Suffix:             suffix,
@@ -133,6 +133,9 @@ func main() {
 		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
 		ShowJoinQuit:       showJoinQuit,
 		MaxNickLength:      maxNickLength,
+
+		Debug:         *debugMode,
+		DebugPresence: *debugPresence,
 	})
 
 	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)
