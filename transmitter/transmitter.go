@@ -14,7 +14,6 @@ package transmitter
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
@@ -25,7 +24,7 @@ import (
 type Transmitter struct {
 	session    *discordgo.Session
 	guild      string
-	prefix     string
+	title      string
 	autoCreate bool
 
 	// channelWebhooks maps from a channel ID to a webhook instance
@@ -35,8 +34,8 @@ type Transmitter struct {
 // ErrWebhookNotFound is returned when a valid webhook for this channel/message combination does not exist
 var ErrWebhookNotFound = errors.New("webhook for this channel and message does not exist")
 
-// New returns a new Transmitter given a Discord session, guild ID, and webhook prefix.
-func New(session *discordgo.Session, guild string, prefix string, autoCreate bool) (*Transmitter, error) {
+// New returns a new Transmitter given a Discord session, guild ID, and title.
+func New(session *discordgo.Session, guild string, title string, autoCreate bool) (*Transmitter, error) {
 	channelWebhooks := make(map[string]*discordgo.Webhook)
 
 	// Get all existing webhooks
@@ -56,10 +55,23 @@ func New(session *discordgo.Session, guild string, prefix string, autoCreate boo
 		}
 	}
 
+	// Get own user ID from state, and fallback on API request
+	var botID string
+	if user := session.State.User; user != nil {
+		botID = user.ID
+	} else {
+		user, err := session.User("@me")
+		if err != nil {
+			return nil, errors.Wrap(err, "could not get current user")
+		}
+		botID = user.ID
+	}
+
 	// Pick up existing webhooks with the same name, created by us
 	// This is still used when autoCreate is disabled
 	for _, wh := range hooks {
-		chosen := strings.HasPrefix(wh.Name, prefix)
+		// If there are multiple webhooks, it will just take
+		chosen := wh.ApplicationID == botID
 		if chosen {
 			channelWebhooks[wh.ChannelID] = wh
 			log.WithFields(log.Fields{
@@ -73,7 +85,7 @@ func New(session *discordgo.Session, guild string, prefix string, autoCreate boo
 	t := &Transmitter{
 		session:    session,
 		guild:      guild,
-		prefix:     prefix,
+		title:      title,
 		autoCreate: autoCreate,
 
 		channelWebhooks: channelWebhooks,
