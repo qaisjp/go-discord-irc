@@ -140,6 +140,8 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 }
 
 func (i *ircListener) DoesUserExist(user string) bool {
+	i.Lock()
+	defer i.Unlock()
 	for _, channel := range i.Channels {
 		_, ok := channel.Users[user]
 		if ok {
