@@ -369,7 +369,7 @@ func (b *Bridge) loop() {
 
 			// System messages have no username
 			if username != "" {
-				avatar := b.discord.GetAvatar(b.Config.GuildID, msg.Username)
+				avatar = b.discord.GetAvatar(b.Config.GuildID, msg.Username)
 				if avatar == "" {
 					// If we don't have a Discord avatar, generate an adorable avatar
 					avatar = "https://avatars.dicebear.com/api/gridy/" + msg.Username + ".svg"
