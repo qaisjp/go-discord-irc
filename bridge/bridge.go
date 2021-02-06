@@ -3,6 +3,7 @@ package bridge
 import (
 	"crypto/tls"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -77,6 +78,8 @@ type Bridge struct {
 	discordMessageEventsChan chan *DiscordMessage
 	updateUserChan           chan DiscordUser
 	removeUserChan           chan string // user id
+
+	emoji map[string]*discordgo.Emoji
 }
 
 // Close the Bridge
@@ -227,6 +230,8 @@ func New(conf *Config) (*Bridge, error) {
 		discordMessageEventsChan: make(chan *DiscordMessage),
 		updateUserChan:           make(chan DiscordUser),
 		removeUserChan:           make(chan string),
+
+		emoji: make(map[string]*discordgo.Emoji),
 	}
 
 	if err := dib.load(conf); err != nil {
@@ -353,6 +358,8 @@ func (b *Bridge) GetMappingByDiscord(channel string) (Mapping, bool) {
 	return Mapping{}, false
 }
 
+var emojiRegex = regexp.MustCompile("(:[a-zA-Z_-]+:)")
+
 func (b *Bridge) loop() {
 	for {
 		select {
@@ -390,6 +397,21 @@ func (b *Bridge) loop() {
 			if content == "" {
 				content = "\u200B"
 			}
+
+			// Convert any emoji ye?
+			content = emojiRegex.ReplaceAllStringFunc(content, func(emoji string) string {
+				e, ok := b.emoji[strings.ToLower(emoji[1:len(emoji)-1])]
+				if !ok {
+					return emoji
+				}
+
+				emoji = ":" + e.Name + ":" + e.ID
+				if e.Animated {
+					emoji = "a" + emoji
+				}
+
+				return "<" + emoji + ">"
+			})
 
 			// Replace everyone and here - https://git.io/Je1yi
 			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")

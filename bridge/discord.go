@@ -43,6 +43,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 	discord.AddHandler(discord.OnReady)
 	discord.AddHandler(discord.onMessageCreate)
 	discord.AddHandler(discord.onMessageUpdate)
+	discord.AddHandler(discord.onGuildEmojiUpdate)
 
 	if !bridge.Config.SimpleMode {
 		discord.AddHandler(discord.onMemberListChunk)

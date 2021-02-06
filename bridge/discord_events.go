@@ -1,6 +1,8 @@
 package bridge
 
 import (
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -67,6 +69,22 @@ func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 	if err != nil {
 		log.Warningln(errors.Wrap(err, "could not request guild members").Error())
 		return
+	}
+
+	emoji, err := d.GuildEmojis(d.guildID)
+	if err == nil {
+		d.setGuildEmoji(d.guildID, emoji)
+	}
+}
+
+func (d *discordBot) onGuildEmojiUpdate(s *discordgo.Session, m *discordgo.GuildEmojisUpdate) {
+	d.setGuildEmoji(m.GuildID, m.Emojis)
+}
+
+func (d *discordBot) setGuildEmoji(guild string, emoji []*discordgo.Emoji) {
+	d.bridge.emoji = make(map[string]*discordgo.Emoji)
+	for _, e := range emoji {
+		d.bridge.emoji[strings.ToLower(e.Name)] = e
 	}
 }
 
