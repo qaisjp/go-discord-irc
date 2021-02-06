@@ -133,7 +133,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		content = "[edit] " + content
 	}
 
-	if m.MessageReference != nil {
+	if m.MessageReference != nil && m.MessageReference.ChannelID == m.ChannelID {
 		content = "[reply] " + content
 	}
 
