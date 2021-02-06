@@ -129,7 +129,11 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			content = "/me " + content
 		}
 
-		content = "[edit]: " + content
+		content = "[edit] " + content
+	}
+
+	if m.MessageReference != nil {
+		content = "[reply] " + content
 	}
 
 	pmTarget := ""
