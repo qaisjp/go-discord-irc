@@ -9,7 +9,7 @@ import (
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/transmitter"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )

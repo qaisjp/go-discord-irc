@@ -3,7 +3,7 @@ package transmitter
 import (
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
 )
 

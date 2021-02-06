@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/gobwas/glob"
+	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -30,7 +30,7 @@ type Config struct {
 	PuppetUsername   string // Username to connect to IRC with
 	IRCIgnores       []glob.Glob
 	ConnectionLimit  int // number of IRC connections we can spawn
-	
+
 	IRCPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server

@@ -3,10 +3,9 @@ module github.com/qaisjp/go-discord-irc
 go 1.12
 
 require (
-	github.com/bwmarrin/discordgo v0.22.1-0.20201122145021-31f70d439498
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gobwas/glob v0.2.3
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/matterbridge/discordgo v0.23.2-0.20210201201054-fb39a175b4f7
 	github.com/mozillazg/go-unidecode v0.1.1
 	github.com/pkg/errors v0.8.1
 	github.com/qaisjp/go-ircevent v0.0.0-20180911155239-e71f5fec2a8d
