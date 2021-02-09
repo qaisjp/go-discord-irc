@@ -138,12 +138,12 @@ func main() {
 		DebugPresence: *debugPresence,
 	})
 
-	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)
-
 	if err != nil {
 		log.WithField("error", err).Fatalln("Go-Discord-IRC failed to initialise.")
 		return
 	}
+
+	log.Infoln("Cooldown duration for IRC puppets is", dib.Config.CooldownDuration)
 
 	// Create new signal receiver
 	sc := make(chan os.Signal, 1)
