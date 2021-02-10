@@ -35,7 +35,7 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 
 	// execute perform second
 	for _, com := range i.manager.bridge.Config.IRCGlobalPerform {
-		i.innerCon.SendRawf(com)
+		i.innerCon.SendRaw(com)
 	}
 
 	i.JoinChannels()
