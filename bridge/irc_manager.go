@@ -385,6 +385,22 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	}
 }
 
+func (m *IRCManager) formatDiscordMessage(msgFormat string, e *irc.Event, content string, target string) string {
+	msg := ""
+	if format, ok := m.bridge.Config.DiscordFormat[strings.ToLower(msgFormat)]; ok && format != "" {
+		msg = format
+		msg = strings.ReplaceAll(msg, "${NICK}", e.Nick)
+		msg = strings.ReplaceAll(msg, "${IDENT}", e.User)
+		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
+		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+		msg = strings.ReplaceAll(msg, "${TARGET}", target)
+	} // else {
+	//	 should we warn?
+	//}
+
+	return msg
+}
+
 // RequestChannels finds all the Discord channels this user belongs to,
 // and then find pairings in the global pairings list
 // Currently just returns all participating IRC channels

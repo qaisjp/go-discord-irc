@@ -80,16 +80,11 @@ func main() {
 		*insecure = viper.GetBool("insecure")
 	}
 	//
+	discordFormat := viper.GetStringMapString("discord_format")
+	discordFormat = setupDiscordFormat(discordFormat)
+	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
-	//
-	viper.SetDefault("discord_format", map[string]string{
-		"JOIN": "_${NICK} joined (${IDENT}@${HOST})_",
-		"PART": "_${NICK} left (${IDENT}@${HOST}) - ${CONTENT}_",
-		"QUIT": "_${NICK} quit (${IDENT}@${HOST}) - Quit: ${CONTENT}_",
-		"KICK": "_${TARGET} was kicked by ${NICK} - ${CONTENT}_",
-	})
-	discordFormat := viper.GetStringMapString("discord_format")
 	//
 	viper.SetDefault("irc_format", "<${USER}#${DISCRIMINATOR}> ${CONTENT}")
 	ircFormat := viper.GetString("irc_format")
@@ -197,6 +192,10 @@ func main() {
 			SetLogDebug(debug)
 		}
 
+		discordFormat := viper.GetStringMapString("discord_format")
+		dib.Config.DiscordFormat = setupDiscordFormat(discordFormat)
+		dib.Config.IRCFormat = viper.GetString("irc_format")
+
 		chans := viper.GetStringMapString("channel_mappings")
 		equalChans := reflect.DeepEqual(chans, channelMappings)
 		if !equalChans {
@@ -220,6 +219,25 @@ func main() {
 
 	// Cleanly close down the bridge.
 	dib.Close()
+}
+
+func setupDiscordFormat(discordFormat map[string]string) map[string]string {
+	// lowercase to match that YAML lowercases it
+	discordFormatDefaults := map[string]string{
+		"join": "_${NICK} joined (${IDENT}@${HOST})_",
+		"part": "_${NICK} left (${IDENT}@${HOST}) - ${CONTENT}_",
+		"quit": "_${NICK} quit (${IDENT}@${HOST}) - Quit: ${CONTENT}_",
+		"kick": "_${TARGET} was kicked by ${NICK} - ${CONTENT}_",
+		"nick": "_${NICK} changed nick to ${CONTENT}_",
+	}
+
+	for ev, format := range discordFormatDefaults {
+		if df, ok := discordFormat[ev]; !ok || df == "" {
+			discordFormat[ev] = format
+		}
+	}
+
+	return discordFormat
 }
 
 func SetLogDebug(debug bool) {

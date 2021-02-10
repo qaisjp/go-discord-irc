@@ -13,11 +13,12 @@ type ircListener struct {
 	bridge *Bridge
 
 	joinQuitCallbacks map[string]int
+	relayNickTrackID  int
 }
 
 func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	listener := &ircListener{irccon, dib, nil}
+	listener := &ircListener{irccon, dib, nil, 0}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
 	listener.SetDebugMode(dib.Config.Debug)
@@ -39,6 +40,8 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 		listener.JoinChannels()
 	})
 
+	listener.AddCallback("NICK", listener.nickTrackNick)
+
 	// Note that this might override SetupNickTrack!
 	listener.OnJoinQuitSettingChange()
 
@@ -54,6 +57,45 @@ func (i *ircListener) nickTrackNick(event *irc.Event) {
 	}
 }
 
+func userOnChannelFix(user string, channel irc.Channel) bool {
+	if _, ok := channel.Users[user]; ok {
+		return true
+	}
+
+	// work around nicks being prefixed with mode characters for some reason
+	for _, c := range "!$~&@%+" {
+		if _, ok := channel.Users[string(c)+user]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
+	newNick := event.Message()
+
+	msg := IRCMessage{
+		Username: "",
+		Message:  i.bridge.ircManager.formatDiscordMessage(event.Code, event, newNick, ""),
+	}
+
+	for _, m := range i.bridge.mappings {
+		channel := m.IRCChannel
+		channelObj, ok := i.Connection.Channels[channel]
+		if !ok {
+			continue
+		}
+
+		if !userOnChannelFix(newNick, channelObj) {
+			continue
+		}
+
+		msg.IRCChannel = channel
+		i.bridge.discordMessagesChan <- msg
+	}
+}
+
 // From irc_nicktrack.go.
 func (i *ircListener) nickTrackQuit(e *irc.Event) {
 	for k := range i.Connection.Channels {
@@ -64,8 +106,11 @@ func (i *ircListener) nickTrackQuit(e *irc.Event) {
 func (i *ircListener) OnJoinQuitSettingChange() {
 	// Clear Nicktrack QUIT callback as it races with this
 	i.ClearCallback("QUIT")
-	i.ClearCallback("NICK")
-	i.AddCallback("NICK", i.nickTrackNick)
+
+	if i.relayNickTrackID != 0 {
+		i.RemoveCallback("NICK", i.relayNickTrackID)
+		i.relayNickTrackID = 0
+	}
 
 	// If remove callbacks...
 	if !i.bridge.Config.ShowJoinQuit {
@@ -78,6 +123,8 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 		return
 	}
 
+	i.relayNickTrackID = i.AddCallback("NICK", i.OnNickRelayToDiscord)
+
 	callbacks := []string{"JOIN", "PART", "QUIT", "KICK"}
 	cbs := make(map[string]int, len(callbacks))
 	for _, cb := range callbacks {
@@ -85,22 +132,6 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 	}
 
 	i.joinQuitCallbacks = cbs
-}
-
-func (i *ircListener) formatDiscordMessage(fmt string, e *irc.Event, content string, target string) string {
-	msg := ""
-	if format, ok := i.bridge.Config.DiscordFormat[fmt]; ok {
-		msg = format
-		msg = strings.ReplaceAll(msg, "${NICK}", e.Nick)
-		msg = strings.ReplaceAll(msg, "${IDENT}", e.User)
-		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
-		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
-		msg = strings.ReplaceAll(msg, "${TARGET}", target)
-	} else {
-		// should we warn?
-	}
-
-	return msg
 }
 
 func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
@@ -114,24 +145,25 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 	message := ""
 	content := ""
 	target := ""
+	manager := i.bridge.ircManager
 
 	switch event.Code {
 	case "JOIN":
-		message = i.formatDiscordMessage(event.Code, event, "", "")
+		message = manager.formatDiscordMessage(event.Code, event, "", "")
 	case "PART":
 		if len(event.Arguments) > 1 {
 			content = event.Arguments[1]
 		}
-		message = i.formatDiscordMessage(event.Code, event, content, "")
+		message = manager.formatDiscordMessage(event.Code, event, content, "")
 	case "QUIT":
 		content := event.Nick
 		if len(event.Arguments) == 1 {
 			content = event.Arguments[0]
 		}
-		message = i.formatDiscordMessage(event.Code, event, content, "")
+		message = manager.formatDiscordMessage(event.Code, event, content, "")
 	case "KICK":
 		target, content = event.Arguments[1], event.Arguments[2]
-		message = i.formatDiscordMessage(event.Code, event, content, target)
+		message = manager.formatDiscordMessage(event.Code, event, content, target)
 	}
 
 	msg := IRCMessage{
