@@ -65,7 +65,7 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 	// Clear Nicktrack QUIT callback as it races with this
 	i.ClearCallback("QUIT")
 	i.ClearCallback("NICK")
-	i.AddCallback("NICK", i.nickTrackQuit)
+	i.AddCallback("NICK", i.nickTrackNick)
 
 	// If remove callbacks...
 	if !i.bridge.Config.ShowJoinQuit {
