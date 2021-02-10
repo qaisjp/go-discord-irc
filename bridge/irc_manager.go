@@ -19,7 +19,7 @@ var DevMode = false
 // IRCManager should only be used from one thread.
 type IRCManager struct {
 	ircConnections map[string]*ircConnection
-	discordNicks   map[string]*ircConnection
+	puppetNicks    map[string]*ircConnection
 
 	bridge *Bridge
 }
@@ -28,7 +28,7 @@ type IRCManager struct {
 func newIRCManager(bridge *Bridge) *IRCManager {
 	return &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
-		discordNicks:   make(map[string]*ircConnection),
+		puppetNicks:    make(map[string]*ircConnection),
 		bridge:         bridge,
 	}
 }
