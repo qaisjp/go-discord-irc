@@ -68,6 +68,16 @@ func main() {
 	guildID := viper.GetString("guild_id")                          // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
+
+	ircNickModes := struct {
+		Add string `mapstructure:"add"`
+		Del string `mapstructure:"del"`
+	}{} // Other modes to set on the IRC connection @OnWelcome
+	err = viper.UnmarshalKey("irc_nick_modes", &ircNickModes)
+	if err != nil {
+		log.Println("Failed to unmarshall irc_nick_modes.")
+	}
+
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -122,6 +132,7 @@ func main() {
 		DiscordBotToken:    discordBotToken,
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
+		IRCNickModes:       ircNickModes,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
 		PuppetUsername:     puppetUsername,

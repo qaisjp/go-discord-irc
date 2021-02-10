@@ -31,8 +31,18 @@ type ircConnection struct {
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
-	i.JoinChannels()
+	// set modes first
 	i.innerCon.SendRawf("MODE %s +D", i.innerCon.GetNick())
+
+	if i.manager.bridge.Config.IRCNickModes.Add != "" {
+		i.innerCon.SendRawf("MODE %s +%s", i.innerCon.GetNick(), i.manager.bridge.Config.IRCNickModes.Add)
+	}
+
+	if i.manager.bridge.Config.IRCNickModes.Del != "" {
+		i.innerCon.SendRawf("MODE %s -%s", i.innerCon.GetNick(), i.manager.bridge.Config.IRCNickModes.Del)
+	}
+
+	i.JoinChannels()
 
 	go func(i *ircConnection) {
 		for m := range i.messages {

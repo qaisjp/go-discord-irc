@@ -21,9 +21,13 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer        string
-	IRCServerPass    string
-	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
+	IRCServer       string
+	IRCServerPass   string
+	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
+	IRCNickModes    struct {
+		Add string `mapstructure:"add"`
+		Del string `mapstructure:"del"`
+	} // Modes to set on each IRC connection @OnWelcome
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
