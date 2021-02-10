@@ -12,6 +12,10 @@ channel_mappings:
   "#bottest chanKey": 316038111811600387
   "#bottest2": 318327329044561920
 
+# Note the ID is not correct length and we're pretending that this is MEE6's ID (it's not)
+# ignored_discord_user_ids:
+#  - 10101010101010101: true
+
 suffix: "_d2"
 separator: "_"
 irc_listener_name: "_d2"

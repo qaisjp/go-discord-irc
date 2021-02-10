@@ -21,12 +21,13 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer        string
-	IRCServerPass    string
-	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
-	WebIRCPass       string
-	NickServIdentify string // string: "[account] password"
-	PuppetUsername   string // Username to connect to IRC with
+	IRCServer         string
+	IRCServerPass     string
+	IRCListenerName   string              // i.e, "DiscordBot", required to listen for messages in all cases
+	IRCIgnoresDiscord map[string]struct{} // Ignore Discord nicks on IRC side of the relay
+	WebIRCPass        string
+	NickServIdentify  string // string: "[account] password"
+	PuppetUsername    string // Username to connect to IRC with
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool

@@ -61,13 +61,14 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discordBotToken := viper.GetString("discord_token")             // Discord Bot User Token
-	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
-	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
-	ircPassword := viper.GetString("irc_pass")                      // Optional password for connecting to the IRC server
-	guildID := viper.GetString("guild_id")                          // Guild to use
-	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
+	discordBotToken := viper.GetString("discord_token")                   // Discord Bot User Token
+	channelMappings := viper.GetStringMapString("channel_mappings")       // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
+	ircServer := viper.GetString("irc_server")                            // Server address to use, example `irc.freenode.net:7000`.
+	ircPassword := viper.GetString("irc_pass")                            // Optional password for connecting to the IRC server
+	ircIgnoresDiscord := viper.GetStringSlice("ignored_discord_user_ids") // Ignore these Discord users on IRC
+	guildID := viper.GetString("guild_id")                                // Guild to use
+	webIRCPass := viper.GetString("webirc_pass")                          // Password for WEBIRC
+	identify := viper.GetString("nickserv_identify")                      // NickServ IDENTIFY for Listener
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -117,6 +118,12 @@ func main() {
 
 	SetLogDebug(*debugMode)
 
+	IRCIgnoresDiscord := make(map[string]struct{})
+
+	for _, nick := range ircIgnoresDiscord {
+		IRCIgnoresDiscord[nick] = struct{}{}
+	}
+
 	dib, err := bridge.New(&bridge.Config{
 		AvatarURL:          avatarURL,
 		DiscordBotToken:    discordBotToken,
@@ -124,6 +131,7 @@ func main() {
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
+		IRCIgnoresDiscord:  IRCIgnoresDiscord,
 		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
@@ -183,6 +191,15 @@ func main() {
 			dib.SetDebugMode(debug)
 			SetLogDebug(debug)
 		}
+
+		ircIgnoresDiscord := viper.GetStringSlice("ignored_discord_user_ids")
+		IRCIgnoresDiscord := make(map[string]struct{})
+
+		for _, nick := range ircIgnoresDiscord {
+			IRCIgnoresDiscord[nick] = struct{}{}
+		}
+
+		dib.Config.IRCIgnoresDiscord = IRCIgnoresDiscord
 
 		chans := viper.GetStringMapString("channel_mappings")
 		equalChans := reflect.DeepEqual(chans, channelMappings)
