@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"strings"
 
 	ircf "github.com/qaisjp/go-discord-irc/irc/format"
@@ -214,10 +215,18 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 	msg = ircf.BlocksToMarkdown(ircf.Parse(ircf.StripColor(msg)))
 
 	go func(e *irc.Event) {
-		i.bridge.discordMessagesChan <- IRCMessage{
-			IRCChannel: e.Arguments[0],
-			Username:   e.Nick,
-			Message:    msg,
+		if !i.bridge.Config.DiscordSingleUser {
+			i.bridge.discordMessagesChan <- IRCMessage{
+				IRCChannel: e.Arguments[0],
+				Username:   e.Nick,
+				Message:    msg,
+			}
+		} else {
+			i.bridge.discordMessagesChan <- IRCMessage{
+				IRCChannel: e.Arguments[0],
+				Username:   "",
+				Message:    fmt.Sprintf("**%s** %s", e.Nick, msg),
+			}
 		}
 	}(e)
 }

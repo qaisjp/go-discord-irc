@@ -61,6 +61,7 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
+	discordSingleUser := viper.GetBool("discord_single_user")
 	discordBotToken := viper.GetString("discord_token")             // Discord Bot User Token
 	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
 	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
@@ -116,6 +117,7 @@ func main() {
 
 	dib, err := bridge.New(&bridge.Config{
 		DiscordBotToken:    discordBotToken,
+		DiscordSingleUser:  discordSingleUser,
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
@@ -177,6 +179,7 @@ func main() {
 			SetLogDebug(debug)
 		}
 
+		dib.Config.DiscordSingleUser = viper.GetBool("discord_single_user")
 		chans := viper.GetStringMapString("channel_mappings")
 		equalChans := reflect.DeepEqual(chans, channelMappings)
 		if !equalChans {

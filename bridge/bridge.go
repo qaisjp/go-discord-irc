@@ -16,6 +16,7 @@ import (
 // Config to be passed to New
 type Config struct {
 	DiscordBotToken, GuildID string
+	DiscordSingleUser        bool // Relay all messages via the bot instead of fake usernames if true
 
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
