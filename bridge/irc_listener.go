@@ -177,7 +177,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 
 	// Execute global perform commands
 	for _, com := range i.bridge.Config.IRCGlobalPerform {
-		i.SendRawf(com)
+		i.SendRaw(com)
 	}
 
 	// Join all channels
