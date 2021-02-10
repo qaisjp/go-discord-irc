@@ -28,3 +28,6 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
+# global_perform:
+#   - PART #forced-to-join-test-channel
+#   - PRIVMSG Nick :msg

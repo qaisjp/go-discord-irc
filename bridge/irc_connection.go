@@ -31,8 +31,14 @@ type ircConnection struct {
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
-	i.JoinChannels()
 	i.innerCon.SendRawf("MODE %s +D", i.innerCon.GetNick())
+
+	// execute perform second
+	for _, com := range i.manager.bridge.Config.IRCGlobalPerform {
+		i.innerCon.SendRawf(com)
+	}
+
+	i.JoinChannels()
 
 	go func(i *ircConnection) {
 		for m := range i.messages {

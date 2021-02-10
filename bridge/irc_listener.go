@@ -175,6 +175,11 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 		i.Privmsgf("nickserv", "identify %s", identify)
 	}
 
+	//execute peform
+	for _, com := range i.bridge.Config.IRCGlobalPerform {
+		i.SendRawf(com)
+	}
+
 	// Join all channels
 	i.JoinChannels()
 }

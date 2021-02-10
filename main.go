@@ -65,6 +65,7 @@ func main() {
 	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
 	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
 	ircPassword := viper.GetString("irc_pass")                      // Optional password for connecting to the IRC server
+	ircGlobalPerform := viper.GetStringSlice("global_perform")      // IRC Messages to send @OnWelcome
 	guildID := viper.GetString("guild_id")                          // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
@@ -124,6 +125,7 @@ func main() {
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
+		IRCGlobalPerform:   ircGlobalPerform,
 		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,

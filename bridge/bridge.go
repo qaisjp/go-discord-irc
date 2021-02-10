@@ -24,6 +24,7 @@ type Config struct {
 	IRCServer        string
 	IRCServerPass    string
 	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
+	IRCGlobalPerform []string
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
