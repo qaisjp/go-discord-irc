@@ -54,6 +54,46 @@ func (i *ircListener) nickTrackNick(event *irc.Event) {
 	}
 }
 
+func userOnChannelFix(user string, channel irc.Channel) bool {
+	if _, ok := channel.Users[user]; ok {
+		return true
+	}
+
+	// work around nicks being prefixed with mode characters for some reason
+	for _, c := range "!$~&@%+" {
+		if _, ok := channel.Users[string(c)+user]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
+	oldNick := event.Nick
+	newNick := event.Message()
+
+	msg := IRCMessage{
+		Username: "",
+		Message:  fmt.Sprintf("_%s changed nick to %s_", oldNick, newNick),
+	}
+
+	for _, m := range i.bridge.mappings {
+		channel := m.IRCChannel
+		channelObj, ok := i.Connection.Channels[channel]
+		if !ok {
+			continue
+		}
+
+		if !userOnChannelFix(oldNick, channelObj) {
+			continue
+		}
+
+		msg.IRCChannel = channel
+		i.bridge.discordMessagesChan <- msg
+	}
+}
+
 // From irc_nicktrack.go.
 func (i *ircListener) nickTrackQuit(e *irc.Event) {
 	for k := range i.Connection.Channels {
@@ -77,6 +117,8 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 		i.AddCallback("QUIT", i.nickTrackQuit)
 		return
 	}
+
+	i.AddCallback("NICK", i.OnNickRelayToDiscord)
 
 	callbacks := []string{"JOIN", "PART", "QUIT", "KICK"}
 	cbs := make(map[string]int, len(callbacks))
