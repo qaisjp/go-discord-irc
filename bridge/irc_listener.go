@@ -175,7 +175,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 		i.Privmsgf("nickserv", "identify %s", identify)
 	}
 
-	//execute peform
+	// Execute global perform commands
 	for _, com := range i.bridge.Config.IRCGlobalPerform {
 		i.SendRawf(com)
 	}
