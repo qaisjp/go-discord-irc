@@ -89,7 +89,7 @@ The config file is a yaml formatted file with the following fields:
 | `show_joinquit`            | No               | false                                      | yes                          | displays JOIN, PART, QUIT, KICK on discord                                                                                                                               |
 | `max_nick_length`          | No               | 30                                         | yes                          | Maximum allowed nick length                                                                                                                                              |
 
-** `irc_ignores_discord` doesn't require a restart but the users when un-ignored will relay as if in simple mode **
+**Note:** `ignored_discord_user_ids` doesn't require a restart but unignored users will not reconnect automatically if they are online — their messages will just be relayed by the irc listener bot, as if in simple mode.
 
 **The filename.yaml file is continuously read from and many changes will
 automatically update on the bridge. This means you can add or remove channels
