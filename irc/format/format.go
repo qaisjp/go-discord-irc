@@ -12,15 +12,15 @@ import (
 
 // Chars includes all the codes defined in https://modern.ircdocs.horse/formatting.html
 const (
-	CharBold          rune = '\x02'
-	CharItalics            = '\x1D'
-	CharUnderline          = '\x1F'
-	CharStrikethrough      = '\x1E'
-	CharMonospace          = '\x11'
-	CharColor              = '\x03'
-	CharHex                = '\x04'
-	CharReverseColor       = '\x16'
-	CharReset              = '\x0F'
+	CharBold          = '\x02'
+	CharItalics       = '\x1D'
+	CharUnderline     = '\x1F'
+	CharStrikethrough = '\x1E'
+	CharMonospace     = '\x11'
+	CharColor         = '\x03'
+	CharHex           = '\x04'
+	CharReverseColor  = '\x16'
+	CharReset         = '\x0F'
 )
 
 var colorRegex = regexp.MustCompile(`\x03(\d\d?)?(?:,(\d\d?))?`)

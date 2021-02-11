@@ -113,8 +113,6 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 			i.innerCon.Privmsg(e.Nick, "Commands: help, who")
 		} else if e.Message() == "who" {
 			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
-		} else {
-			// i.innerCon.Privmsg(e.Nick, "Private messaging Discord users is not supported, but I support commands! Type 'help'.")
 		}
 
 		d := i.manager.bridge.discord
