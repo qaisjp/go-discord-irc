@@ -45,6 +45,15 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	return listener
 }
 
+func (i *ircListener) nickTrackNick(event *irc.Event) {
+	oldNick := event.Nick
+	newNick := event.Message()
+	if con, ok := i.bridge.ircManager.puppetNicks[oldNick]; ok {
+		i.bridge.ircManager.puppetNicks[newNick] = con
+		delete(i.bridge.ircManager.puppetNicks, oldNick)
+	}
+}
+
 // From irc_nicktrack.go.
 func (i *ircListener) nickTrackQuit(e *irc.Event) {
 	for k := range i.Connection.Channels {
@@ -55,6 +64,8 @@ func (i *ircListener) nickTrackQuit(e *irc.Event) {
 func (i *ircListener) OnJoinQuitSettingChange() {
 	// Clear Nicktrack QUIT callback as it races with this
 	i.ClearCallback("QUIT")
+	i.ClearCallback("NICK")
+	i.AddCallback("NICK", i.nickTrackNick)
 
 	// If remove callbacks...
 	if !i.bridge.Config.ShowJoinQuit {
@@ -177,7 +188,10 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 }
 
 func (i *ircListener) isPuppetNick(nick string) bool {
-	return nick == i.bridge.Config.IRCListenerName || strings.HasSuffix(strings.TrimRight(nick, "_"), i.bridge.Config.Suffix)
+	if _, ok := i.bridge.ircManager.puppetNicks[nick]; ok {
+		return true
+	}
+	return false
 }
 
 func (i *ircListener) OnPrivateMessage(e *irc.Event) {
