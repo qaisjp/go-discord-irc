@@ -11,15 +11,15 @@ import (
 
 type ircListener struct {
 	*irc.Connection
-	bridge           *Bridge
-	relayNickTrackID int
+	bridge *Bridge
 
 	joinQuitCallbacks map[string]int
+	relayNickTrackID  int
 }
 
 func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	listener := &ircListener{irccon, dib, nil}
+	listener := &ircListener{irccon, dib, nil, 0}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
 	listener.SetDebugMode(dib.Config.Debug)
@@ -109,7 +109,8 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 	i.AddCallback("NICK", i.nickTrackNick)
 
 	if i.relayNickTrackID != 0 {
-		i.RemoveCallback("NICK", id)
+		i.RemoveCallback("NICK", i.relayNickTrackID)
+		i.relayNickTrackID = 0
 	}
 
 	// If remove callbacks...
