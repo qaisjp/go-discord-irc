@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -94,9 +95,20 @@ func main() {
 	//
 	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D"})
 	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
+	rawDiscordFormat := viper.GetStringMapString("discord_format")
+	var discordFormat map[string]string
+	if df, err := setupDiscordFormat(rawDiscordFormat); err == nil {
+		discordFormat = df
+	} else {
+		log.WithError(err).Fatal("discord_format setting is invalid")
+		return
+	}
 	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
+	//
+	viper.SetDefault("irc_format", "<${USER}#${DISCRIMINATOR}> ${CONTENT}")
+	ircFormat := viper.GetString("irc_format")
 	//
 	viper.SetDefault("irc_listener_name", "~d")
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
@@ -142,7 +154,9 @@ func main() {
 		AvatarURL:                  avatarURL,
 		Discriminator:              discriminator,
 		DiscordBotToken:            discordBotToken,
+		DiscordFormat:              discordFormat,
 		GuildID:                    guildID,
+		IRCFormat:                  ircFormat,
 		IRCListenerName:            ircUsername,
 		IRCServer:                  ircServer,
 		IRCServerPass:              ircPassword,
@@ -227,6 +241,14 @@ func main() {
 		}
 		dib.Config.DiscordIgnores = discordIgnores
 
+		rawDiscordFormat := viper.GetStringMapString("discord_format")
+		if discordFormat, err := setupDiscordFormat(rawDiscordFormat); err == nil {
+			dib.Config.DiscordFormat = discordFormat
+		} else {
+			log.WithError(err).Error("discord_format setting is invalid, this setting has not been updated")
+		}
+		dib.Config.IRCFormat = viper.GetString("irc_format")
+
 		chans := viper.GetStringMapString("channel_mappings")
 		equalChans := reflect.DeepEqual(chans, channelMappings)
 		if !equalChans {
@@ -280,6 +302,34 @@ func setupFilter(filters []string) []glob.Glob {
 	}
 
 	return matchers
+}
+
+func setupDiscordFormat(discordFormat map[string]string) (map[string]string, error) {
+	var err error
+	// lowercase to match that YAML lowercases it
+	discordFormatDefaults := map[string]string{
+		"pm":   "${SERVER},${NICK}!${IDENT}@${HOST} - ${NICK}@${DISCRIMINATOR}: ${CONTENT}",
+		"join": "_${NICK} joined (${IDENT}@${HOST})_",
+		"part": "_${NICK} left (${IDENT}@${HOST}) - ${CONTENT}_",
+		"quit": "_${NICK} quit (${IDENT}@${HOST}) - Quit: ${CONTENT}_",
+		"kick": "_${TARGET} was kicked by ${NICK} - ${CONTENT}_",
+		"nick": "_${NICK} changed nick to ${CONTENT}_",
+	}
+
+	for ev, format := range discordFormatDefaults {
+		if df, ok := discordFormat[ev]; !ok || df == "" {
+			discordFormat[ev] = format
+		}
+	}
+
+	for ev := range discordFormat {
+		if _, ok := discordFormatDefaults[ev]; !ok {
+			err = fmt.Errorf("Unknown format key %s", ev)
+			break
+		}
+	}
+
+	return discordFormat, err
 }
 
 func SetLogDebug(debug bool) {

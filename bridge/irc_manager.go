@@ -368,6 +368,18 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	return newNick
 }
 
+func (m *IRCManager) formatIRCMessage(message *DiscordMessage, content string) string {
+	msg := m.bridge.Config.IRCFormat
+	length := len(message.Author.Username)
+	msg = strings.ReplaceAll(msg, "${USER}", message.Author.Username[:1]+"\u200B"+message.Author.Username[1:length])
+	msg = strings.ReplaceAll(msg, "${DISCRIMINATOR}", message.Author.Discriminator)
+	msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+
+	// we don't do trimming and later checks here, IRC doesn't mind blank messages or at least doesn't complain
+	// as loudly as Discord
+	return msg
+}
+
 // SendMessage sends a broken down Discord Message to a particular IRC channel.
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	if m.ircIgnoredDiscord(msg.Author.ID) {
@@ -382,14 +394,8 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
-		length := len(msg.Author.Username)
 		for _, line := range strings.Split(content, "\n") {
-			m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
-				"<%s#%s> %s",
-				msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
-				msg.Author.Discriminator,
-				line,
-			))
+			m.bridge.ircListener.Privmsg(channel, m.formatIRCMessage(msg, line))
 		}
 		return
 	}
@@ -425,6 +431,22 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 			}()
 		}
 	}
+}
+
+func (m *IRCManager) formatDiscordMessage(msgFormat string, e *irc.Event, content string, target string) string {
+	msg := ""
+	if format, ok := m.bridge.Config.DiscordFormat[strings.ToLower(msgFormat)]; ok && format != "" {
+		msg = format
+		msg = strings.ReplaceAll(msg, "${NICK}", e.Nick)
+		msg = strings.ReplaceAll(msg, "${IDENT}", e.User)
+		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
+		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+		msg = strings.ReplaceAll(msg, "${TARGET}", target)
+		msg = strings.ReplaceAll(msg, "${SERVER}", e.Connection.Server)
+		msg = strings.ReplaceAll(msg, "${DISCRIMINATOR}", m.bridge.Config.Discriminator)
+	}
+
+	return strings.Trim(msg, " ")
 }
 
 // RequestChannels finds all the Discord channels this user belongs to,
