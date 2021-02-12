@@ -91,7 +91,7 @@ func (i *ircConnection) introducePM(nick string) {
 		i.pmNoticed = true
 		_, err := d.ChannelMessageSend(
 			i.pmDiscordChannel,
-			fmt.Sprintf("To reply type: %s@%s, message", nick, i.manager.bridge.Config.Discriminator))
+			fmt.Sprintf("To reply type: `%s@%s, your message here`", nick, i.manager.bridge.Config.Discriminator))
 		if err != nil {
 			log.Warnln("Could not send pmNotice", i.discord, err)
 			return
@@ -117,7 +117,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 
 		i.introducePM(e.Nick)
 
-		msg := fmt.Sprintf("%s,%s - %s@%s: %s", e.Connection.Server, e.Source, e.Nick, e.Message())
+		msg := i.manager.formatDiscordMessage("PM", e, e.Message(), "")
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
 		if err != nil {
 			log.Warnln("Could not send PM", i.discord, err)
