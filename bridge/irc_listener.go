@@ -11,7 +11,8 @@ import (
 
 type ircListener struct {
 	*irc.Connection
-	bridge *Bridge
+	bridge           *Bridge
+	relayNickTrackID int
 
 	joinQuitCallbacks map[string]int
 }
@@ -71,30 +72,28 @@ func userOnChannelFix(user string, channel irc.Channel) bool {
 }
 
 func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
-	go func(e *irc.Event) {
-		oldNick := event.Nick
-		newNick := event.Message()
+	oldNick := event.Nick
+	newNick := event.Message()
 
-		msg := IRCMessage{
-			Username: "",
-			Message:  fmt.Sprintf("_%s changed nick to %s_", oldNick, newNick),
+	msg := IRCMessage{
+		Username: "",
+		Message:  fmt.Sprintf("_%s changed nick to %s_", oldNick, newNick),
+	}
+
+	for _, m := range i.bridge.mappings {
+		channel := m.IRCChannel
+		channelObj, ok := i.Connection.Channels[channel]
+		if !ok {
+			continue
 		}
 
-		for _, m := range i.bridge.mappings {
-			channel := m.IRCChannel
-			channelObj, ok := i.Connection.Channels[channel]
-			if !ok {
-				continue
-			}
-
-			if !userOnChannelFix(oldNick, channelObj) {
-				continue
-			}
-
-			msg.IRCChannel = channel
-			i.bridge.discordMessagesChan <- msg
+		if !userOnChannelFix(oldNick, channelObj) {
+			continue
 		}
-	}(event)
+
+		msg.IRCChannel = channel
+		i.bridge.discordMessagesChan <- msg
+	}
 }
 
 // From irc_nicktrack.go.
@@ -107,8 +106,11 @@ func (i *ircListener) nickTrackQuit(e *irc.Event) {
 func (i *ircListener) OnJoinQuitSettingChange() {
 	// Clear Nicktrack QUIT callback as it races with this
 	i.ClearCallback("QUIT")
-	i.ClearCallback("NICK")
 	i.AddCallback("NICK", i.nickTrackNick)
+
+	if i.relayNickTrackID != 0 {
+		i.RemoveCallback("NICK", id)
+	}
 
 	// If remove callbacks...
 	if !i.bridge.Config.ShowJoinQuit {
@@ -121,7 +123,7 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 		return
 	}
 
-	i.AddCallback("NICK", i.OnNickRelayToDiscord)
+	i.relayNickTrackID = i.AddCallback("NICK", i.OnNickRelayToDiscord)
 
 	callbacks := []string{"JOIN", "PART", "QUIT", "KICK"}
 	cbs := make(map[string]int, len(callbacks))
