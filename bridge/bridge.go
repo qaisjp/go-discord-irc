@@ -434,7 +434,7 @@ func (b *Bridge) loop() {
 				}
 			} else {
 				go func() {
-					_, err := b.discord.transmitter.Message(
+					_, err := b.discord.transmitter.Send(
 						mapping.DiscordChannel,
 						&discordgo.WebhookParams{
 							Username:  username,

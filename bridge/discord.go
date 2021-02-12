@@ -6,11 +6,12 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/42wim/matterbridge/bridge/discord/transmitter"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
-	"github.com/qaisjp/go-discord-irc/transmitter"
 
 	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,14 +60,14 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 }
 
 func (d *discordBot) Open() error {
-	var err error
-	d.transmitter, err = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix, true)
-	if err != nil {
-		return errors.Wrap(err, "could not create transmitter")
+	d.transmitter = transmitter.New(d.Session, d.guildID, d.bridge.Config.WebhookPrefix, true)
+	d.transmitter.Log = logrus.NewEntry(logrus.StandardLogger())
+	if err := d.transmitter.RefreshGuildWebhooks(nil); err != nil {
+		return fmt.Errorf("failed to refresh guild webhooks: %w", err)
 	}
 
 	d.Session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
-	err = d.Session.Open()
+	err := d.Session.Open()
 	if err != nil {
 		return errors.Wrap(err, "discord, could not open session")
 	}
