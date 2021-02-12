@@ -141,11 +141,15 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 	pmTarget := ""
 	for _, channel := range d.State.PrivateChannels {
 		if channel.ID == m.ChannelID {
-			pmTarget, content = pmTargetFromContent(content)
+			pmTarget, content = pmTargetFromContent(content, d.bridge.Config.Discriminator)
 
 			// if the target could not be deduced. tell them this.
 			if pmTarget == "" {
-				_, _ = d.ChannelMessageSend(m.ChannelID, "Don't know who that is. Can't PM. Try 'name, message here'")
+				_, _ = d.ChannelMessageSend(
+					m.ChannelID,
+					fmt.Sprintf(
+						"Don't know who that is. Can't PM. Try 'name@%s, message here'",
+						d.bridge.Config.Discriminator))
 				return
 			}
 			break
@@ -442,7 +446,7 @@ func GetMemberNick(m *discordgo.Member) string {
 //
 // Returns empty string if the nick could not be deduced.
 // Also returns the content without the nick
-func pmTargetFromContent(content string) (nick, newContent string) {
+func pmTargetFromContent(content string, discriminator string) (nick, newContent string) {
 	// Pull out substrings
 	// "qais,come on, i need this!" gives []string{"qais", "come on, i need this!"}
 	subs := strings.SplitN(content, ",", 2)
@@ -453,6 +457,19 @@ func pmTargetFromContent(content string) (nick, newContent string) {
 
 	nick = subs[0]
 	newContent = strings.TrimPrefix(subs[1], " ")
+
+	nickParts := strings.Split(nick, "@")
+
+	// we were given an invalid nick if we can't split it into 2 parts
+	if len(nickParts) < 2 {
+		return "", ""
+	}
+
+	if nickParts[1] != discriminator {
+		return "", ""
+	}
+
+	nick = nickParts[0]
 
 	// check if name is a valid nick
 	for _, c := range []byte(nick) {
