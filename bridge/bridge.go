@@ -22,6 +22,7 @@ type Config struct {
 	ChannelMappings map[string]string
 
 	IRCServer        string
+	Discriminator    string
 	IRCServerPass    string
 	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
 	WebIRCPass       string

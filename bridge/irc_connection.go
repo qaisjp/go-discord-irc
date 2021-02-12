@@ -39,9 +39,6 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 			if m.IsAction {
 				i.innerCon.Action(m.IRCChannel, m.Message)
 			} else {
-				if !strings.HasPrefix(m.IRCChannel, "#") {
-					i.experimentalNotice(m.IRCChannel)
-				}
 				i.innerCon.Privmsg(m.IRCChannel, m.Message)
 			}
 		}
@@ -77,7 +74,7 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	go i.innerCon.Nick(i.nick)
 }
 
-func (i *ircConnection) experimentalNotice(nick string) {
+func (i *ircConnection) introducePM(nick string) {
 	d := i.manager.bridge.discord
 
 	if i.pmDiscordChannel == "" {
@@ -92,7 +89,9 @@ func (i *ircConnection) experimentalNotice(nick string) {
 
 	if !i.pmNoticed {
 		i.pmNoticed = true
-		_, err := d.ChannelMessageSend(i.pmDiscordChannel, "**Private messaging is still in dev. Proceed with caution.**")
+		_, err := d.ChannelMessageSend(
+			i.pmDiscordChannel,
+			fmt.Sprintf("To reply type: %s@%s, message", nick, i.manager.bridge.Config.Discriminator))
 		if err != nil {
 			log.Warnln("Could not send pmNotice", i.discord, err)
 			return
@@ -102,7 +101,6 @@ func (i *ircConnection) experimentalNotice(nick string) {
 	nick = strings.ToLower(nick)
 	if _, ok := i.pmNoticedSenders[nick]; !ok {
 		i.pmNoticedSenders[nick] = struct{}{}
-		i.innerCon.Privmsg(nick, "Private messaging is still in dev. Proceed with caution.")
 	}
 }
 
@@ -117,9 +115,9 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 
 		d := i.manager.bridge.discord
 
-		i.experimentalNotice(e.Nick)
+		i.introducePM(e.Nick)
 
-		msg := fmt.Sprintf("%s,%s: %s", e.Connection.Server, e.Source, e.Message())
+		msg := fmt.Sprintf("%s,%s - %s@%s: %s", e.Connection.Server, e.Source, e.Nick, e.Message())
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
 		if err != nil {
 			log.Warnln("Could not send PM", i.discord, err)

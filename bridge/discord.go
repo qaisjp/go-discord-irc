@@ -144,7 +144,11 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 
 			// if the target could not be deduced. tell them this.
 			if pmTarget == "" {
-				_, _ = d.ChannelMessageSend(m.ChannelID, "Don't know who that is. Can't PM. Try 'name, message here'")
+				_, _ = d.ChannelMessageSend(
+					m.ChannelID,
+					fmt.Sprintf(
+						"Don't know who that is. Can't PM. Try 'name@%s, message here'",
+						d.bridge.Config.Discriminator))
 				return
 			}
 			break
