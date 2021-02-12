@@ -87,6 +87,22 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 	i.joinQuitCallbacks = cbs
 }
 
+func (i *ircListener) formatDiscordMessage(fmt string, e *irc.Event, content string, target string) string {
+	msg := ""
+	if format, ok := i.bridge.Config.DiscordFormat[fmt]; ok {
+		msg = format
+		msg = strings.ReplaceAll(msg, "${NICK}", e.Nick)
+		msg = strings.ReplaceAll(msg, "${IDENT}", e.User)
+		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
+		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+		msg = strings.ReplaceAll(msg, "${TARGET}", target)
+	} else {
+		// should we warn?
+	}
+
+	return msg
+}
+
 func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 	// This checks if the source of the event was from a puppet.
 	// It won't work correctly for KICK, as the source is always the person that
@@ -95,29 +111,27 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 		return
 	}
 
-	who := event.Nick
-	message := event.Nick
-	id := " (" + event.User + "@" + event.Host + ") "
+	message := ""
+	content := ""
+	target := ""
 
 	switch event.Code {
 	case "JOIN":
-		message += " joined" + id
+		message = i.formatDiscordMessage(event.Code, event, "", "")
 	case "PART":
-		message += " left" + id
 		if len(event.Arguments) > 1 {
-			message += ": " + event.Arguments[1]
+			content = event.Arguments[1]
 		}
+		message = i.formatDiscordMessage(event.Code, event, content, "")
 	case "QUIT":
-		message += " quit" + id
-
-		reason := event.Nick
+		content := event.Nick
 		if len(event.Arguments) == 1 {
-			reason = event.Arguments[0]
+			content = event.Arguments[0]
 		}
-		message += "Quit: " + reason
+		message = i.formatDiscordMessage(event.Code, event, content, "")
 	case "KICK":
-		who = event.Arguments[1]
-		message = event.Arguments[1] + " was kicked by " + event.Nick + ": " + event.Arguments[2]
+		target, content = event.Arguments[1], event.Arguments[2]
+		message = i.formatDiscordMessage(event.Code, event, content, target)
 	}
 
 	msg := IRCMessage{
@@ -132,10 +146,10 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 			channel := m.IRCChannel
 			channelObj, ok := i.Connection.Channels[channel]
 			if !ok {
-				log.WithField("channel", channel).WithField("who", who).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
+				log.WithField("channel", channel).WithField("who", event.Nick).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
 				continue
 			}
-			if _, ok := channelObj.Users[who]; !ok {
+			if _, ok := channelObj.Users[event.Nick]; !ok {
 				continue
 			}
 			msg.IRCChannel = channel

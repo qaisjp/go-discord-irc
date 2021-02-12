@@ -323,6 +323,15 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	return newNick
 }
 
+func (m *IRCManager) formatIRCMessage(message *DiscordMessage, content string) string {
+	msg := m.bridge.Config.IRCFormat
+	length := len(message.Author.Username)
+	msg = strings.ReplaceAll(msg, "${USER}", message.Author.Username[:1]+"\u200B"+message.Author.Username[1:length])
+	msg = strings.ReplaceAll(msg, "${DISCRIMINATOR}", message.Author.Discriminator)
+	msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+	return msg
+}
+
 // SendMessage sends a broken down Discord Message to a particular IRC channel.
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	con, ok := m.ircConnections[msg.Author.ID]
@@ -333,14 +342,16 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
-		length := len(msg.Author.Username)
+		// length := len(msg.Author.Username)
 		for _, line := range strings.Split(content, "\n") {
-			m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
-				"<%s#%s> %s",
-				msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
-				msg.Author.Discriminator,
-				line,
-			))
+			// m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
+			// 	"<%s#%s> %s",
+			// 	msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
+			// 	msg.Author.Discriminator,
+			// 	line,
+			// ))
+
+			m.bridge.ircListener.Privmsg(channel, m.formatIRCMessage(msg, line))
 		}
 		return
 	}

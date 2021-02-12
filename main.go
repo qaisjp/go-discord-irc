@@ -83,6 +83,17 @@ func main() {
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
 	//
+	viper.SetDefault("discord_format", map[string]string{
+		"JOIN": "_${NICK} joined (${IDENT}@${HOST})_",
+		"PART": "_${NICK} left (${IDENT}@${HOST}) - ${CONTENT}_",
+		"QUIT": "_${NICK} quit (${IDENT}@${HOST}) - Quit: ${CONTENT}_",
+		"KICK": "_${TARGET} was kicked by ${NICK} - ${CONTENT}_",
+	})
+	discordFormat := viper.GetStringMapString("discord_format")
+	//
+	viper.SetDefault("irc_format", "<${USER}#${DISCRIMINATOR}> ${CONTENT}")
+	ircFormat := viper.GetString("irc_format")
+	//
 	viper.SetDefault("irc_listener_name", "~d")
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
 	// Name to Connect to IRC puppet account with
@@ -120,7 +131,9 @@ func main() {
 	dib, err := bridge.New(&bridge.Config{
 		AvatarURL:          avatarURL,
 		DiscordBotToken:    discordBotToken,
+		DiscordFormat:      discordFormat,
 		GuildID:            guildID,
+		IRCFormat:          ircFormat,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,

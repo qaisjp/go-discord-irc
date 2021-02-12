@@ -28,6 +28,9 @@ type Config struct {
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
 
+	DiscordFormat map[string]string // formatting for non-PRIVMSG relays from IRC to Discord
+	IRCFormat     string            // format for messages relayed in simple mode
+
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
 
