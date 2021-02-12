@@ -71,28 +71,30 @@ func userOnChannelFix(user string, channel irc.Channel) bool {
 }
 
 func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
-	oldNick := event.Nick
-	newNick := event.Message()
+	go func(e *irc.Event) {
+		oldNick := event.Nick
+		newNick := event.Message()
 
-	msg := IRCMessage{
-		Username: "",
-		Message:  fmt.Sprintf("_%s changed nick to %s_", oldNick, newNick),
-	}
-
-	for _, m := range i.bridge.mappings {
-		channel := m.IRCChannel
-		channelObj, ok := i.Connection.Channels[channel]
-		if !ok {
-			continue
+		msg := IRCMessage{
+			Username: "",
+			Message:  fmt.Sprintf("_%s changed nick to %s_", oldNick, newNick),
 		}
 
-		if !userOnChannelFix(oldNick, channelObj) {
-			continue
-		}
+		for _, m := range i.bridge.mappings {
+			channel := m.IRCChannel
+			channelObj, ok := i.Connection.Channels[channel]
+			if !ok {
+				continue
+			}
 
-		msg.IRCChannel = channel
-		i.bridge.discordMessagesChan <- msg
-	}
+			if !userOnChannelFix(oldNick, channelObj) {
+				continue
+			}
+
+			msg.IRCChannel = channel
+			i.bridge.discordMessagesChan <- msg
+		}
+	}(event)
 }
 
 // From irc_nicktrack.go.
