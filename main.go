@@ -80,6 +80,9 @@ func main() {
 		*insecure = viper.GetBool("insecure")
 	}
 	//
+	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
+	avatarURL := viper.GetString("avatar_url")
+	//
 	viper.SetDefault("irc_listener_name", "~d")
 	ircUsername := viper.GetString("irc_listener_name") // Name for IRC-side bot, for listening to messages.
 	// Name to Connect to IRC puppet account with
@@ -115,6 +118,7 @@ func main() {
 	SetLogDebug(*debugMode)
 
 	dib, err := bridge.New(&bridge.Config{
+		AvatarURL:          avatarURL,
 		DiscordBotToken:    discordBotToken,
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
@@ -169,6 +173,9 @@ func main() {
 			ircUsername = newUsername
 			dib.SetIRCListenerName(ircUsername)
 		}
+
+		avatarURL := viper.GetString("avatar_url")
+		dib.Config.AvatarURL = avatarURL
 
 		if debug := viper.GetBool("debug"); *debugMode != debug {
 			log.Printf("Debug changed from %+v to %+v", *debugMode, debug)
