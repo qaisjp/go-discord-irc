@@ -15,6 +15,7 @@ import (
 
 // Config to be passed to New
 type Config struct {
+	AvatarURL                string
 	DiscordBotToken, GuildID string
 
 	// Map from Discord to IRC
@@ -381,7 +382,7 @@ func (b *Bridge) loop() {
 				avatar = b.discord.GetAvatar(b.Config.GuildID, msg.Username)
 				if avatar == "" {
 					// If we don't have a Discord avatar, generate an adorable avatar
-					avatar = "https://avatars.dicebear.com/api/gridy/" + msg.Username + ".svg"
+					avatar = strings.ReplaceAll(b.Config.AvatarURL, "${USERNAME}", msg.Username)
 				}
 
 				if len(username) == 1 {
