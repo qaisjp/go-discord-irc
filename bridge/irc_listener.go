@@ -41,6 +41,8 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 		listener.JoinChannels()
 	})
 
+	listener.AddCallback("NICK", listener.nickTrackNick)
+
 	// Note that this might override SetupNickTrack!
 	listener.OnJoinQuitSettingChange()
 
@@ -87,7 +89,7 @@ func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
 			continue
 		}
 
-		if !userOnChannelFix(oldNick, channelObj) {
+		if !userOnChannelFix(newNick, channelObj) {
 			continue
 		}
 
@@ -106,7 +108,6 @@ func (i *ircListener) nickTrackQuit(e *irc.Event) {
 func (i *ircListener) OnJoinQuitSettingChange() {
 	// Clear Nicktrack QUIT callback as it races with this
 	i.ClearCallback("QUIT")
-	i.AddCallback("NICK", i.nickTrackNick)
 
 	if i.relayNickTrackID != 0 {
 		i.RemoveCallback("NICK", i.relayNickTrackID)
