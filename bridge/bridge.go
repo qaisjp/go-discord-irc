@@ -58,6 +58,9 @@ type Config struct {
 	// Maximum Nicklength for irc server
 	MaxNickLength int
 
+	// Disabling this field is disabling @everyone and @here by inserting an invisible whitespace
+	AllowMentionEveryone bool
+
 	Debug         bool
 	DebugPresence bool
 }
@@ -415,8 +418,10 @@ func (b *Bridge) loop() {
 			})
 
 			// Replace everyone and here - https://git.io/Je1yi
-			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
-			content = strings.ReplaceAll(content, "@here", "@\u200bhere")
+			if b.Config.AllowMentionEveryone {
+				content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
+				content = strings.ReplaceAll(content, "@here", "@\u200bhere")
+			}
 
 			if username == "" {
 				// System messages come straight from the bot

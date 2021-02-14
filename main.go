@@ -106,6 +106,9 @@ func main() {
 	viper.SetDefault("max_nick_length", ircnick.MAXLENGTH)
 	maxNickLength := viper.GetInt("max_nick_length")
 
+	viper.SetDefault("allow_mention_everyone", false)
+	allowMentionEveryone := viper.GetBool("allow_mention_everyone")
+
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
 	}
@@ -118,25 +121,26 @@ func main() {
 	SetLogDebug(*debugMode)
 
 	dib, err := bridge.New(&bridge.Config{
-		AvatarURL:          avatarURL,
-		DiscordBotToken:    discordBotToken,
-		GuildID:            guildID,
-		IRCListenerName:    ircUsername,
-		IRCServer:          ircServer,
-		IRCServerPass:      ircPassword,
-		PuppetUsername:     puppetUsername,
-		NickServIdentify:   identify,
-		WebIRCPass:         webIRCPass,
-		NoTLS:              *notls,
-		InsecureSkipVerify: *insecure,
-		Suffix:             suffix,
-		Separator:          separator,
-		SimpleMode:         *simple,
-		ChannelMappings:    channelMappings,
-		WebhookPrefix:      webhookPrefix,
-		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
-		ShowJoinQuit:       showJoinQuit,
-		MaxNickLength:      maxNickLength,
+		AvatarURL:            avatarURL,
+		DiscordBotToken:      discordBotToken,
+		GuildID:              guildID,
+		IRCListenerName:      ircUsername,
+		IRCServer:            ircServer,
+		IRCServerPass:        ircPassword,
+		PuppetUsername:       puppetUsername,
+		NickServIdentify:     identify,
+		WebIRCPass:           webIRCPass,
+		NoTLS:                *notls,
+		InsecureSkipVerify:   *insecure,
+		Suffix:               suffix,
+		Separator:            separator,
+		SimpleMode:           *simple,
+		ChannelMappings:      channelMappings,
+		WebhookPrefix:        webhookPrefix,
+		CooldownDuration:     time.Second * time.Duration(cooldownDuration),
+		ShowJoinQuit:         showJoinQuit,
+		MaxNickLength:        maxNickLength,
+		AllowMentionEveryone: allowMentionEveryone,
 
 		Debug:         *debugMode,
 		DebugPresence: *debugPresence,
