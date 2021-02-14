@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
@@ -61,13 +62,14 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discordBotToken := viper.GetString("discord_token")             // Discord Bot User Token
-	channelMappings := viper.GetStringMapString("channel_mappings") // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
-	ircServer := viper.GetString("irc_server")                      // Server address to use, example `irc.freenode.net:7000`.
-	ircPassword := viper.GetString("irc_pass")                      // Optional password for connecting to the IRC server
-	guildID := viper.GetString("guild_id")                          // Guild to use
-	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
+	discordBotToken := viper.GetString("discord_token")                // Discord Bot User Token
+	channelMappings := viper.GetStringMapString("channel_mappings")    // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
+	ircServer := viper.GetString("irc_server")                         // Server address to use, example `irc.freenode.net:7000`.
+	ircPassword := viper.GetString("irc_pass")                         // Optional password for connecting to the IRC server
+	guildID := viper.GetString("guild_id")                             // Guild to use
+	webIRCPass := viper.GetString("webirc_pass")                       // Password for WEBIRC
+	identify := viper.GetString("nickserv_identify")                   // NickServ IDENTIFY for Listener
+	discordIgnoresIRC := viper.GetStringSlice("ignored_irc_hostmasks") // IRC hosts to not relay to Discord
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -115,11 +117,13 @@ func main() {
 		log.Warnln("Channel mappings are missing!")
 	}
 
+	matchers := setupHostmaskMatchers(discordIgnoresIRC)
 	SetLogDebug(*debugMode)
 
 	dib, err := bridge.New(&bridge.Config{
 		AvatarURL:          avatarURL,
 		DiscordBotToken:    discordBotToken,
+		DiscordIgnoresIRC:  matchers,
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
@@ -174,6 +178,9 @@ func main() {
 			dib.SetIRCListenerName(ircUsername)
 		}
 
+		discordIgnoresIRC := viper.GetStringSlice("ignored_irc_hostmasks")
+		dib.Config.DiscordIgnoresIRC = setupHostmaskMatchers(discordIgnoresIRC)
+
 		avatarURL := viper.GetString("avatar_url")
 		dib.Config.AvatarURL = avatarURL
 
@@ -207,6 +214,21 @@ func main() {
 
 	// Cleanly close down the bridge.
 	dib.Close()
+}
+
+func setupHostmaskMatchers(hostmasks []string) []glob.Glob {
+	var matchers []glob.Glob
+	for _, mask := range hostmasks {
+		g, err := glob.Compile(mask)
+		if err != nil {
+			log.WithField("error", err).WithField("hostmask", mask).Errorln("Failed to compile hostmask ban!")
+			continue
+		}
+
+		matchers = append(matchers, g)
+	}
+
+	return matchers
 }
 
 func SetLogDebug(debug bool) {

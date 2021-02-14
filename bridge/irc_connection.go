@@ -107,6 +107,11 @@ func (i *ircConnection) experimentalNotice(nick string) {
 }
 
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
+	// Ignored hostmasks
+	if i.manager.isIgnoredHostmask(e.Source) {
+		return
+	}
+
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {
