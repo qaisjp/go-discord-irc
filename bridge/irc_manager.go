@@ -357,6 +357,11 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 			IsAction:   msg.IsAction,
 		}
 
+		if strings.HasPrefix(line, "/me ") && len(line) > 4 {
+			ircMessage.IsAction = true
+			ircMessage.Message = line[4:]
+		}
+
 		select {
 		// Try to send the message immediately
 		case con.messages <- ircMessage:
