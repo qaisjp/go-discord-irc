@@ -153,6 +153,11 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		}
 	}
 
+	// Don't connect them if we're over our configured connection limit! (Includes our listener)
+	if len(m.ircConnections)+1 >= m.bridge.Config.ConnectionLimit && m.bridge.Config.ConnectionLimit > 0 {
+		return
+	}
+
 	nick := m.generateNickname(user)
 	username := m.generateUsername(user)
 

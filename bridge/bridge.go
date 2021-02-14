@@ -17,6 +17,7 @@ import (
 type Config struct {
 	AvatarURL                string
 	DiscordBotToken, GuildID string
+	ConnectionLimit          int // amount of IRC Connections we can spawn
 
 	// Map from Discord to IRC
 	ChannelMappings map[string]string

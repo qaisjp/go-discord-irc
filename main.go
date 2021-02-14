@@ -68,6 +68,7 @@ func main() {
 	guildID := viper.GetString("guild_id")                          // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                    // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                // NickServ IDENTIFY for Listener
+	connectionLimit := viper.GetInt("connection_limit")             // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -124,6 +125,7 @@ func main() {
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
+		ConnectionLimit:    connectionLimit,
 		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
