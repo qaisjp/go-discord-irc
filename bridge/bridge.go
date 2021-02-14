@@ -419,10 +419,42 @@ func (b *Bridge) loop() {
 				return "<" + emoji + ">"
 			})
 
-			// Replace everyone and here - https://git.io/Je1yi
-			if b.Config.AllowMentionEveryone {
+			if !b.Config.AllowMentionEveryone {
+				// Replace everyone and here - https://git.io/Je1yi
 				content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
 				content = strings.ReplaceAll(content, "@here", "@\u200bhere")
+			}
+
+			if b.Config.AllowMentionRoles {
+				// Ping roles
+				roles, err := b.discord.GuildRoles(b.discord.guildID)
+				if err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"msg.channel":  mapping.DiscordChannel,
+						"msg.username": username,
+						"msg.content":  content,
+					}).Errorln("could not get roles of the guild")
+				} else {
+					for _, role := range roles {
+						content = strings.ReplaceAll(content, "@"+role.Name, "<@&"+role.ID+">")
+					}
+				}
+			}
+
+			if b.Config.AllowMentionChannels {
+				// Mention channels
+				channels, err := b.discord.GuildChannels(b.discord.guildID)
+				if err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"msg.channel":  mapping.DiscordChannel,
+						"msg.username": username,
+						"msg.content":  content,
+					}).Errorln("could not get channels of the guild")
+				} else {
+					for _, channel := range channels {
+						content = strings.ReplaceAll(content, "#"+channel.Name, "<#"+channel.ID+">")
+					}
+				}
 			}
 
 			if username == "" {
