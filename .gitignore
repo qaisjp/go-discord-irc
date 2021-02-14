@@ -1,3 +1,4 @@
 private
 go-discord-irc
 .vscode
+config_dev.yml
