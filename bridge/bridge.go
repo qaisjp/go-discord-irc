@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 type Config struct {
 	AvatarURL                string
 	DiscordBotToken, GuildID string
+	DiscordIgnoresIRC        []glob.Glob
 
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
