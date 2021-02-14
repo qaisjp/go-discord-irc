@@ -188,6 +188,9 @@ func (i *ircListener) OnJoinChannel(e *irc.Event) {
 }
 
 func (i *ircListener) isPuppetNick(nick string) bool {
+	if i.GetNick() == nick {
+		return true
+	}
 	if _, ok := i.bridge.ircManager.puppetNicks[nick]; ok {
 		return true
 	}
