@@ -60,6 +60,8 @@ type Config struct {
 
 	// Disabling this field is disabling @everyone and @here by inserting an invisible whitespace
 	AllowMentionEveryone bool
+	AllowMentionRoles    bool
+	AllowMentionChannels bool
 
 	Debug         bool
 	DebugPresence bool

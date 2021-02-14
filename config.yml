@@ -23,6 +23,8 @@ cooldown_duration: 86400 # optional, default 86400 (24 hours), time in seconds f
 max_nick_length: 30 # Maximum Length of a nick allowed
 
 allow_mention_everyone: false # @everyone and @here are disabled by default.
+allow_mention_roles: false # enabling this option enables to convert @role into a Discord mention for the role <role>.
+allow_mention_channels: true # enabling this option enables to convert #channel into a Discord link for the channel #channel.
 
 # You definitely should restart the bridge after changing the following:
 insecure: true

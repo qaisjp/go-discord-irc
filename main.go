@@ -108,6 +108,10 @@ func main() {
 
 	viper.SetDefault("allow_mention_everyone", false)
 	allowMentionEveryone := viper.GetBool("allow_mention_everyone")
+	viper.SetDefault("allow_mention_roles", false)
+	allowMentionRoles := viper.GetBool("allow_mention_roles")
+	viper.SetDefault("allow_mention_channels", false)
+	allowMentionChannels := viper.GetBool("allow_mention_channels")
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -141,6 +145,8 @@ func main() {
 		ShowJoinQuit:         showJoinQuit,
 		MaxNickLength:        maxNickLength,
 		AllowMentionEveryone: allowMentionEveryone,
+		AllowMentionRoles:    allowMentionRoles,
+		AllowMentionChannels: allowMentionChannels,
 
 		Debug:         *debugMode,
 		DebugPresence: *debugPresence,
