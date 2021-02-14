@@ -97,7 +97,7 @@ func (i *ircConnection) introducePM(nick string) {
 		i.pmNoticed = true
 		_, err := d.ChannelMessageSend(
 			i.pmDiscordChannel,
-			fmt.Sprintf("To reply type: %s@%s, message", nick, i.manager.bridge.Config.Discriminator))
+			fmt.Sprintf("To reply type: `%s@%s, your message here`", nick, i.manager.bridge.Config.Discriminator))
 		if err != nil {
 			log.Warnln("Could not send pmNotice", i.discord, err)
 			return
