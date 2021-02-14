@@ -28,3 +28,8 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
+
+# Uses matching syntax as in https://github.com/gobwas/glob
+# ignored_irc_hostmasks:
+#  - "bot1!*@*"
+#  - "*!?bot@*"

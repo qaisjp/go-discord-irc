@@ -74,6 +74,11 @@ func userOnChannelFix(user string, channel irc.Channel) bool {
 }
 
 func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
+	// Ignored hostmasks
+	if i.bridge.ircManager.isIgnoredHostmask(event.Source) {
+		return
+	}
+
 	oldNick := event.Nick
 	newNick := event.Message()
 
