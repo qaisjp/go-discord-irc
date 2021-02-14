@@ -359,7 +359,7 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 		if strings.HasPrefix(line, "/me ") && len(line) > 4 {
 			ircMessage.IsAction = true
-			ircMessage.Message = line[3:]
+			ircMessage.Message = line[4:]
 		}
 
 		select {
