@@ -166,6 +166,11 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 		message = manager.formatDiscordMessage(event.Code, event, content, target)
 	}
 
+	// if the message is empty...
+	if message == "" {
+		return // do nothing, Discord doesn't like empty messages anyway
+	}
+
 	msg := IRCMessage{
 		// IRCChannel: set on the fly
 		Username: "",

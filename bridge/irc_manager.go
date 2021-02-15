@@ -329,6 +329,8 @@ func (m *IRCManager) formatIRCMessage(message *DiscordMessage, content string) s
 	msg = strings.ReplaceAll(msg, "${USER}", message.Author.Username[:1]+"\u200B"+message.Author.Username[1:length])
 	msg = strings.ReplaceAll(msg, "${DISCRIMINATOR}", message.Author.Discriminator)
 	msg = strings.ReplaceAll(msg, "${CONTENT}", content)
+	// we don't do trimming and later checks here, IRC doesn't mind blank messages or at least doesn't complain
+	// as loudly as Discord
 	return msg
 }
 
@@ -398,7 +400,7 @@ func (m *IRCManager) formatDiscordMessage(msgFormat string, e *irc.Event, conten
 	//	 should we warn?
 	//}
 
-	return msg
+	return strings.Trim(msg, " ")
 }
 
 // RequestChannels finds all the Discord channels this user belongs to,
