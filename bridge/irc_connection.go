@@ -114,10 +114,15 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 		}
 
 		d := i.manager.bridge.discord
+		msg := i.manager.formatDiscordMessage("PM", e, e.Message(), "")
+
+		// if we have an empty message
+		if msg == "" {
+			return // do nothing, Discord doesn't like those
+		}
 
 		i.introducePM(e.Nick)
 
-		msg := i.manager.formatDiscordMessage("PM", e, e.Message(), "")
 		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
 		if err != nil {
 			log.Warnln("Could not send PM", i.discord, err)
