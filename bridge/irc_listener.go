@@ -74,10 +74,16 @@ func userOnChannelFix(user string, channel irc.Channel) bool {
 
 func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
 	newNick := event.Message()
+	message := i.bridge.ircManager.formatDiscordMessage(event.Code, event, newNick, "")
+
+	// if the message is empty...
+	if message == "" {
+		return // do nothing, Discord doesn't like empty messages anyway
+	}
 
 	msg := IRCMessage{
 		Username: "",
-		Message:  i.bridge.ircManager.formatDiscordMessage(event.Code, event, newNick, ""),
+		Message:  message,
 	}
 
 	for _, m := range i.bridge.mappings {
