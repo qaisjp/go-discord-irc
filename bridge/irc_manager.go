@@ -154,7 +154,7 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	}
 
 	// Don't connect them if we're over our configured connection limit! (Includes our listener)
-	if len(m.ircConnections)+1 >= m.bridge.Config.ConnectionLimit && m.bridge.Config.ConnectionLimit > 0 {
+	if m.bridge.Config.ConnectionLimit > 0 && len(m.ircConnections)+1 >= m.bridge.Config.ConnectionLimit {
 		return
 	}
 
