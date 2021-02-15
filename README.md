@@ -87,7 +87,7 @@ The config file is a yaml formatted file with the following fields:
 | `cooldown_duration` | No               | 86400 (24 hours)                               | Yes                          | time in seconds for a discord user to be offline before it's puppet disconnects from irc                                                                                 |
 | `show_joinquit`     | No               | false                                          | yes                          | displays JOIN, PART, QUIT, KICK on discord                                                                                                                               |
 | `max_nick_length`   | No               | 30                                             | yes                          | Maximum allowed nick length                                                                                                                                              |
-| `connection_limit`  | Yes              |                                                | Yes                          | How many connections to IRC (including our listener) to spawn (limit of 0 or less means unlimited)                                                                       |
+| `connection_limit`  | Yes              | 0                                              | Yes                          | How many connections to IRC (including our listener) to spawn (limit of 0 or less means unlimited)                                                                       |
 
 **The filename.yaml file is continuously read from and many changes will
 automatically update on the bridge. This means you can add or remove channels
