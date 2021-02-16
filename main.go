@@ -71,7 +71,7 @@ func main() {
 	webIRCPass := viper.GetString("webirc_pass")                       // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                   // NickServ IDENTIFY for Listener
 	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")        // IRC hosts to not relay to Discord
-	discordIgnores := viper.GetStringSlice("ignored_discord_ids") // Ignore these Discord users on IRC
+	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")   // Ignore these Discord users on IRC
 	connectionLimit := viper.GetInt("connection_limit")                // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
@@ -123,10 +123,9 @@ func main() {
 	matchers := setupHostmaskMatchers(ircIgnores)
 	SetLogDebug(*debugMode)
 
-	IRCIgnoresDiscord := make(map[string]struct{})
-
-	for _, nick := range ircIgnoresDiscord {
-		IRCIgnoresDiscord[nick] = struct{}{}
+	discordIgnores := make(map[string]struct{}, len(rawDiscordIgnores))
+	for _, nick := range rawDiscordIgnores {
+		discordIgnores[nick] = struct{}{}
 	}
 
 	dib, err := bridge.New(&bridge.Config{
@@ -203,8 +202,9 @@ func main() {
 			SetLogDebug(debug)
 		}
 
-		discordIgnores := make(map[string]struct{})
-		for _, nick := range viper.GetStringSlice("ignored_discord_ids") {
+		rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")
+		discordIgnores := make(map[string]struct{}, len(rawDiscordIgnores))
+		for _, nick := range rawDiscordIgnores {
 			discordIgnores[nick] = struct{}{}
 		}
 		dib.Config.DiscordIgnores = discordIgnores
