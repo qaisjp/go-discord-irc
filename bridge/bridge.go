@@ -29,7 +29,7 @@ type Config struct {
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
 	IRCIgnores       []glob.Glob
-	DiscordIgnores   map[string]struct{} // Discord nicks to not sent to IRC side
+	DiscordIgnores   map[string]struct{} // Discord user IDs to not bridge
 	ConnectionLimit  int // number of IRC connections we can spawn
 
 	IRCPrejoinCommands []string
