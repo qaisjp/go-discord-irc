@@ -79,7 +79,7 @@ func main() {
 	}{} // Other modes to set on the IRC connection @OnWelcome
 	err = viper.UnmarshalKey("irc_nick_modes", &ircNickModes)
 	if err != nil {
-    log.WithErr(err).Println("Failed to unmarshal irc_nick_modes")
+		log.WithErorr(err).Println("Failed to unmarshal irc_nick_modes")
 	}
 	//
 	if !*debugMode {
