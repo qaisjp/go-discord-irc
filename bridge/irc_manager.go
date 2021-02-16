@@ -344,15 +344,7 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 
 	// Person is appearing offline (or the bridge is running in Simple Mode)
 	if !ok {
-		// length := len(msg.Author.Username)
 		for _, line := range strings.Split(content, "\n") {
-			// m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
-			// 	"<%s#%s> %s",
-			// 	msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
-			// 	msg.Author.Discriminator,
-			// 	line,
-			// ))
-
 			m.bridge.ircListener.Privmsg(channel, m.formatIRCMessage(msg, line))
 		}
 		return
@@ -396,9 +388,7 @@ func (m *IRCManager) formatDiscordMessage(msgFormat string, e *irc.Event, conten
 		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
 		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
 		msg = strings.ReplaceAll(msg, "${TARGET}", target)
-	} // else {
-	//	 should we warn?
-	//}
+	}
 
 	return strings.Trim(msg, " ")
 }
