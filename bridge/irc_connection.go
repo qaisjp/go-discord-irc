@@ -34,7 +34,7 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 	i.innerCon.SendRawf("MODE %s +D", i.innerCon.GetNick())
 
 	// execute perform second
-	for _, com := range i.manager.bridge.Config.IRCGlobalPerform {
+	for _, com := range i.manager.bridge.Config.IRCPrejoinCommands {
 		i.innerCon.SendRaw(com)
 	}
 

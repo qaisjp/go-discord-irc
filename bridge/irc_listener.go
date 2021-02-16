@@ -181,7 +181,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 	}
 
 	// Execute global perform commands
-	for _, com := range i.bridge.Config.IRCGlobalPerform {
+	for _, com := range i.bridge.Config.IRCPrejoinCommands {
 		i.SendRaw(com)
 	}
 
