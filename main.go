@@ -180,7 +180,7 @@ func main() {
 			dib.SetIRCListenerName(ircUsername)
 		}
 
-		discordIgnoresIRC := viper.GetStringSlice("ignored_irc_hostmasks")
+		ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")
 		dib.Config.IRCIgnores = setupHostmaskMatchers(ircIgnores)
 
 		avatarURL := viper.GetString("avatar_url")
