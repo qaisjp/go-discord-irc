@@ -248,7 +248,7 @@ func setupDiscordFormat(discordFormat map[string]string) (map[string]string, err
 		}
 	}
 
-	for ev, _ := range discordFormat {
+	for ev := range discordFormat {
 		if _, ok := discordFormatDefaults[ev]; !ok {
 			err = fmt.Errorf("Unknown format key %s", ev)
 			break
