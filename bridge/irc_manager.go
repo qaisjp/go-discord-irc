@@ -92,10 +92,18 @@ func (m *IRCManager) DisconnectUser(userID string) {
 
 var connectionsIgnored = 0
 
+func (m *IRCManager) ircIgnoredDiscord(user string) bool {
+	_, ret := m.bridge.Config.DiscordIgnores[user]
+	return ret
+}
+
 // HandleUser deals with messages sent from a DiscordUser
 //
 // When `user.Online == false`, we make `user.ID` the only other data present in discord.handlePresenceUpdate
 func (m *IRCManager) HandleUser(user DiscordUser) {
+	if m.ircIgnoredDiscord(user.ID) {
+		return
+	}
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
 		// Close the connection if they are not
@@ -330,6 +338,10 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 
 // SendMessage sends a broken down Discord Message to a particular IRC channel.
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
+	if m.ircIgnoredDiscord(msg.Author.ID) {
+		return
+	}
+
 	con, ok := m.ircConnections[msg.Author.ID]
 
 	content := msg.Content
