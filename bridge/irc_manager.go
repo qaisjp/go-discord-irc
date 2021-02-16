@@ -396,9 +396,7 @@ func (m *IRCManager) formatDiscordMessage(msgFormat string, e *irc.Event, conten
 		msg = strings.ReplaceAll(msg, "${HOST}", e.Host)
 		msg = strings.ReplaceAll(msg, "${CONTENT}", content)
 		msg = strings.ReplaceAll(msg, "${TARGET}", target)
-	} // else {
-	//	 should we warn?
-	//}
+	}
 
 	return strings.Trim(msg, " ")
 }
