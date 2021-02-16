@@ -30,6 +30,8 @@ type Config struct {
 	PuppetUsername   string // Username to connect to IRC with
 	IRCIgnores       []glob.Glob
 	ConnectionLimit  int // number of IRC connections we can spawn
+	
+	IRCPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool

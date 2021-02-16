@@ -180,6 +180,11 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 		i.Privmsgf("nickserv", "identify %s", identify)
 	}
 
+	// Execute global perform commands
+	for _, com := range i.bridge.Config.IRCPrejoinCommands {
+		i.SendRaw(com)
+	}
+
 	// Join all channels
 	i.JoinChannels()
 }

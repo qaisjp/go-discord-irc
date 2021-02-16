@@ -29,6 +29,10 @@ debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
 
+# irc_prejoin_commands:
+#   - PART #forced-to-join-test-channel
+#   - PRIVMSG Nick :msg
+
 # Uses matching syntax as in https://github.com/gobwas/glob
 # ignored_irc_hostmasks:
 #  - "bot1!*@*"
