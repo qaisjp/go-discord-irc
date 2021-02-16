@@ -28,3 +28,4 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
+# connection_limit: 2 # Would limit this to 2 connections (a listener, and one puppet, the rest relayed)
