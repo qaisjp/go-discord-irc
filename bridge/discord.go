@@ -144,15 +144,19 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 			pmTarget, content = pmTargetFromContent(content, d.bridge.Config.Discriminator)
 
 			// if the target could not be deduced. tell them this.
-			if pmTarget == "" {
+			switch pmTarget {
+			case "":
 				_, _ = d.ChannelMessageSend(
 					m.ChannelID,
 					fmt.Sprintf(
 						"Don't know who that is. Can't PM. Try 'name@%s, message here'",
 						d.bridge.Config.Discriminator))
 				return
+			case "*UKNOWN*":
+				return
+			default:
+				break
 			}
-			break
 		}
 	}
 
@@ -466,7 +470,7 @@ func pmTargetFromContent(content string, discriminator string) (nick, newContent
 	}
 
 	if nickParts[1] != discriminator {
-		return "", ""
+		return "*UKNOWN*", ""
 	}
 
 	nick = nickParts[0]
