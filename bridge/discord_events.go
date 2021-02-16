@@ -3,7 +3,7 @@ package bridge
 import (
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )

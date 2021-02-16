@@ -31,8 +31,14 @@ type ircConnection struct {
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
-	i.JoinChannels()
 	i.innerCon.SendRawf("MODE %s +D", i.innerCon.GetNick())
+
+	// execute perform second
+	for _, com := range i.manager.bridge.Config.IRCPrejoinCommands {
+		i.innerCon.SendRaw(com)
+	}
+
+	i.JoinChannels()
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
@@ -107,6 +113,11 @@ func (i *ircConnection) experimentalNotice(nick string) {
 }
 
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
+	// Ignored hostmasks
+	if i.manager.isIgnoredHostmask(e.Source) {
+		return
+	}
+
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {

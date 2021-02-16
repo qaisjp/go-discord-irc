@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/gobwas/glob"
+	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -21,13 +22,17 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer         string
-	IRCServerPass     string
-	IRCListenerName   string              // i.e, "DiscordBot", required to listen for messages in all cases
-	IRCIgnoresDiscord map[string]struct{} // Ignore Discord nicks on IRC side of the relay
-	WebIRCPass        string
-	NickServIdentify  string // string: "[account] password"
-	PuppetUsername    string // Username to connect to IRC with
+	IRCServer        string
+	IRCServerPass    string
+	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
+	WebIRCPass       string
+	NickServIdentify string // string: "[account] password"
+	PuppetUsername   string // Username to connect to IRC with
+	IRCIgnores       []glob.Glob
+	DiscordIgnores   map[string]struct{} // Discord nicks to not sent to IRC side
+	ConnectionLimit  int // number of IRC connections we can spawn
+
+	IRCPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
@@ -430,7 +435,7 @@ func (b *Bridge) loop() {
 				}
 			} else {
 				go func() {
-					_, err := b.discord.transmitter.Message(
+					_, err := b.discord.transmitter.Send(
 						mapping.DiscordChannel,
 						&discordgo.WebhookParams{
 							Username:  username,
