@@ -93,7 +93,7 @@ func (m *IRCManager) DisconnectUser(userID string) {
 var connectionsIgnored = 0
 
 func (m *IRCManager) ircIgnoredDiscord(user string) bool {
-	_, ret := m.bridge.Config.IRCIgnoresDiscord[user]
+	_, ret := m.bridge.Config.DiscordIgnores[user]
 	return ret
 }
 
