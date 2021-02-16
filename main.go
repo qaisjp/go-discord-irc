@@ -69,7 +69,8 @@ func main() {
 	guildID := viper.GetString("guild_id")                             // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                       // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                   // NickServ IDENTIFY for Listener
-	discordIgnoresIRC := viper.GetStringSlice("ignored_irc_hostmasks") // IRC hosts to not relay to Discord
+	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")        // IRC hosts to not relay to Discord
+	connectionLimit := viper.GetInt("connection_limit")                // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -117,17 +118,18 @@ func main() {
 		log.Warnln("Channel mappings are missing!")
 	}
 
-	matchers := setupHostmaskMatchers(discordIgnoresIRC)
+	matchers := setupHostmaskMatchers(ircIgnores)
 	SetLogDebug(*debugMode)
 
 	dib, err := bridge.New(&bridge.Config{
 		AvatarURL:          avatarURL,
 		DiscordBotToken:    discordBotToken,
-		DiscordIgnoresIRC:  matchers,
 		GuildID:            guildID,
 		IRCListenerName:    ircUsername,
 		IRCServer:          ircServer,
 		IRCServerPass:      ircPassword,
+		ConnectionLimit:    connectionLimit,
+		IRCIgnores:         matchers,
 		PuppetUsername:     puppetUsername,
 		NickServIdentify:   identify,
 		WebIRCPass:         webIRCPass,
@@ -179,7 +181,7 @@ func main() {
 		}
 
 		discordIgnoresIRC := viper.GetStringSlice("ignored_irc_hostmasks")
-		dib.Config.DiscordIgnoresIRC = setupHostmaskMatchers(discordIgnoresIRC)
+		dib.Config.IRCIgnores = setupHostmaskMatchers(ircIgnores)
 
 		avatarURL := viper.GetString("avatar_url")
 		dib.Config.AvatarURL = avatarURL

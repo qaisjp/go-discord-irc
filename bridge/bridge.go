@@ -18,7 +18,6 @@ import (
 type Config struct {
 	AvatarURL                string
 	DiscordBotToken, GuildID string
-	DiscordIgnoresIRC        []glob.Glob
 
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
@@ -29,6 +28,8 @@ type Config struct {
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
+	IRCIgnores       []glob.Glob
+	ConnectionLimit  int // number of IRC connections we can spawn
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool

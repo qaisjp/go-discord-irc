@@ -33,3 +33,6 @@ webhook_prefix: "(auto-test)"
 # ignored_irc_hostmasks:
 #  - "bot1!*@*"
 #  - "*!?bot@*"
+
+# This limits to 2 connections (a listener, and one puppet, the rest relayed in simple mode)
+# connection_limit: 2

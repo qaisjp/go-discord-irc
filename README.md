@@ -88,6 +88,7 @@ The config file is a yaml formatted file with the following fields:
 | `show_joinquit`         | No               | false                                          | yes                          | displays JOIN, PART, QUIT, KICK on discord                                                                                                                               |
 | `max_nick_length`       | No               | 30                                             | yes                          | Maximum allowed nick length                                                                                                                                              |
 | `ignored_irc_hostmasks` | No               |                                                | Yes                          | A list of IRC users identified by hostmask to not relay to Discord, uses matching syntax as in [glob](https://github.com/gobwas/glob)                                                                                                      |
+| `connection_limit`      | Yes              | 0                                              | Yes                          | How many connections to IRC (including our listener) to spawn (limit of 0 or less means unlimited)                                                                       |
 
 **The filename.yaml file is continuously read from and many changes will
 automatically update on the bridge. This means you can add or remove channels
