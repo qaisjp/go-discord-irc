@@ -95,6 +95,11 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 		return
 	}
 
+	// Ignored hostmasks
+	if i.bridge.ircManager.isIgnoredHostmask(event.Source) {
+		return
+	}
+
 	who := event.Nick
 	message := event.Nick
 	id := " (" + event.User + "@" + event.Host + ") "
@@ -212,6 +217,11 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 
 	// Ignore messages from Discord bots
 	if i.isPuppetNick(e.Nick) {
+		return
+	}
+
+	// Ignored hostmasks
+	if i.bridge.ircManager.isIgnoredHostmask(e.Source) {
 		return
 	}
 

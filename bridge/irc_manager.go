@@ -387,6 +387,15 @@ func (m *IRCManager) RequestChannels(userID string) []Mapping {
 	return m.bridge.mappings
 }
 
+func (m *IRCManager) isIgnoredHostmask(mask string) bool {
+	for _, ban := range m.bridge.Config.IRCIgnores {
+		if ban.Match(mask) {
+			return true
+		}
+	}
+	return false
+}
+
 func (m *IRCManager) generateUsername(discordUser DiscordUser) string {
 	if len(m.bridge.Config.PuppetUsername) > 0 {
 		return m.bridge.Config.PuppetUsername

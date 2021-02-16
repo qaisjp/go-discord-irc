@@ -28,4 +28,11 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
-# connection_limit: 2 # Would limit this to 2 connections (a listener, and one puppet, the rest relayed)
+
+# Uses matching syntax as in https://github.com/gobwas/glob
+# ignored_irc_hostmasks:
+#  - "bot1!*@*"
+#  - "*!?bot@*"
+
+# This limits to 2 connections (a listener, and one puppet, the rest relayed in simple mode)
+# connection_limit: 2
