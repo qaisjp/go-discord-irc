@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -81,8 +82,14 @@ func main() {
 		*insecure = viper.GetBool("insecure")
 	}
 	//
-	discordFormat := viper.GetStringMapString("discord_format")
-	discordFormat = setupDiscordFormat(discordFormat)
+	rawDiscordFormat := viper.GetStringMapString("discord_format")
+	var discordFormat map[string]string
+	if df, err := setupDiscordFormat(rawDiscordFormat); err == nil {
+		discordFormat = df
+	} else {
+		log.WithError(err).Fatal("discord_format setting is invalid")
+		return
+	}
 	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
@@ -194,8 +201,12 @@ func main() {
 			SetLogDebug(debug)
 		}
 
-		discordFormat := viper.GetStringMapString("discord_format")
-		dib.Config.DiscordFormat = setupDiscordFormat(discordFormat)
+		rawDiscordFormat := viper.GetStringMapString("discord_format")
+		if discordFormat, err := setupDiscordFormat(rawDiscordFormat); err == nil {
+			dib.Config.DiscordFormat = discordFormat
+		} else {
+			log.WithError(err).Error("discord_format setting is invalid, this setting has not been updated")
+		}
 		dib.Config.IRCFormat = viper.GetString("irc_format")
 
 		chans := viper.GetStringMapString("channel_mappings")
@@ -223,7 +234,8 @@ func main() {
 	dib.Close()
 }
 
-func setupDiscordFormat(discordFormat map[string]string) map[string]string {
+func setupDiscordFormat(discordFormat map[string]string) (map[string]string, error) {
+	var err error
 	// lowercase to match that YAML lowercases it
 	discordFormatDefaults := map[string]string{
 		"pm":   "${SERVER},${NICK}!${IDENT}@${HOST} - ${NICK}@${DISCRIMINATOR}: ${CONTENT}",
@@ -239,7 +251,14 @@ func setupDiscordFormat(discordFormat map[string]string) map[string]string {
 		}
 	}
 
-	return discordFormat
+	for ev := range discordFormat {
+		if _, ok := discordFormatDefaults[ev]; !ok {
+			err = fmt.Errorf("Unknown format key %s", ev)
+			break
+		}
+	}
+
+	return discordFormat, err
 }
 
 func SetLogDebug(debug bool) {
