@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
@@ -31,6 +32,10 @@ type Config struct {
 	WebIRCPass       string
 	NickServIdentify string // string: "[account] password"
 	PuppetUsername   string // Username to connect to IRC with
+	IRCIgnores       []glob.Glob
+	ConnectionLimit  int // number of IRC connections we can spawn
+	
+	IRCPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool

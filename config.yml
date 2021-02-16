@@ -28,9 +28,22 @@ no_tls: false
 debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
+
 # Mode explanations, set the nick as a Bot and only PM's from same channel
 #  on inspircd, and remove invisibility
+# 
 # irc_nick_modes:
 #   add: Bc
 #   del: i
 
+# irc_prejoin_commands:
+#   - PART #forced-to-join-test-channel
+#   - PRIVMSG Nick :msg
+
+# Uses matching syntax as in https://github.com/gobwas/glob
+# ignored_irc_hostmasks:
+#  - "bot1!*@*"
+#  - "*!?bot@*"
+
+# This limits to 2 connections (a listener, and one puppet, the rest relayed in simple mode)
+# connection_limit: 2

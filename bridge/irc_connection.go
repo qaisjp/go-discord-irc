@@ -40,6 +40,11 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 
 	if i.manager.bridge.Config.IRCNickModes.Del != "" {
 		i.innerCon.SendRawf("MODE %s -%s", i.innerCon.GetNick(), i.manager.bridge.Config.IRCNickModes.Del)
+  }
+
+	// execute perform second
+	for _, com := range i.manager.bridge.Config.IRCPrejoinCommands {
+		i.innerCon.SendRaw(com)
 	}
 
 	i.JoinChannels()
@@ -117,6 +122,11 @@ func (i *ircConnection) experimentalNotice(nick string) {
 }
 
 func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
+	// Ignored hostmasks
+	if i.manager.isIgnoredHostmask(e.Source) {
+		return
+	}
+
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {

@@ -153,6 +153,11 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		}
 	}
 
+	// Don't connect them if we're over our configured connection limit! (Includes our listener)
+	if m.bridge.Config.ConnectionLimit > 0 && len(m.ircConnections)+1 >= m.bridge.Config.ConnectionLimit {
+		return
+	}
+
 	nick := m.generateNickname(user)
 	username := m.generateUsername(user)
 
@@ -380,6 +385,15 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 // TODO (?)
 func (m *IRCManager) RequestChannels(userID string) []Mapping {
 	return m.bridge.mappings
+}
+
+func (m *IRCManager) isIgnoredHostmask(mask string) bool {
+	for _, ban := range m.bridge.Config.IRCIgnores {
+		if ban.Match(mask) {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *IRCManager) generateUsername(discordUser DiscordUser) string {
