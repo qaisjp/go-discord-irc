@@ -81,7 +81,7 @@ func main() {
 	if err != nil {
     log.WithErr(err).Println("Failed to unmarshal irc_nick_modes")
 	}
-  //
+	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
 	}
