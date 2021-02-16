@@ -62,7 +62,11 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discriminator := viper.GetString("discriminator")                  // unique per IRC network connected to, keeps PM's working
+	discriminator := viper.GetString("discriminator") // unique per IRC network connected to, keeps PMs working
+	if discriminator == "" {
+		log.Fatalln("Refusing to run without a network discriminator set, please set a non-empty discriminator in the config.")
+		return
+	}
 	discordBotToken := viper.GetString("discord_token")                // Discord Bot User Token
 	channelMappings := viper.GetStringMapString("channel_mappings")    // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
 	ircServer := viper.GetString("irc_server")                         // Server address to use, example `irc.freenode.net:7000`.
