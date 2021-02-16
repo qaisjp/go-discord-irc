@@ -388,7 +388,7 @@ func (m *IRCManager) RequestChannels(userID string) []Mapping {
 }
 
 func (m *IRCManager) isIgnoredHostmask(mask string) bool {
-	for _, ban := range m.bridge.Config.DiscordIgnoresIRC {
+	for _, ban := range m.bridge.Config.IRCIgnores {
 		if ban.Match(mask) {
 			return true
 		}
