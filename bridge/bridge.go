@@ -32,8 +32,8 @@ type Config struct {
 	DiscordIgnores   map[string]struct{} // Discord user IDs to not bridge
 	ConnectionLimit  int                 // number of IRC connections we can spawn
 
-	IRCPuppetPrejoinCommands []string
-	IRCPrejoinCommands       []string
+	IRCPuppetPrejoinCommands   []string
+	IRCListenerPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool

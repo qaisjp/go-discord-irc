@@ -181,7 +181,7 @@ func (i *ircListener) OnWelcome(e *irc.Event) {
 	}
 
 	// Execute prejoin commands
-	for _, com := range i.bridge.Config.IRCPrejoinCommands {
+	for _, com := range i.bridge.Config.IRCListenerPrejoinCommands {
 		i.SendRaw(strings.ReplaceAll(com, "${NICK}", i.GetNick()))
 	}
 
