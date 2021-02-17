@@ -66,7 +66,6 @@ The binary takes three flags:
 
 The config file is a yaml formatted file with the following fields:
 
-<<<<<<< HEAD
 | name                    | requires restart | default                                        | optional                     | description                                                                                                                                                              |
 | ----------------------- | ---------------- | ---------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `discriminator`         | Yes              |                                                | No                           | The network discriminator used for when PM from Discord to IRC nick                                                                                                      |
