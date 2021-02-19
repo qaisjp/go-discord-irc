@@ -85,7 +85,7 @@ func main() {
 		*insecure = viper.GetBool("insecure")
 	}
 	//
-	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D", "PRIVMSG qaisjp hi"})
+	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D"})
 	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
 	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
