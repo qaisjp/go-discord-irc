@@ -62,17 +62,17 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discordBotToken := viper.GetString("discord_token")                // Discord Bot User Token
-	channelMappings := viper.GetStringMapString("channel_mappings")    // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
-	ircServer := viper.GetString("irc_server")                         // Server address to use, example `irc.freenode.net:7000`.
-	ircPassword := viper.GetString("irc_pass")                         // Optional password for connecting to the IRC server
-	ircPrejoinCommands := viper.GetStringSlice("irc_prejoin_commands") // Commands for each connection to send before joining channels
-	guildID := viper.GetString("guild_id")                             // Guild to use
-	webIRCPass := viper.GetString("webirc_pass")                       // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                   // NickServ IDENTIFY for Listener
-	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")        // IRC hosts to not relay to Discord
-	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")   // Ignore these Discord users on IRC
-	connectionLimit := viper.GetInt("connection_limit")                // Limiter on how many IRC Connections we can spawn
+	discordBotToken := viper.GetString("discord_token")                                 // Discord Bot User Token
+	channelMappings := viper.GetStringMapString("channel_mappings")                     // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
+	ircServer := viper.GetString("irc_server")                                          // Server address to use, example `irc.freenode.net:7000`.
+	ircPassword := viper.GetString("irc_pass")                                          // Optional password for connecting to the IRC server
+	ircListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
+	guildID := viper.GetString("guild_id")                                              // Guild to use
+	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
+	identify := viper.GetString("nickserv_identify")                                    // NickServ IDENTIFY for Listener
+	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")                         // IRC hosts to not relay to Discord
+	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")                    // Ignore these Discord users on IRC
+	connectionLimit := viper.GetInt("connection_limit")                                 // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -84,6 +84,9 @@ func main() {
 	if !*insecure {
 		*insecure = viper.GetBool("insecure")
 	}
+	//
+	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D", "PRIVMSG qaisjp hi"})
+	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
 	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
@@ -129,29 +132,30 @@ func main() {
 	}
 
 	dib, err := bridge.New(&bridge.Config{
-		AvatarURL:          avatarURL,
-		DiscordBotToken:    discordBotToken,
-		GuildID:            guildID,
-		IRCListenerName:    ircUsername,
-		IRCServer:          ircServer,
-		IRCServerPass:      ircPassword,
-		IRCPrejoinCommands: ircPrejoinCommands,
-		ConnectionLimit:    connectionLimit,
-		IRCIgnores:         matchers,
-		DiscordIgnores:     discordIgnores,
-		PuppetUsername:     puppetUsername,
-		NickServIdentify:   identify,
-		WebIRCPass:         webIRCPass,
-		NoTLS:              *notls,
-		InsecureSkipVerify: *insecure,
-		Suffix:             suffix,
-		Separator:          separator,
-		SimpleMode:         *simple,
-		ChannelMappings:    channelMappings,
-		WebhookPrefix:      webhookPrefix,
-		CooldownDuration:   time.Second * time.Duration(cooldownDuration),
-		ShowJoinQuit:       showJoinQuit,
-		MaxNickLength:      maxNickLength,
+		AvatarURL:                  avatarURL,
+		DiscordBotToken:            discordBotToken,
+		GuildID:                    guildID,
+		IRCListenerName:            ircUsername,
+		IRCServer:                  ircServer,
+		IRCServerPass:              ircPassword,
+		IRCPuppetPrejoinCommands:   ircPuppetPrejoinCommands,
+		IRCListenerPrejoinCommands: ircListenerPrejoinCommands,
+		ConnectionLimit:            connectionLimit,
+		IRCIgnores:                 matchers,
+		DiscordIgnores:             discordIgnores,
+		PuppetUsername:             puppetUsername,
+		NickServIdentify:           identify,
+		WebIRCPass:                 webIRCPass,
+		NoTLS:                      *notls,
+		InsecureSkipVerify:         *insecure,
+		Suffix:                     suffix,
+		Separator:                  separator,
+		SimpleMode:                 *simple,
+		ChannelMappings:            channelMappings,
+		WebhookPrefix:              webhookPrefix,
+		CooldownDuration:           time.Second * time.Duration(cooldownDuration),
+		ShowJoinQuit:               showJoinQuit,
+		MaxNickLength:              maxNickLength,
 
 		Debug:         *debugMode,
 		DebugPresence: *debugPresence,

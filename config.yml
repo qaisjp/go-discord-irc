@@ -33,9 +33,14 @@ debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
 
-# irc_prejoin_commands:
+# irc_listener_prejoin_commands:
 #   - PART #forced-to-join-test-channel
 #   - PRIVMSG Nick :msg
+
+# This is the default value, which makes sure that puppets
+# are deafened (i.e. puppets do not need to hear anything!)
+irc_puppet_prejoin_commands:
+  - "MODE ${NICK} +D" # Note that for inspircd 3.x this should be +d!
 
 # Uses matching syntax as in https://github.com/gobwas/glob
 # ignored_irc_hostmasks:
