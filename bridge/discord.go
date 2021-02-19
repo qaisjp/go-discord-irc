@@ -139,24 +139,22 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 	}
 
 	pmTarget := ""
-	for _, channel := range d.State.PrivateChannels {
-		if channel.ID == m.ChannelID {
-			pmTarget, content = pmTargetFromContent(content, d.bridge.Config.Discriminator)
-
-			// if the target could not be deduced. tell them this.
-			switch pmTarget {
-			case "":
-				_, _ = d.ChannelMessageSend(
-					m.ChannelID,
-					fmt.Sprintf(
-						"Don't know who that is. Can't PM. Try 'name@%s, message here'",
-						d.bridge.Config.Discriminator))
-				return
-			case "*UKNOWN*":
-				return
-			default:
-				break
-			}
+	// Blank guild means that it's a PM
+	if m.GuildID == "" {
+		pmTarget, content = pmTargetFromContent(content, d.bridge.Config.Discriminator)
+		// if the target could not be deduced. tell them this.
+		switch pmTarget {
+		case "":
+			_, _ = d.ChannelMessageSend(
+				m.ChannelID,
+				fmt.Sprintf(
+					"Don't know who that is. Can't PM. Try 'name@%s, message here'",
+					d.bridge.Config.Discriminator))
+			return
+		case "*UNKNOWN*":
+			return
+		default:
+			break
 		}
 	}
 
@@ -470,7 +468,7 @@ func pmTargetFromContent(content string, discriminator string) (nick, newContent
 	}
 
 	if nickParts[1] != discriminator {
-		return "*UKNOWN*", ""
+		return "*UNKNOWN*", ""
 	}
 
 	nick = nickParts[0]
