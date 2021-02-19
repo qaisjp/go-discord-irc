@@ -67,7 +67,7 @@ func main() {
 	ircServer := viper.GetString("irc_server")                                          // Server address to use, example `irc.freenode.net:7000`.
 	ircPassword := viper.GetString("irc_pass")                                          // Optional password for connecting to the IRC server
 	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands")     // Commands for each connection to send before joining channels
-	IRCListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
+	ircListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
 	guildID := viper.GetString("guild_id")                                              // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
 	identify := viper.GetString("nickserv_identify")                                    // NickServ IDENTIFY for Listener
@@ -137,7 +137,7 @@ func main() {
 		IRCServer:                  ircServer,
 		IRCServerPass:              ircPassword,
 		IRCPuppetPrejoinCommands:   ircPuppetPrejoinCommands,
-		IRCListenerPrejoinCommands: IRCListenerPrejoinCommands,
+		IRCListenerPrejoinCommands: ircListenerPrejoinCommands,
 		ConnectionLimit:            connectionLimit,
 		IRCIgnores:                 matchers,
 		DiscordIgnores:             discordIgnores,
