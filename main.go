@@ -62,6 +62,11 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
+	discriminator := viper.GetString("irc_server_name") // unique per IRC network connected to, keeps PMs working
+	if discriminator == "" {
+		log.Fatalln("'irc_server_name' config option is required and cannot be empty")
+		return
+	}
 	discordBotToken := viper.GetString("discord_token")                                 // Discord Bot User Token
 	channelMappings := viper.GetStringMapString("channel_mappings")                     // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
 	ircServer := viper.GetString("irc_server")                                          // Server address to use, example `irc.freenode.net:7000`.
@@ -133,6 +138,7 @@ func main() {
 
 	dib, err := bridge.New(&bridge.Config{
 		AvatarURL:                  avatarURL,
+		Discriminator:              discriminator,
 		DiscordBotToken:            discordBotToken,
 		GuildID:                    guildID,
 		IRCListenerName:            ircUsername,
