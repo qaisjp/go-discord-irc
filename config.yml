@@ -33,7 +33,7 @@ debug: false
 webhook_prefix: "(auto-test)"
 # simple: true
 
-# irc_prejoin_commands:
+# irc_listener_prejoin_commands:
 #   - PART #forced-to-join-test-channel
 #   - PRIVMSG Nick :msg
 
