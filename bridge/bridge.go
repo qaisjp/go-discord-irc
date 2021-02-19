@@ -31,9 +31,10 @@ type Config struct {
 	PuppetUsername   string // Username to connect to IRC with
 	IRCIgnores       []glob.Glob
 	DiscordIgnores   map[string]struct{} // Discord user IDs to not bridge
-	ConnectionLimit  int // number of IRC connections we can spawn
+	ConnectionLimit  int                 // number of IRC connections we can spawn
 
-	IRCPrejoinCommands []string
+	IRCPuppetPrejoinCommands   []string
+	IRCListenerPrejoinCommands []string
 
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
