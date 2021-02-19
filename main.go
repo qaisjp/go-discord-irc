@@ -62,9 +62,9 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
-	discriminator := viper.GetString("discriminator") // unique per IRC network connected to, keeps PMs working
+	discriminator := viper.GetString("irc_server_name") // unique per IRC network connected to, keeps PMs working
 	if discriminator == "" {
-		log.Fatalln("'discriminator' config option is required and cannot be empty")
+		log.Fatalln("'irc_server_name' config option is required and cannot be empty")
 		return
 	}
 	discordBotToken := viper.GetString("discord_token")                                 // Discord Bot User Token
