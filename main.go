@@ -66,7 +66,6 @@ func main() {
 	channelMappings := viper.GetStringMapString("channel_mappings")                     // Discord:IRC mappings in format '#discord1:#irc1,#discord2:#irc2,...'
 	ircServer := viper.GetString("irc_server")                                          // Server address to use, example `irc.freenode.net:7000`.
 	ircPassword := viper.GetString("irc_pass")                                          // Optional password for connecting to the IRC server
-	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands")     // Commands for each connection to send before joining channels
 	ircListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
 	guildID := viper.GetString("guild_id")                                              // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
@@ -85,6 +84,9 @@ func main() {
 	if !*insecure {
 		*insecure = viper.GetBool("insecure")
 	}
+	//
+	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D", "PRIVMSG qaisjp hi"})
+	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
 	//
 	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
 	avatarURL := viper.GetString("avatar_url")
