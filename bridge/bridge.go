@@ -274,10 +274,6 @@ func (b *Bridge) SetIRCListenerName(name string) {
 func (b *Bridge) SetDebugMode(debug bool) {
 	b.Config.Debug = debug
 	b.ircListener.SetDebugMode(debug)
-
-	for _, conn := range b.ircManager.ircConnections {
-		conn.innerCon.Debug = debug
-	}
 }
 
 // Open all the connections required to run the bridge
