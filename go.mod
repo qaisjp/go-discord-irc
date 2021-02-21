@@ -1,6 +1,6 @@
 module github.com/qaisjp/go-discord-irc
 
-go 1.12
+go 1.15
 
 require (
 	github.com/42wim/matterbridge v1.22.0
