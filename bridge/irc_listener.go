@@ -52,6 +52,18 @@ func (i *ircListener) nickTrackNick(event *irc.Event) {
 		i.bridge.ircManager.puppetNicks[newNick] = con
 		delete(i.bridge.ircManager.puppetNicks, oldNick)
 	}
+
+	// This bit is from irc_nicktrack.go
+	if len(event.Arguments) == 1 { // Sanity check
+		for k := range i.Channels {
+			if _, ok := i.Channels[k].Users[event.Nick]; ok {
+				u := i.Channels[k].Users[event.Nick]
+				u.Host = event.Host
+				i.Channels[k].Users[event.Arguments[0]] = u //New nick
+				delete(i.Channels[k].Users, event.Nick)     //Delete old
+			}
+		}
+	}
 }
 
 // From irc_nicktrack.go.

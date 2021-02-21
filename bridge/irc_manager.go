@@ -82,6 +82,7 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 	}
 
 	delete(m.ircConnections, i.discord.ID)
+	delete(m.puppetNicks, i.nick)
 	close(i.messages)
 
 	if DevMode {
