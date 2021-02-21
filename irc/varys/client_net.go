@@ -42,3 +42,8 @@ func (c *netClient) SendRaw(uid string, params InterpolationParams, messages ...
 	var reply struct{}
 	return c.client.Call("Varys.SendRaw", SendRawParams{uid, messages, params}, &reply)
 }
+
+func (c *netClient) Nick(uid string, nick string) error {
+	var reply struct{}
+	return c.client.Call("Varys.Nick", NickParams{uid, nick}, &reply)
+}

@@ -72,9 +72,8 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 
 	i.discord = discord
 	i.nick = i.manager.generateNickname(i.discord)
-	i.innerCon.RealName = discord.Username
 
-	go i.innerCon.Nick(i.nick)
+	i.manager.varys.Nick(i.discord.ID, i.nick)
 }
 
 func (i *ircConnection) introducePM(nick string) {

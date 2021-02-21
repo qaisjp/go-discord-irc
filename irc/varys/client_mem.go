@@ -29,3 +29,7 @@ func (c *memClient) QuitIfConnected(uid string, quitMessage string) error {
 func (c *memClient) SendRaw(uid string, params InterpolationParams, messages ...string) error {
 	return c.varys.SendRaw(SendRawParams{uid, messages, params}, nil)
 }
+
+func (c *memClient) Nick(uid string, nick string) error {
+	return c.varys.Nick(NickParams{uid, nick}, nil)
+}

@@ -36,8 +36,9 @@ type Client interface {
 	GetUIDToNicks() (map[string]string, error)
 	Connect(params ConnectParams) error
 	QuitIfConnected(uid string, quitMsg string) error
+	Nick(uid string, nick string) error
 
-	// Provide a blank uid to send to all puppets
+	// SendRaw supports a blank uid to send to all connections.
 	SendRaw(uid string, params InterpolationParams, messages ...string) error
 }
 
@@ -146,5 +147,17 @@ func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
 			c.SendRaw(msg)
 		}
 	})
+	return nil
+}
+
+type NickParams struct {
+	UID  string
+	Nick string
+}
+
+func (v *Varys) Nick(params NickParams, _ *struct{}) error {
+	if conn, ok := v.uidToConns[params.UID]; ok {
+		conn.Nick(params.Nick)
+	}
 	return nil
 }
