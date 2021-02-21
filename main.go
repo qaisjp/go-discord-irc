@@ -224,13 +224,13 @@ func main() {
 		if !equalChans {
 			log.Println("Channel mappings updated!")
 			if len(chans) == 0 {
-				log.Println("Channel mappings are missing!")
-			}
-
-			if err := dib.SetChannelMappings(chans); err != nil {
-				log.WithField("error", err).Errorln("could not set channel mappings")
+				log.Println("Channel mappings are missing! Not applying changes in case this was an accident.")
 			} else {
-				channelMappings = chans
+				if err := dib.SetChannelMappings(chans); err != nil {
+					log.WithField("error", err).Errorln("could not set channel mappings")
+				} else {
+					channelMappings = chans
+				}
 			}
 		}
 	})
