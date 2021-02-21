@@ -14,8 +14,11 @@ import (
 
 type Varys struct {
 	connConfig SetupParams
-
 	uidToConns map[string]*irc.Connection
+}
+
+func NewVarys() *Varys {
+	return &Varys{uidToConns: make(map[string]*irc.Connection)}
 }
 
 func (v *Varys) connCall(uid string, fn func(*irc.Connection)) {

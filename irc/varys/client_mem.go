@@ -6,7 +6,7 @@ type memClient struct {
 
 // NewMemClient returns an in-memory variant of varys
 func NewMemClient() Client {
-	return &memClient{varys: &Varys{}}
+	return &memClient{varys: NewVarys()}
 }
 
 func (c *memClient) Setup(params SetupParams) error {

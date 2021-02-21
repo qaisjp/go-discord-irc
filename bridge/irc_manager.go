@@ -44,6 +44,7 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
 
+		Server:         conf.IRCServer,
 		ServerPassword: conf.IRCServerPass,
 		WebIRCPassword: conf.WebIRCPass,
 	})
