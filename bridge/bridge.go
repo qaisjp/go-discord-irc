@@ -300,12 +300,6 @@ func (b *Bridge) Open() (err error) {
 	return
 }
 
-func rejoinIRC(con *irc.Connection, event *irc.Event) {
-	if event.Arguments[1] == con.GetNick() {
-		con.Join(event.Arguments[0])
-	}
-}
-
 // SetupIRCConnection sets up an IRC connection with config settings like
 // UseTLS, InsecureSkipVerify, and WebIRCPass.
 func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
@@ -315,8 +309,12 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 			InsecureSkipVerify: b.Config.InsecureSkipVerify,
 		}
 	}
+
+	// On kick, rejoin the channel
 	con.AddCallback("KICK", func(e *irc.Event) {
-		rejoinIRC(con, e)
+		if e.Arguments[1] == con.GetNick() {
+			con.Join(e.Arguments[0])
+		}
 	})
 
 	con.Password = b.Config.IRCServerPass

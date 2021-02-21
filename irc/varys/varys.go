@@ -5,6 +5,7 @@
 package varys
 
 import (
+	"crypto/tls"
 	"fmt"
 
 	irc "github.com/qaisjp/go-ircevent"
@@ -19,19 +20,20 @@ type Varys struct {
 type Client interface {
 	Setup(params SetupParams) error
 	GetUIDToNicks() (map[string]string, error)
-	// Connect(uid string, params ConnectParams) (err error)
+	Connect(params ConnectParams) error
+	QuitIfConnected(uid string, quitMsg string) error
 }
 
 type SetupParams struct {
 	UseTLS             bool // Whether we should use TLS
 	InsecureSkipVerify bool // Controls tls.Config.InsecureSkipVerify, if using TLS
 
+	Server         string
 	ServerPassword string
 	WebIRCPassword string
 }
 
 func (v *Varys) Setup(params SetupParams, _ *struct{}) error {
-	fmt.Printf("setup params are now %#v", params)
 	v.connConfig = params
 	return nil
 }
@@ -47,10 +49,63 @@ func (v *Varys) GetUIDToNicks(_ struct{}, result *map[string]string) error {
 }
 
 type ConnectParams struct {
+	UID string
+
 	Nick     string
 	Username string
 	RealName string
-	QuitMsg  string
+
+	WebIRCSuffix string
 }
 
-// func (v *Varys) Connect(uid string, p)
+func (v *Varys) Connect(params ConnectParams, _ *struct{}) error {
+	conn := irc.IRC(params.Nick, params.Username)
+	// conn.Debug = true
+	conn.RealName = params.RealName
+
+	// TLS things, and the server password
+	conn.Password = v.connConfig.ServerPassword
+	conn.UseTLS = v.connConfig.UseTLS
+	if v.connConfig.InsecureSkipVerify {
+		conn.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
+	// Set up WebIRC, if a suffix is provided
+	if params.WebIRCSuffix != "" {
+		conn.WebIRC = v.connConfig.WebIRCPassword + " " + params.WebIRCSuffix
+	}
+
+	// On kick, rejoin the channel
+	conn.AddCallback("KICK", func(e *irc.Event) {
+		if e.Arguments[1] == conn.GetNick() {
+			conn.Join(e.Arguments[0])
+		}
+	})
+
+	err := conn.Connect(v.connConfig.Server)
+	if err != nil {
+		return fmt.Errorf("error opening irc connection: %w", err)
+	}
+
+	v.uidToConns[params.UID] = conn
+	go conn.Loop()
+	return nil
+}
+
+type QuitParams struct {
+	UID         string
+	QuitMessage string
+}
+
+func (v *Varys) QuitIfConnected(params QuitParams, _ *struct{}) error {
+	if conn, ok := v.uidToConns[params.UID]; ok {
+		if conn.Connected() {
+			conn.QuitMessage = params.QuitMessage
+			conn.Quit()
+		}
+	}
+	delete(v.uidToConns, params.UID)
+	return nil
+}

@@ -12,10 +12,10 @@ import (
 // An ircConnection should only ever communicate with its manager
 // Refer to `(m *ircManager) CreateConnection` to see how these are spawned
 type ircConnection struct {
-	innerCon *irc.Connection
-
 	discord DiscordUser
 	nick    string
+
+	quitMessage string
 
 	messages      chan IRCMessage
 	cooldownTimer *time.Timer
@@ -55,7 +55,7 @@ func (i *ircConnection) JoinChannels() {
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	if i.discord.Username != discord.Username {
-		i.innerCon.QuitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
+		i.QuitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
 		i.manager.CloseConnection(i)
 
 		// After one second make the user reconnect.

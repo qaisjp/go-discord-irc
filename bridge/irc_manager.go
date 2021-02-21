@@ -11,7 +11,6 @@ import (
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/irc/varys"
-	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -52,14 +51,20 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	}
 
 	// Sync back state, if there is any
-	m.discordToNick, err = m.varys.GetUIDToNicks()
+	discordToNicks, err := m.varys.GetUIDToNicks()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get discordToNickname: %w", err)
+		return nil, fmt.Errorf("failed to get discordToNicks: %w", err)
 	}
-	// go2: m.nickToDiscord = InvertMap(m.discordToNick)
-	m.nickToDiscord = make(map[string]string, len(m.discordToNick))
+	m.ircConnections = make(map[string]*ircConnection, len(discordToNicks))
+	m.puppetNicks = make(map[string]*ircConnection, len(discordToNicks))
 	for discord, nick := range m.discordToNick {
-		m.nickToDiscord[nick] = discord
+		m.ircConnections[discord] = &ircConnection{
+			discord:          DiscordUser{ID: discord},
+			nick:             nick,
+			messages:         make(chan IRCMessage),
+			manager:          m,
+			pmNoticedSenders: make(map[string]struct{}),
+		}
 	}
 
 	return m, nil
@@ -81,9 +86,7 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 		fmt.Println("Decrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	if i.innerCon.Connected() {
-		i.innerCon.Quit()
-	}
+	m.varys.QuitIfConnected(i.discord.ID, i.quitMessage)
 }
 
 // Close closes all of an IRCManager's connections.
@@ -201,11 +204,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	nick := m.generateNickname(user)
 	username := m.generateUsername(user)
 
-	innerCon := irc.IRC(nick, username)
-	// innerCon.Debug = m.bridge.Config.Debug
-	innerCon.RealName = user.Username
-	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration)
-
 	var ip string
 	{
 		baseip := "fd75:f5f5:226f:"
@@ -224,20 +222,13 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		hostname += ".user.discord"
 	}
 
-	m.bridge.SetupIRCConnection(innerCon, hostname, ip)
-
 	con := &ircConnection{
-		innerCon: innerCon,
-
-		discord: user,
-		nick:    nick,
-
-		messages:      make(chan IRCMessage),
-		cooldownTimer: nil,
-
-		manager: m,
-
+		discord:          user,
+		nick:             nick,
+		messages:         make(chan IRCMessage),
+		manager:          m,
 		pmNoticedSenders: make(map[string]struct{}),
+		quitMessage:      fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration),
 	}
 
 	con.innerCon.AddCallback("001", con.OnWelcome)
@@ -250,13 +241,19 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
+	err := m.varys.Connect(varys.ConnectParams{
+		UID: user.ID,
+
+		Nick:     nick,
+		Username: username,
+		RealName: user.Username,
+
+		WebIRCSuffix: fmt.Sprintf("discord %s %s", hostname, ip),
+	})
 	if err != nil {
-		log.WithField("error", err).Errorln("error opening irc connection")
+		log.WithError(err).Errorln("error opening irc connection")
 		return
 	}
-
-	go innerCon.Loop()
 }
 
 // Converts a nickname to a sanitised form.

@@ -27,3 +27,13 @@ func (c *netClient) GetUIDToNicks() (result map[string]string, err error) {
 	err = c.client.Call("Varys.GetUIDToNicks", struct{}{}, &result)
 	return
 }
+
+func (c *netClient) Connect(params ConnectParams) error {
+	var reply struct{}
+	return c.client.Call("Varys.Connect", params, &reply)
+}
+
+func (c *netClient) QuitIfConnected(uid string, quitMessage string) error {
+	var reply struct{}
+	return c.client.Call("Varys.QuitIfConnected", QuitParams{uid, quitMessage}, &reply)
+}
