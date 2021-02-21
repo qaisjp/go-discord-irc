@@ -6,12 +6,9 @@ type memClient struct {
 
 // NewMemClient returns an in-memory variant of varys
 func NewMemClient() Client {
-	return &memClient{}
+	return &memClient{varys: &Varys{}}
 }
 
-func (c *memClient) AddPuppet(name string) (realname string, err error) {
-	if err = c.varys.AddPuppet(name, &realname); err != nil {
-		return
-	}
-	return
+func (c *memClient) Setup(params SetupParams) error {
+	return c.varys.Setup(params, nil)
 }

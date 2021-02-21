@@ -18,7 +18,7 @@ func NewNetClient() Client {
 	return &netClient{client: client}
 }
 
-func (c *netClient) AddPuppet(name string) (realname string, err error) {
-	err = c.client.Call("Varys.AddPuppet", name, &realname)
-	return
+func (c *netClient) Setup(params SetupParams) error {
+	var reply struct{}
+	return c.client.Call("Varys.Setup", params, reply)
 }

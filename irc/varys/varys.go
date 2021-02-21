@@ -4,13 +4,36 @@
 // Why "varys"? Because it is the Master of Whisperers.
 package varys
 
-type Client interface {
-	AddPuppet(name string) (realname string, err error)
+import "fmt"
+
+type Varys struct {
+	connConfig SetupParams
 }
 
-type Varys struct{}
+type Client interface {
+	Setup(params SetupParams) error
+	// Connect(uid string, params ConnectParams) (err error)
+}
 
-func (v *Varys) AddPuppet(name string, realname *string) error {
-	*realname = name
+type SetupParams struct {
+	UseTLS             bool // Whether we should use TLS
+	InsecureSkipVerify bool // Controls tls.Config.InsecureSkipVerify, if using TLS
+
+	ServerPassword string
+	WebIRCPassword string
+}
+
+func (v *Varys) Setup(params SetupParams, _ *struct{}) error {
+	fmt.Printf("setup params are now %#v", params)
+	v.connConfig = params
 	return nil
 }
+
+type ConnectParams struct {
+	Nick     string
+	Username string
+	RealName string
+	QuitMsg  string
+}
+
+// func (v *Varys) Connect(uid string, p)
