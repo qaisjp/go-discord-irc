@@ -163,7 +163,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		}
 
 		// Update their nickname / username
-		// TODO: Support username changes
 		// Note: this event is still called when their status is changed
 		//       from `online` to `dnd` (online related states)
 		//       In UpdateDetails we handle nickname changes so it is
