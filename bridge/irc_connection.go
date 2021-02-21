@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -32,9 +33,7 @@ type ircConnection struct {
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
 	// execute puppet prejoin commands
-	for _, com := range i.manager.bridge.Config.IRCPuppetPrejoinCommands {
-		i.innerCon.SendRaw(strings.ReplaceAll(com, "${NICK}", i.innerCon.GetNick()))
-	}
+	i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{Nick: true}, i.manager.bridge.Config.IRCPuppetPrejoinCommands...)
 
 	i.JoinChannels()
 
@@ -142,8 +141,9 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 }
 
 func (i *ircConnection) SendRaw(message string) {
-	i.manager.varys.SendRaw(i.discord.ID, message)
+	i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{}, message)
 }
+
 func (i *ircConnection) SetAway(status string) {
 	i.SendRaw(fmt.Sprintf("AWAY :%s", status))
 }

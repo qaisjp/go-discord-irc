@@ -10,6 +10,7 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -215,9 +216,7 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 		}
 
 		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
-		for _, conn := range b.ircManager.ircConnections {
-			conn.innerCon.SendRaw("PART " + strings.Join(rmChannels, ","))
-		}
+		b.ircManager.varys.SendRaw("", varys.InterpolationParams{}, "PART "+strings.Join(rmChannels, ","))
 
 		// The bots needs to join the new mappings
 		b.ircListener.JoinChannels()

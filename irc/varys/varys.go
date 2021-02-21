@@ -7,6 +7,7 @@ package varys
 import (
 	"crypto/tls"
 	"fmt"
+	"strings"
 
 	irc "github.com/qaisjp/go-ircevent"
 )
@@ -37,7 +38,7 @@ type Client interface {
 	QuitIfConnected(uid string, quitMsg string) error
 
 	// Provide a blank uid to send to all puppets
-	SendRaw(uid string, message string) error
+	SendRaw(uid string, params InterpolationParams, messages ...string) error
 }
 
 type SetupParams struct {
@@ -126,14 +127,24 @@ func (v *Varys) QuitIfConnected(params QuitParams, _ *struct{}) error {
 	return nil
 }
 
+type InterpolationParams struct {
+	Nick bool
+}
 type SendRawParams struct {
-	UID     string
-	Message string
+	UID      string
+	Messages []string
+
+	Interpolation InterpolationParams
 }
 
 func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
 	v.connCall(params.UID, func(c *irc.Connection) {
-		c.SendRaw(params.Message)
+		for _, msg := range params.Messages {
+			if params.Interpolation.Nick {
+				msg = strings.ReplaceAll(msg, "${NICK}", c.GetNick())
+			}
+			c.SendRaw(msg)
+		}
 	})
 	return nil
 }

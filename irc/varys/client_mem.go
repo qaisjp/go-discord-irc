@@ -26,6 +26,6 @@ func (c *memClient) QuitIfConnected(uid string, quitMessage string) error {
 	return c.varys.QuitIfConnected(QuitParams{uid, quitMessage}, nil)
 }
 
-func (c *memClient) SendRaw(uid string, message string) error {
-	return c.varys.SendRaw(SendRawParams{uid, message}, nil)
+func (c *memClient) SendRaw(uid string, params InterpolationParams, messages ...string) error {
+	return c.varys.SendRaw(SendRawParams{uid, messages, params}, nil)
 }

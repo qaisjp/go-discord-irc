@@ -38,7 +38,7 @@ func (c *netClient) QuitIfConnected(uid string, quitMessage string) error {
 	return c.client.Call("Varys.QuitIfConnected", QuitParams{uid, quitMessage}, &reply)
 }
 
-func (c *netClient) SendRaw(uid string, message string) error {
+func (c *netClient) SendRaw(uid string, params InterpolationParams, messages ...string) error {
 	var reply struct{}
-	return c.client.Call("Varys.SendRaw", SendRawParams{uid, message}, &reply)
+	return c.client.Call("Varys.SendRaw", SendRawParams{uid, messages, params}, &reply)
 }
