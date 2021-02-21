@@ -72,8 +72,9 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	}
 
 	i.discord = discord
+	delete(i.manager.puppetNicks, i.nick)
 	i.nick = i.manager.generateNickname(i.discord)
-	i.innerCon.RealName = discord.Username
+	i.manager.puppetNicks[i.nick] = i
 
 	go i.innerCon.Nick(i.nick)
 }
