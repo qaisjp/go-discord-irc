@@ -17,11 +17,27 @@ type Varys struct {
 	uidToConns map[string]*irc.Connection
 }
 
+func (v *Varys) connCall(uid string, fn func(*irc.Connection)) {
+	if uid == "" {
+		for _, conn := range v.uidToConns {
+			fn(conn)
+		}
+		return
+	}
+
+	if conn, ok := v.uidToConns[uid]; ok {
+		fn(conn)
+	}
+}
+
 type Client interface {
 	Setup(params SetupParams) error
 	GetUIDToNicks() (map[string]string, error)
 	Connect(params ConnectParams) error
 	QuitIfConnected(uid string, quitMsg string) error
+
+	// Provide a blank uid to send to all puppets
+	SendRaw(uid string, message string) error
 }
 
 type SetupParams struct {
@@ -107,5 +123,17 @@ func (v *Varys) QuitIfConnected(params QuitParams, _ *struct{}) error {
 		}
 	}
 	delete(v.uidToConns, params.UID)
+	return nil
+}
+
+type SendRawParams struct {
+	UID     string
+	Message string
+}
+
+func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
+	v.connCall(params.UID, func(c *irc.Connection) {
+		c.SendRaw(params.Message)
+	})
 	return nil
 }

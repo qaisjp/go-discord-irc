@@ -40,22 +40,22 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
+			msg := m.Message
 			if m.IsAction {
-				i.innerCon.Action(m.IRCChannel, m.Message)
-			} else {
-				i.innerCon.Privmsg(m.IRCChannel, m.Message)
+				msg = fmt.Sprintf("\001ACTION %s\001", msg)
 			}
+			i.Privmsg(m.IRCChannel, msg)
 		}
 	}(i)
 }
 
 func (i *ircConnection) JoinChannels() {
-	i.innerCon.SendRaw(i.manager.bridge.GetJoinCommand(i.manager.RequestChannels(i.discord.ID)))
+	i.SendRaw(i.manager.bridge.GetJoinCommand(i.manager.RequestChannels(i.discord.ID)))
 }
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	if i.discord.Username != discord.Username {
-		i.QuitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
+		i.quitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
 		i.manager.CloseConnection(i)
 
 		// After one second make the user reconnect.
@@ -117,9 +117,9 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {
-			i.innerCon.Privmsg(e.Nick, "Commands: help, who")
+			i.Privmsg(e.Nick, "Commands: help, who")
 		} else if e.Message() == "who" {
-			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
+			i.Privmsg(e.Nick, fmt.Sprintf("I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID))
 		}
 
 		d := i.manager.bridge.discord
@@ -141,6 +141,13 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
 }
 
+func (i *ircConnection) SendRaw(message string) {
+	i.manager.varys.SendRaw(i.discord.ID, message)
+}
 func (i *ircConnection) SetAway(status string) {
-	i.innerCon.SendRawf("AWAY :%s", status)
+	i.SendRaw(fmt.Sprintf("AWAY :%s", status))
+}
+
+func (i *ircConnection) Privmsg(target, message string) {
+	i.SendRaw(fmt.Sprintf("PRIVMSG %s :%s\r\n", target, message))
 }
