@@ -34,7 +34,7 @@ func (v *Varys) connCall(uid string, fn func(*irc.Connection)) {
 type Client interface {
 	Setup(params SetupParams) error
 	GetUIDToNicks() (map[string]string, error)
-	Connect(params ConnectParams) error
+	Connect(params ConnectParams) error // Does not yet support netClient
 	QuitIfConnected(uid string, quitMsg string) error
 	Nick(uid string, nick string) error
 
@@ -74,6 +74,9 @@ type ConnectParams struct {
 	RealName string
 
 	WebIRCSuffix string
+
+	// TODO(qaisjp): does not support net/rpc!!!!
+	Callbacks map[string]func(*irc.Event)
 }
 
 func (v *Varys) Connect(params ConnectParams, _ *struct{}) error {
@@ -101,6 +104,10 @@ func (v *Varys) Connect(params ConnectParams, _ *struct{}) error {
 			conn.Join(e.Arguments[0])
 		}
 	})
+
+	for eventcode, callback := range params.Callbacks {
+		conn.AddCallback(eventcode, callback)
+	}
 
 	err := conn.Connect(v.connConfig.Server)
 	if err != nil {

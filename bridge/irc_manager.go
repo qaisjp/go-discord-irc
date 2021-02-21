@@ -11,6 +11,7 @@ import (
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	"github.com/qaisjp/go-discord-irc/irc/varys"
+	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -230,9 +231,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		quitMessage:      fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration),
 	}
 
-	con.innerCon.AddCallback("001", con.OnWelcome)
-	con.innerCon.AddCallback("PRIVMSG", con.OnPrivateMessage)
-
 	m.ircConnections[user.ID] = con
 	m.puppetNicks[nick] = con
 
@@ -248,6 +246,11 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		RealName: user.Username,
 
 		WebIRCSuffix: fmt.Sprintf("discord %s %s", hostname, ip),
+
+		Callbacks: map[string]func(*irc.Event){
+			"001":     con.OnWelcome,
+			"PRIVMSG": con.OnPrivateMessage,
+		},
 	})
 	if err != nil {
 		log.WithError(err).Errorln("error opening irc connection")
