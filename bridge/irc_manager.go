@@ -22,6 +22,9 @@ type IRCManager struct {
 	ircConnections map[string]*ircConnection
 	puppetNicks    map[string]*ircConnection
 
+	discordToNick map[string]string
+	nickToDiscord map[string]string
+
 	bridge *Bridge
 	varys  varys.Client
 }
@@ -37,18 +40,27 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 
 	// Set up varys
 	m.varys = varys.NewMemClient()
-	if err := m.varys.Setup(varys.SetupParams{
+	err := m.varys.Setup(varys.SetupParams{
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
 
 		ServerPassword: conf.IRCServerPass,
 		WebIRCPassword: conf.WebIRCPass,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, fmt.Errorf("failed to set up params: %w", err)
 	}
 
 	// Sync back state, if there is any
-	// uids := m.varys.GetUserIDs()
+	m.discordToNick, err = m.varys.GetUIDToNicks()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get discordToNickname: %w", err)
+	}
+	// go2: m.nickToDiscord = InvertMap(m.discordToNick)
+	m.nickToDiscord = make(map[string]string, len(m.discordToNick))
+	for discord, nick := range m.discordToNick {
+		m.nickToDiscord[nick] = discord
+	}
 
 	return m, nil
 }

@@ -4,14 +4,21 @@
 // Why "varys"? Because it is the Master of Whisperers.
 package varys
 
-import "fmt"
+import (
+	"fmt"
+
+	irc "github.com/qaisjp/go-ircevent"
+)
 
 type Varys struct {
 	connConfig SetupParams
+
+	uidToConns map[string]*irc.Connection
 }
 
 type Client interface {
 	Setup(params SetupParams) error
+	GetUIDToNicks() (map[string]string, error)
 	// Connect(uid string, params ConnectParams) (err error)
 }
 
@@ -26,6 +33,16 @@ type SetupParams struct {
 func (v *Varys) Setup(params SetupParams, _ *struct{}) error {
 	fmt.Printf("setup params are now %#v", params)
 	v.connConfig = params
+	return nil
+}
+
+func (v *Varys) GetUIDToNicks(_ struct{}, result *map[string]string) error {
+	conns := v.uidToConns
+	m := make(map[string]string, len(conns))
+	for uid, conn := range conns {
+		m[uid] = conn.GetNick()
+	}
+	*result = m
 	return nil
 }
 
