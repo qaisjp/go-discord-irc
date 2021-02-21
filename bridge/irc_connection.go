@@ -33,7 +33,10 @@ type ircConnection struct {
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
 	// execute puppet prejoin commands
-	i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{Nick: true}, i.manager.bridge.Config.IRCPuppetPrejoinCommands...)
+	err := i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{Nick: true}, i.manager.bridge.Config.IRCPuppetPrejoinCommands...)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	i.JoinChannels()
 
@@ -75,7 +78,9 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	i.nick = i.manager.generateNickname(i.discord)
 	i.manager.puppetNicks[i.nick] = i
 
-	i.manager.varys.Nick(i.discord.ID, i.nick)
+	if err := i.manager.varys.Nick(i.discord.ID, i.nick); err != nil {
+		panic(err.Error())
+	}
 }
 
 func (i *ircConnection) introducePM(nick string) {
@@ -142,7 +147,9 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 }
 
 func (i *ircConnection) SendRaw(message string) {
-	i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{}, message)
+	if err := i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{}, message); err != nil {
+		panic(err.Error())
+	}
 }
 
 func (i *ircConnection) SetAway(status string) {

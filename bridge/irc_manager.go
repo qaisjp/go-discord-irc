@@ -22,9 +22,6 @@ type IRCManager struct {
 	ircConnections map[string]*ircConnection
 	puppetNicks    map[string]*ircConnection
 
-	discordToNick map[string]string
-	nickToDiscord map[string]string
-
 	bridge *Bridge
 	varys  varys.Client
 }
@@ -59,7 +56,7 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	}
 	m.ircConnections = make(map[string]*ircConnection, len(discordToNicks))
 	m.puppetNicks = make(map[string]*ircConnection, len(discordToNicks))
-	for discord, nick := range m.discordToNick {
+	for discord, nick := range discordToNicks {
 		m.ircConnections[discord] = &ircConnection{
 			discord:          DiscordUser{ID: discord},
 			nick:             nick,
@@ -89,7 +86,9 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 		fmt.Println("Decrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	m.varys.QuitIfConnected(i.discord.ID, i.quitMessage)
+	if err := m.varys.QuitIfConnected(i.discord.ID, i.quitMessage); err != nil {
+		log.WithError(err).WithFields(log.Fields{"discord": i.discord.ID}).Errorln("failed to quit")
+	}
 }
 
 // Close closes all of an IRCManager's connections.

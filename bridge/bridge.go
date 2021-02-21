@@ -216,7 +216,9 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 		}
 
 		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
-		b.ircManager.varys.SendRaw("", varys.InterpolationParams{}, "PART "+strings.Join(rmChannels, ","))
+		if err := b.ircManager.varys.SendRaw("", varys.InterpolationParams{}, "PART "+strings.Join(rmChannels, ",")); err != nil {
+			panic(err.Error())
+		}
 
 		// The bots needs to join the new mappings
 		b.ircListener.JoinChannels()
