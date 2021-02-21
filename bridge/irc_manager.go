@@ -27,7 +27,7 @@ type IRCManager struct {
 }
 
 // NewIRCManager creates a new IRCManager
-func newIRCManager(bridge *Bridge) *IRCManager {
+func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	conf := bridge.Config
 	m := &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
@@ -37,15 +37,20 @@ func newIRCManager(bridge *Bridge) *IRCManager {
 
 	// Set up varys
 	m.varys = varys.NewMemClient()
-	m.varys.Setup(varys.SetupParams{
+	if err := m.varys.Setup(varys.SetupParams{
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
 
 		ServerPassword: conf.IRCServerPass,
 		WebIRCPassword: conf.WebIRCPass,
-	})
+	}); err != nil {
+		return nil, fmt.Errorf("failed to set up params: %w", err)
+	}
 
-	return m
+	// Sync back state, if there is any
+	// uids := m.varys.GetUserIDs()
+
+	return m, nil
 }
 
 // CloseConnection shuts down a particular connection and its channels.

@@ -255,7 +255,9 @@ func New(conf *Config) (*Bridge, error) {
 	}
 
 	dib.ircListener = newIRCListener(dib, conf.WebIRCPass)
-	dib.ircManager = newIRCManager(dib)
+	if dib.ircManager, err = newIRCManager(dib); err != nil {
+		return nil, fmt.Errorf("failed to create ircManager: %w", err)
+	}
 
 	go dib.loop()
 
