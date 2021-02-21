@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,15 +23,29 @@ type IRCManager struct {
 	puppetNicks    map[string]*ircConnection
 
 	bridge *Bridge
+	varys  varys.Client
 }
 
 // NewIRCManager creates a new IRCManager
 func newIRCManager(bridge *Bridge) *IRCManager {
-	return &IRCManager{
+	conf := bridge.Config
+	m := &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
 		puppetNicks:    make(map[string]*ircConnection),
 		bridge:         bridge,
 	}
+
+	// Set up varys
+	m.varys = varys.NewMemClient()
+	m.varys.Setup(varys.SetupParams{
+		UseTLS:             !conf.NoTLS,
+		InsecureSkipVerify: conf.InsecureSkipVerify,
+
+		ServerPassword: conf.IRCServerPass,
+		WebIRCPassword: conf.WebIRCPass,
+	})
+
+	return m
 }
 
 // CloseConnection shuts down a particular connection and its channels.

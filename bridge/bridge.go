@@ -10,7 +10,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
-	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -78,7 +77,6 @@ type Bridge struct {
 	discord     *discordBot
 	ircListener *ircListener
 	ircManager  *IRCManager
-	varys       varys.Client
 
 	mappings       []Mapping
 	ircChannelKeys map[string]string // From "#test" to "password"
@@ -258,15 +256,6 @@ func New(conf *Config) (*Bridge, error) {
 
 	dib.ircListener = newIRCListener(dib, conf.WebIRCPass)
 	dib.ircManager = newIRCManager(dib)
-
-	dib.varys = varys.NewMemClient()
-	dib.varys.Setup(varys.SetupParams{
-		UseTLS:             !conf.NoTLS,
-		InsecureSkipVerify: conf.InsecureSkipVerify,
-
-		ServerPassword: conf.IRCServerPass,
-		WebIRCPassword: conf.WebIRCPass,
-	})
 
 	go dib.loop()
 
