@@ -9,7 +9,7 @@ require (
 	github.com/matterbridge/discordgo v0.23.2-0.20210201201054-fb39a175b4f7
 	github.com/mozillazg/go-unidecode v0.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/qaisjp/go-ircevent v0.0.0-20210221185252-a5424835fdbc
+	github.com/qaisjp/go-ircevent v0.0.0-20210223011734-62863beddc83
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
