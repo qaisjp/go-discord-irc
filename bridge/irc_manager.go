@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,15 +23,50 @@ type IRCManager struct {
 	puppetNicks    map[string]*ircConnection
 
 	bridge *Bridge
+	varys  varys.Client
 }
 
 // NewIRCManager creates a new IRCManager
-func newIRCManager(bridge *Bridge) *IRCManager {
-	return &IRCManager{
+func newIRCManager(bridge *Bridge) (*IRCManager, error) {
+	conf := bridge.Config
+	m := &IRCManager{
 		ircConnections: make(map[string]*ircConnection),
 		puppetNicks:    make(map[string]*ircConnection),
 		bridge:         bridge,
 	}
+
+	// Set up varys
+	m.varys = varys.NewMemClient()
+	err := m.varys.Setup(varys.SetupParams{
+		UseTLS:             !conf.NoTLS,
+		InsecureSkipVerify: conf.InsecureSkipVerify,
+
+		Server:         conf.IRCServer,
+		ServerPassword: conf.IRCServerPass,
+		WebIRCPassword: conf.WebIRCPass,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to set up params: %w", err)
+	}
+
+	// Sync back state, if there is any
+	discordToNicks, err := m.varys.GetUIDToNicks()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get discordToNicks: %w", err)
+	}
+	m.ircConnections = make(map[string]*ircConnection, len(discordToNicks))
+	m.puppetNicks = make(map[string]*ircConnection, len(discordToNicks))
+	for discord, nick := range discordToNicks {
+		m.ircConnections[discord] = &ircConnection{
+			discord:          DiscordUser{ID: discord},
+			nick:             nick,
+			messages:         make(chan IRCMessage),
+			manager:          m,
+			pmNoticedSenders: make(map[string]struct{}),
+		}
+	}
+
+	return m, nil
 }
 
 // CloseConnection shuts down a particular connection and its channels.
@@ -50,8 +86,8 @@ func (m *IRCManager) CloseConnection(i *ircConnection) {
 		fmt.Println("Decrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	if i.innerCon.Connected() {
-		i.innerCon.Quit()
+	if err := m.varys.QuitIfConnected(i.discord.ID, i.quitMessage); err != nil {
+		log.WithError(err).WithFields(log.Fields{"discord": i.discord.ID}).Errorln("failed to quit")
 	}
 }
 
@@ -129,7 +165,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		}
 
 		// Update their nickname / username
-		// TODO: Support username changes
 		// Note: this event is still called when their status is changed
 		//       from `online` to `dnd` (online related states)
 		//       In UpdateDetails we handle nickname changes so it is
@@ -170,11 +205,6 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	nick := m.generateNickname(user)
 	username := m.generateUsername(user)
 
-	innerCon := irc.IRC(nick, username)
-	// innerCon.Debug = m.bridge.Config.Debug
-	innerCon.RealName = user.Username
-	innerCon.QuitMessage = fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration)
-
 	var ip string
 	{
 		baseip := "fd75:f5f5:226f:"
@@ -193,24 +223,14 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		hostname += ".user.discord"
 	}
 
-	m.bridge.SetupIRCConnection(innerCon, hostname, ip)
-
 	con := &ircConnection{
-		innerCon: innerCon,
-
-		discord: user,
-		nick:    nick,
-
-		messages:      make(chan IRCMessage),
-		cooldownTimer: nil,
-
-		manager: m,
-
+		discord:          user,
+		nick:             nick,
+		messages:         make(chan IRCMessage),
+		manager:          m,
 		pmNoticedSenders: make(map[string]struct{}),
+		quitMessage:      fmt.Sprintf("Offline for %s", m.bridge.Config.CooldownDuration),
 	}
-
-	con.innerCon.AddCallback("001", con.OnWelcome)
-	con.innerCon.AddCallback("PRIVMSG", con.OnPrivateMessage)
 
 	m.ircConnections[user.ID] = con
 	m.puppetNicks[nick] = con
@@ -219,13 +239,24 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	err := con.innerCon.Connect(m.bridge.Config.IRCServer)
+	err := m.varys.Connect(varys.ConnectParams{
+		UID: user.ID,
+
+		Nick:     nick,
+		Username: username,
+		RealName: user.Username,
+
+		WebIRCSuffix: fmt.Sprintf("discord %s %s", hostname, ip),
+
+		Callbacks: map[string]func(*irc.Event){
+			"001":     con.OnWelcome,
+			"PRIVMSG": con.OnPrivateMessage,
+		},
+	})
 	if err != nil {
-		log.WithField("error", err).Errorln("error opening irc connection")
+		log.WithError(err).Errorln("error opening irc connection")
 		return
 	}
-
-	go innerCon.Loop()
 }
 
 // Converts a nickname to a sanitised form.

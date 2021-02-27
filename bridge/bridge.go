@@ -10,6 +10,7 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/matterbridge/discordgo"
 	"github.com/pkg/errors"
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -215,8 +216,8 @@ func (b *Bridge) SetChannelMappings(inMappings map[string]string) error {
 		}
 
 		b.ircListener.SendRaw("PART " + strings.Join(rmChannels, ","))
-		for _, conn := range b.ircManager.ircConnections {
-			conn.innerCon.SendRaw("PART " + strings.Join(rmChannels, ","))
+		if err := b.ircManager.varys.SendRaw("", varys.InterpolationParams{}, "PART "+strings.Join(rmChannels, ",")); err != nil {
+			panic(err.Error())
 		}
 
 		// The bots needs to join the new mappings
@@ -255,7 +256,9 @@ func New(conf *Config) (*Bridge, error) {
 	}
 
 	dib.ircListener = newIRCListener(dib, conf.WebIRCPass)
-	dib.ircManager = newIRCManager(dib)
+	if dib.ircManager, err = newIRCManager(dib); err != nil {
+		return nil, fmt.Errorf("failed to create ircManager: %w", err)
+	}
 
 	go dib.loop()
 
@@ -272,10 +275,6 @@ func (b *Bridge) SetIRCListenerName(name string) {
 func (b *Bridge) SetDebugMode(debug bool) {
 	b.Config.Debug = debug
 	b.ircListener.SetDebugMode(debug)
-
-	for _, conn := range b.ircManager.ircConnections {
-		conn.innerCon.Debug = debug
-	}
 }
 
 // Open all the connections required to run the bridge
@@ -298,12 +297,6 @@ func (b *Bridge) Open() (err error) {
 	return
 }
 
-func rejoinIRC(con *irc.Connection, event *irc.Event) {
-	if event.Arguments[1] == con.GetNick() {
-		con.Join(event.Arguments[0])
-	}
-}
-
 // SetupIRCConnection sets up an IRC connection with config settings like
 // UseTLS, InsecureSkipVerify, and WebIRCPass.
 func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
@@ -313,8 +306,12 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 			InsecureSkipVerify: b.Config.InsecureSkipVerify,
 		}
 	}
+
+	// On kick, rejoin the channel
 	con.AddCallback("KICK", func(e *irc.Event) {
-		rejoinIRC(con, e)
+		if e.Arguments[1] == con.GetNick() {
+			con.Join(e.Arguments[0])
+		}
 	})
 
 	con.Password = b.Config.IRCServerPass

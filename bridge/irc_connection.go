@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
 	log "github.com/sirupsen/logrus"
 )
@@ -12,10 +13,10 @@ import (
 // An ircConnection should only ever communicate with its manager
 // Refer to `(m *ircManager) CreateConnection` to see how these are spawned
 type ircConnection struct {
-	innerCon *irc.Connection
-
 	discord DiscordUser
 	nick    string
+
+	quitMessage string
 
 	messages      chan IRCMessage
 	cooldownTimer *time.Timer
@@ -32,30 +33,31 @@ type ircConnection struct {
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {
 	// execute puppet prejoin commands
-	for _, com := range i.manager.bridge.Config.IRCPuppetPrejoinCommands {
-		i.innerCon.SendRaw(strings.ReplaceAll(com, "${NICK}", i.innerCon.GetNick()))
+	err := i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{Nick: true}, i.manager.bridge.Config.IRCPuppetPrejoinCommands...)
+	if err != nil {
+		panic(err.Error())
 	}
 
 	i.JoinChannels()
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
+			msg := m.Message
 			if m.IsAction {
-				i.innerCon.Action(m.IRCChannel, m.Message)
-			} else {
-				i.innerCon.Privmsg(m.IRCChannel, m.Message)
+				msg = fmt.Sprintf("\001ACTION %s\001", msg)
 			}
+			i.Privmsg(m.IRCChannel, msg)
 		}
 	}(i)
 }
 
 func (i *ircConnection) JoinChannels() {
-	i.innerCon.SendRaw(i.manager.bridge.GetJoinCommand(i.manager.RequestChannels(i.discord.ID)))
+	i.SendRaw(i.manager.bridge.GetJoinCommand(i.manager.RequestChannels(i.discord.ID)))
 }
 
 func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	if i.discord.Username != discord.Username {
-		i.innerCon.QuitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
+		i.quitMessage = fmt.Sprintf("Changing real name from %s to %s", i.discord.Username, discord.Username)
 		i.manager.CloseConnection(i)
 
 		// After one second make the user reconnect.
@@ -76,7 +78,9 @@ func (i *ircConnection) UpdateDetails(discord DiscordUser) {
 	i.nick = i.manager.generateNickname(i.discord)
 	i.manager.puppetNicks[i.nick] = i
 
-	go i.innerCon.Nick(i.nick)
+	if err := i.manager.varys.Nick(i.discord.ID, i.nick); err != nil {
+		panic(err.Error())
+	}
 }
 
 func (i *ircConnection) introducePM(nick string) {
@@ -118,9 +122,9 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// Alert private messages
 	if string(e.Arguments[0][0]) != "#" {
 		if e.Message() == "help" {
-			i.innerCon.Privmsg(e.Nick, "Commands: help, who")
+			i.Privmsg(e.Nick, "Commands: help, who")
 		} else if e.Message() == "who" {
-			i.innerCon.Privmsgf(e.Nick, "I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID)
+			i.Privmsg(e.Nick, fmt.Sprintf("I am: %s#%s with ID %s", i.discord.Nick, i.discord.Discriminator, i.discord.ID))
 		}
 
 		d := i.manager.bridge.discord
@@ -142,6 +146,16 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 	// log.Println("Non listener IRC connection received PRIVMSG from channel. Something went wrong.")
 }
 
+func (i *ircConnection) SendRaw(message string) {
+	if err := i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{}, message); err != nil {
+		panic(err.Error())
+	}
+}
+
 func (i *ircConnection) SetAway(status string) {
-	i.innerCon.SendRawf("AWAY :%s", status)
+	i.SendRaw(fmt.Sprintf("AWAY :%s", status))
+}
+
+func (i *ircConnection) Privmsg(target, message string) {
+	i.SendRaw(fmt.Sprintf("PRIVMSG %s :%s\r\n", target, message))
 }
