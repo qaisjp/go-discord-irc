@@ -17,7 +17,7 @@ type ircListener struct {
 
 func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 	irccon := irc.IRC(dib.Config.IRCListenerName, "discord")
-	listener := &ircListener{irccon, dib, nil}
+	listener := &ircListener{irccon, dib, make(map[string]int)}
 
 	dib.SetupIRCConnection(irccon, "discord.", "fd75:f5f5:226f::")
 	listener.SetDebugMode(dib.Config.Debug)
