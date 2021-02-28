@@ -33,13 +33,13 @@ type ircConnection struct {
 
 func (i *ircConnection) GetNick() string {
 	var nick varys.GetNickParams
-	i.manager.varys.GetNick(i.discord.ID, &nick)
+	_ = i.manager.varys.GetNick(i.discord.ID, &nick)
 	return nick.Nick
 }
 
 func (i *ircConnection) Connected() bool {
 	var connected varys.ConnectedParams
-	i.manager.varys.Connected(i.discord.ID, &connected)
+	_ = i.manager.varys.Connected(i.discord.ID, &connected)
 	return connected.Connected
 }
 
