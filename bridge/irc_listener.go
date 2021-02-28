@@ -67,7 +67,7 @@ func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
 	}
 
 	newNick := event.Message()
-	message := i.bridge.ircManager.formatDiscordMessage(event.Code, event, newNick, "")
+	message := i.bridge.ircManager.formatDiscordMessage("NICK", event, newNick, "")
 
 	// if the message is empty...
 	if message == "" {
@@ -147,21 +147,21 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 
 	switch event.Code {
 	case "STJOIN":
-		message = manager.formatDiscordMessage(event.Code, event, "", "")
+		message = manager.formatDiscordMessage("JOIN", event, "", "")
 	case "STPART":
 		if len(event.Arguments) > 1 {
 			content = event.Arguments[1]
 		}
-		message = manager.formatDiscordMessage(event.Code, event, content, "")
+		message = manager.formatDiscordMessage("PART", event, content, "")
 	case "STQUIT":
 		content := event.Nick
 		if len(event.Arguments) == 1 {
 			content = event.Arguments[0]
 		}
-		message = manager.formatDiscordMessage(event.Code, event, content, "")
+		message = manager.formatDiscordMessage("QUIT", event, content, "")
 	case "KICK":
 		target, content = event.Arguments[1], event.Arguments[2]
-		message = manager.formatDiscordMessage(event.Code, event, content, target)
+		message = manager.formatDiscordMessage("KICK", event, content, target)
 	}
 
 	// if the message is empty...
