@@ -33,3 +33,11 @@ func (c *memClient) SendRaw(uid string, params InterpolationParams, messages ...
 func (c *memClient) Nick(uid string, nick string) error {
 	return c.varys.Nick(NickParams{uid, nick}, nil)
 }
+
+func (c *memClient) GetNick(uid string, nick *string) error {
+	return c.varys.GetNick(uid, nick)
+}
+
+func (c *memClient) Connected(uid string, connected *bool) error {
+	return c.varys.Connected(uid, connected)
+}

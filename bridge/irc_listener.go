@@ -12,7 +12,7 @@ type ircListener struct {
 	*irc.Connection
 	bridge *Bridge
 
-	joinQuitCallbacks map[string]int
+	listenerCallbackIDs map[string]int
 }
 
 func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
@@ -39,6 +39,10 @@ func newIRCListener(dib *Bridge, webIRCPass string) *ircListener {
 		listener.JoinChannels()
 	})
 
+	// we are assuming this will be posible to run independent of any
+	// future NICK callbacks added, otherwise do it like the STQUIT callback
+	listener.AddCallback("NICK", listener.nickTrackNick)
+
 	// Note that this might override SetupNickTrack!
 	listener.OnJoinQuitSettingChange()
 
@@ -52,58 +56,48 @@ func (i *ircListener) nickTrackNick(event *irc.Event) {
 		i.bridge.ircManager.puppetNicks[newNick] = con
 		delete(i.bridge.ircManager.puppetNicks, oldNick)
 	}
-
-	// This bit is from irc_nicktrack.go
-	if len(event.Arguments) == 1 { // Sanity check
-		for k := range i.Channels {
-			if _, ok := i.Channels[k].Users[event.Nick]; ok {
-				u := i.Channels[k].Users[event.Nick]
-				u.Host = event.Host
-				i.Channels[k].Users[event.Arguments[0]] = u //New nick
-				delete(i.Channels[k].Users, event.Nick)     //Delete old
-			}
-		}
-	}
 }
 
-// From irc_nicktrack.go.
-func (i *ircListener) nickTrackQuit(e *irc.Event) {
-	for k := range i.Connection.Channels {
-		delete(i.Channels[k].Users, e.Nick)
+func (i *ircListener) nickTrackPuppetQuit(e *irc.Event) {
+	// Protect against HostServ changing nicks or ircd's with CHGHOST/CHGIDENT or similar
+	// sending us a QUIT for a puppet nick only for it to rejoin right after.
+	// The puppet nick won't see a true disconnection itself and thus will still see itself
+	// as connected.
+	if con, ok := i.bridge.ircManager.puppetNicks[e.Nick]; ok && !con.Connected() {
+		delete(i.bridge.ircManager.puppetNicks, e.Nick)
 	}
 }
 
 func (i *ircListener) OnJoinQuitSettingChange() {
-	// Clear Nicktrack QUIT callback as it races with this
-	i.ClearCallback("QUIT")
-	i.ClearCallback("NICK")
-	i.AddCallback("NICK", i.nickTrackNick)
+	// always remove our listener callbacks
+	for ev, id := range i.listenerCallbackIDs {
+		i.RemoveCallback(ev, id)
+		delete(i.listenerCallbackIDs, ev)
+	}
 
-	// If remove callbacks...
-	if !i.bridge.Config.ShowJoinQuit {
-		for event, id := range i.joinQuitCallbacks {
-			i.RemoveCallback(event, id) // note that QUIT was already removed above
+	// we're either going to track quits, or track and relay said, so swap out the callback
+	// based on which is in effect.
+	if i.bridge.Config.ShowJoinQuit {
+		// KICK is not state tracked!
+		callbacks := []string{"STJOIN", "STPART", "STQUIT", "KICK"}
+		for _, cb := range callbacks {
+			id := i.AddCallback(cb, i.OnJoinQuitCallback)
+			i.listenerCallbackIDs[cb] = id
 		}
-
-		// Add back Nicktrack QUIT since it was removed
-		i.AddCallback("QUIT", i.nickTrackQuit)
-		return
+	} else {
+		id := i.AddCallback("STQUIT", i.nickTrackPuppetQuit)
+		i.listenerCallbackIDs["STQUIT"] = id
 	}
-
-	callbacks := []string{"JOIN", "PART", "QUIT", "KICK"}
-	cbs := make(map[string]int, len(callbacks))
-	for _, cb := range callbacks {
-		i.AddCallback(cb, i.OnJoinQuitCallback)
-	}
-
-	i.joinQuitCallbacks = cbs
 }
 
 func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 	// This checks if the source of the event was from a puppet.
-	// It won't work correctly for KICK, as the source is always the person that
-	// performed the kick. But that's okay because puppets aren't supposed to be kicked.
-	if i.isPuppetNick(event.Nick) {
+	if (event.Code == "KICK" && i.isPuppetNick(event.Arguments[1])) || i.isPuppetNick(event.Nick) {
+		// since we replace the STQUIT callback we have to manage our puppet nicks when
+		// this call back is active!
+		if event.Code == "STQUIT" {
+			i.nickTrackPuppetQuit(event)
+		}
 		return
 	}
 
@@ -117,14 +111,14 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 	id := " (" + event.User + "@" + event.Host + ") "
 
 	switch event.Code {
-	case "JOIN":
+	case "STJOIN":
 		message += " joined" + id
-	case "PART":
+	case "STPART":
 		message += " left" + id
 		if len(event.Arguments) > 1 {
 			message += ": " + event.Arguments[1]
 		}
-	case "QUIT":
+	case "STQUIT":
 		message += " quit" + id
 
 		reason := event.Nick
@@ -143,41 +137,38 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 		Message:  message,
 	}
 
-	if event.Code == "QUIT" {
+	if event.Code == "STQUIT" {
 		// Notify channels that the user is in
 		for _, m := range i.bridge.mappings {
 			channel := m.IRCChannel
-			channelObj, ok := i.Connection.Channels[channel]
+			channelObj, ok := i.Connection.GetChannel(channel)
 			if !ok {
 				log.WithField("channel", channel).WithField("who", who).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
 				continue
 			}
-			if _, ok := channelObj.Users[who]; !ok {
+			if _, ok := channelObj.GetUser(who); !ok {
 				continue
 			}
 			msg.IRCChannel = channel
 			i.bridge.discordMessagesChan <- msg
 		}
-
-		// Call nicktrack QUIT now (this avoids a race)
-		i.nickTrackQuit(event)
 	} else {
 		msg.IRCChannel = event.Arguments[0]
 		i.bridge.discordMessagesChan <- msg
 	}
 }
 
+// FIXME: the user might not be on any channel that we're in and that would
+// lead to incorrect assumptions the user doesn't exist!
+// Good way to check is to utilize ISON
 func (i *ircListener) DoesUserExist(user string) bool {
-	i.Lock()
-	defer i.Unlock()
-	for _, channel := range i.Channels {
-		_, ok := channel.Users[user]
-		if ok {
-			return true
+	ret := false
+	i.IterChannels(func(name string, ch *irc.Channel) {
+		if !ret {
+			_, ret = ch.GetUser(user)
 		}
-	}
-
-	return false
+	})
+	return ret
 }
 
 func (i *ircListener) SetDebugMode(debug bool) {
