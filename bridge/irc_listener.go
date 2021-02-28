@@ -218,18 +218,10 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
-	// Discord doesn't accept an empty message
-	if strings.TrimSpace(e.Message()) == "" {
-		return
-	}
-
-	// Ignore messages from Discord bots
-	if i.isPuppetNick(e.Nick) {
-		return
-	}
-
-	// Ignored hostmasks
-	if i.bridge.ircManager.isIgnoredHostmask(e.Source) {
+	if strings.TrimSpace(e.Message()) == "" || // Discord doesn't accept an empty message
+		i.isPuppetNick(e.Nick) || // ignore msg's from our puppets
+		i.bridge.ircManager.isIgnoredHostmask(e.Source) || //ignored hostmasks
+		i.bridge.ircManager.isFilteredIRCMessage(e.Message()) { // filtered
 		return
 	}
 
