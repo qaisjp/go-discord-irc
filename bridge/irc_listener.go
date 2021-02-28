@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"fmt"
 	"strings"
 
 	ircf "github.com/qaisjp/go-discord-irc/irc/format"
@@ -58,6 +59,33 @@ func (i *ircListener) nickTrackNick(event *irc.Event) {
 	}
 }
 
+func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
+	// ignored hostmasks, or we're a puppet? no relay
+	if i.bridge.ircManager.isIgnoredHostmask(event.Source) ||
+		i.isPuppetNick(event.Nick) ||
+		i.isPuppetNick(event.Message()) {
+		return
+	}
+
+	oldNick := event.Nick
+	newNick := event.Message()
+
+	msg := IRCMessage{
+		Username: "",
+		Message:  fmt.Sprintf("_%s changed their nick to %s_", oldNick, newNick),
+	}
+
+	for _, m := range i.bridge.mappings {
+		channel := m.IRCChannel
+		if channelObj, ok := i.Connection.GetChannel(channel); ok {
+			if _, ok := channelObj.GetUser(newNick); ok {
+				msg.IRCChannel = channel
+				i.bridge.discordMessagesChan <- msg
+			}
+		}
+	}
+}
+
 func (i *ircListener) nickTrackPuppetQuit(e *irc.Event) {
 	// Protect against HostServ changing nicks or ircd's with CHGHOST/CHGIDENT or similar
 	// sending us a QUIT for a puppet nick only for it to rejoin right after.
@@ -78,6 +106,8 @@ func (i *ircListener) OnJoinQuitSettingChange() {
 	// we're either going to track quits, or track and relay said, so swap out the callback
 	// based on which is in effect.
 	if i.bridge.Config.ShowJoinQuit {
+		i.listenerCallbackIDs["STNICK"] = i.AddCallback("STNICK", i.OnNickRelayToDiscord)
+
 		// KICK is not state tracked!
 		callbacks := []string{"STJOIN", "STPART", "STQUIT", "KICK"}
 		for _, cb := range callbacks {
