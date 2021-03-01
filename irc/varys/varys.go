@@ -44,9 +44,9 @@ type Client interface {
 	// SendRaw supports a blank uid to send to all connections.
 	SendRaw(uid string, params InterpolationParams, messages ...string) error
 	// GetNick gets the current connection's nick
-	GetNick(uid string, nick *GetNickParams) error
+	GetNick(uid string) (string, error)
 	// Connected returns the status of the current connection
-	Connected(uid string, connected *ConnectedParams) error
+	Connected(uid string) (bool, error)
 }
 
 type SetupParams struct {
@@ -164,13 +164,9 @@ func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
 	return nil
 }
 
-type GetNickParams struct {
-	Nick string
-}
-
-func (v *Varys) GetNick(uid string, nick *GetNickParams) error {
+func (v *Varys) GetNick(uid string, result *string) error {
 	if conn, ok := v.uidToConns[uid]; ok {
-		nick.Nick = conn.GetNick()
+		*result = conn.GetNick()
 	}
 	return nil
 }
