@@ -171,13 +171,9 @@ func (v *Varys) GetNick(uid string, result *string) error {
 	return nil
 }
 
-type ConnectedParams struct {
-	Connected bool
-}
-
-func (v *Varys) Connected(uid string, connected *ConnectedParams) error {
+func (v *Varys) Connected(uid string, result *bool) error {
 	if conn, ok := v.uidToConns[uid]; ok {
-		connected.Connected = conn.Connected()
+		*result = conn.Connected()
 	}
 
 	return nil

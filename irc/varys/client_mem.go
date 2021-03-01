@@ -34,10 +34,14 @@ func (c *memClient) Nick(uid string, nick string) error {
 	return c.varys.Nick(NickParams{uid, nick}, nil)
 }
 
-func (c *memClient) GetNick(uid string, nick *GetNickParams) error {
-	return c.varys.GetNick(uid, nick)
+func (c *memClient) GetNick(uid string) (string, error) {
+	var nick string
+	err := c.varys.GetNick(uid, &nick)
+	return nick, err
 }
 
-func (c *memClient) Connected(uid string, connected *ConnectedParams) error {
-	return c.varys.Connected(uid, connected)
+func (c *memClient) Connected(uid string) (bool, error) {
+	var connected bool
+	err := c.varys.Connected(uid, &connected)
+	return connected, err
 }

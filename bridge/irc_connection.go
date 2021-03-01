@@ -32,15 +32,13 @@ type ircConnection struct {
 }
 
 func (i *ircConnection) GetNick() string {
-	var nick varys.GetNickParams
-	_ = i.manager.varys.GetNick(i.discord.ID, &nick)
-	return nick.Nick
+	nick, _ := i.manager.varys.GetNick(i.discord.ID)
+	return nick
 }
 
 func (i *ircConnection) Connected() bool {
-	var connected varys.ConnectedParams
-	_ = i.manager.varys.Connected(i.discord.ID, &connected)
-	return connected.Connected
+	connected, _ := i.manager.varys.Connected(i.discord.ID)
+	return connected
 }
 
 func (i *ircConnection) OnWelcome(e *irc.Event) {

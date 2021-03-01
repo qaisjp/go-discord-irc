@@ -48,10 +48,14 @@ func (c *netClient) Nick(uid string, nick string) error {
 	return c.client.Call("Varys.Nick", NickParams{uid, nick}, &reply)
 }
 
-func (c *netClient) GetNick(uid string, nick *GetNickParams) error {
-	return c.client.Call("Varys.GetNick", uid, nick)
+func (c *netClient) GetNick(uid string) (string, error) {
+	var nick string
+	err := c.client.Call("Varys.GetNick", uid, &nick)
+	return nick, err
 }
 
-func (c *netClient) Connected(uid string, connected *ConnectedParams) error {
-	return c.client.Call("Varys.GetNick", uid, connected)
+func (c *netClient) Connected(uid string) (bool, error) {
+	var connected bool
+	err := c.client.Call("Varys.GetNick", uid, &connected)
+	return connected, err
 }
