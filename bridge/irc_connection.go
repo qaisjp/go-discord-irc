@@ -40,7 +40,7 @@ func (i *ircConnection) GetNick() string {
 }
 
 func (i *ircConnection) Connected() bool {
-	connected, err := i.manager.varys.Connected(i.discord._ID)
+	connected, err := i.manager.varys.Connected(i.discord.ID)
 	if err != nil {
 		panic(err.Error())
 	}
