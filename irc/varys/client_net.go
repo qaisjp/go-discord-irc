@@ -47,3 +47,13 @@ func (c *netClient) Nick(uid string, nick string) error {
 	var reply struct{}
 	return c.client.Call("Varys.Nick", NickParams{uid, nick}, &reply)
 }
+
+func (c *netClient) GetNick(uid string) (result string, err error) {
+	err = c.client.Call("Varys.GetNick", uid, &result)
+	return
+}
+
+func (c *netClient) Connected(uid string) (result bool, err error) {
+	err = c.client.Call("Varys.GetNick", uid, &result)
+	return
+}

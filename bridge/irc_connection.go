@@ -31,6 +31,22 @@ type ircConnection struct {
 	pmNoticedSenders map[string]struct{}
 }
 
+func (i *ircConnection) GetNick() string {
+	nick, err := i.manager.varys.GetNick(i.discord.ID)
+	if err != nil {
+		panic(err.Error())
+	}
+	return nick
+}
+
+func (i *ircConnection) Connected() bool {
+	connected, err := i.manager.varys.Connected(i.discord.ID)
+	if err != nil {
+		panic(err.Error())
+	}
+	return connected
+}
+
 func (i *ircConnection) OnWelcome(e *irc.Event) {
 	// execute puppet prejoin commands
 	err := i.manager.varys.SendRaw(i.discord.ID, varys.InterpolationParams{Nick: true}, i.manager.bridge.Config.IRCPuppetPrejoinCommands...)
@@ -39,6 +55,9 @@ func (i *ircConnection) OnWelcome(e *irc.Event) {
 	}
 
 	i.JoinChannels()
+
+	// just in case NickServ, Q:Lines, or otherwise force our nick to be not what we expect!
+	i.manager.puppetNicks[i.GetNick()] = i
 
 	go func(i *ircConnection) {
 		for m := range i.messages {
