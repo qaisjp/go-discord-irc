@@ -32,12 +32,18 @@ type ircConnection struct {
 }
 
 func (i *ircConnection) GetNick() string {
-	nick, _ := i.manager.varys.GetNick(i.discord.ID)
+	nick, err := i.manager.varys.GetNick(i.discord.ID)
+	if err != nil {
+		panic(err.Error())
+	}
 	return nick
 }
 
 func (i *ircConnection) Connected() bool {
-	connected, _ := i.manager.varys.Connected(i.discord.ID)
+	connected, err := i.manager.varys.Connected(i.discord._ID)
+	if err != nil {
+		panic(err.Error())
+	}
 	return connected
 }
 
