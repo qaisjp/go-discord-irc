@@ -37,6 +37,10 @@ type Config struct {
 	IRCPuppetPrejoinCommands   []string
 	IRCListenerPrejoinCommands []string
 
+	// filters
+	IRCFilteredMessages     []glob.Glob
+	DiscordFilteredMessages []glob.Glob
+
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
 

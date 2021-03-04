@@ -411,6 +411,10 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 			ircMessage.Message = line[4:]
 		}
 
+		if m.isFilteredDiscordMessage(line) {
+			continue
+		}
+
 		select {
 		// Try to send the message immediately
 		case con.messages <- ircMessage:
@@ -434,6 +438,24 @@ func (m *IRCManager) RequestChannels(userID string) []Mapping {
 func (m *IRCManager) isIgnoredHostmask(mask string) bool {
 	for _, ban := range m.bridge.Config.IRCIgnores {
 		if ban.Match(mask) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *IRCManager) isFilteredIRCMessage(txt string) bool {
+	for _, ban := range m.bridge.Config.IRCFilteredMessages {
+		if ban.Match(txt) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *IRCManager) isFilteredDiscordMessage(txt string) bool {
+	for _, ban := range m.bridge.Config.DiscordFilteredMessages {
+		if ban.Match(txt) {
 			return true
 		}
 	}

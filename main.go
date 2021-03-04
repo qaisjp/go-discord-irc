@@ -77,6 +77,8 @@ func main() {
 	identify := viper.GetString("nickserv_identify")                                    // NickServ IDENTIFY for Listener
 	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")                         // IRC hosts to not relay to Discord
 	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")                    // Ignore these Discord users on IRC
+	rawIRCFilter := viper.GetStringSlice("irc_message_filter")                          // Ignore lines containing matched text from IRC
+	rawDiscordFilter := viper.GetStringSlice("discord_message_filter")                  // Ignore lines containing matched text from Discord
 	connectionLimit := viper.GetInt("connection_limit")                                 // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
@@ -129,6 +131,8 @@ func main() {
 	}
 
 	matchers := setupHostmaskMatchers(ircIgnores)
+	discordFilter := setupFilter(rawDiscordFilter)
+	ircFilter := setupFilter(rawIRCFilter)
 	SetLogDebug(*debugMode)
 
 	discordIgnores := make(map[string]struct{}, len(rawDiscordIgnores))
@@ -148,7 +152,9 @@ func main() {
 		IRCListenerPrejoinCommands: ircListenerPrejoinCommands,
 		ConnectionLimit:            connectionLimit,
 		IRCIgnores:                 matchers,
+		IRCFilteredMessages:        ircFilter,
 		DiscordIgnores:             discordIgnores,
+		DiscordFilteredMessages:    discordFilter,
 		PuppetUsername:             puppetUsername,
 		NickServIdentify:           identify,
 		WebIRCPass:                 webIRCPass,
@@ -202,6 +208,11 @@ func main() {
 		ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")
 		dib.Config.IRCIgnores = setupHostmaskMatchers(ircIgnores)
 
+		rawIRCFilter := viper.GetStringSlice("irc_message_filter")
+		rawDiscordFilter := viper.GetStringSlice("discord_message_filter")
+		dib.Config.DiscordFilteredMessages = setupFilter(rawDiscordFilter)
+		dib.Config.IRCFilteredMessages = setupFilter(rawIRCFilter)
+
 		avatarURL := viper.GetString("avatar_url")
 		dib.Config.AvatarURL = avatarURL
 
@@ -250,6 +261,21 @@ func setupHostmaskMatchers(hostmasks []string) []glob.Glob {
 		g, err := glob.Compile(mask)
 		if err != nil {
 			log.WithField("error", err).WithField("hostmask", mask).Errorln("Failed to compile hostmask ban!")
+			continue
+		}
+
+		matchers = append(matchers, g)
+	}
+
+	return matchers
+}
+
+func setupFilter(filters []string) []glob.Glob {
+	var matchers []glob.Glob
+	for _, filter := range filters {
+		g, err := glob.Compile(filter)
+		if err != nil {
+			log.WithField("error", err).WithField("filter", filter).Errorln("Failed to compile message filter!")
 			continue
 		}
 
