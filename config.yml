@@ -31,7 +31,6 @@ max_nick_length: 30 # Maximum Length of a nick allowed
 insecure: true
 no_tls: false
 debug: false
-webhook_prefix: "(auto-test)"
 # simple: true
 
 # irc_listener_prejoin_commands:
