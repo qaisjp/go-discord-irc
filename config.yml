@@ -3,7 +3,6 @@ discord_token: abc.def.ghi
 irc_server_name: irc
 irc_server: localhost:6697
 guild_id: 315277951597936640
-nickserv_identify: password123
 
 # default is as below
 # avatar_url: https://ui-avatars.com/api/?name=${USERNAME}

@@ -74,7 +74,6 @@ func main() {
 	ircListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
 	guildID := viper.GetString("guild_id")                                              // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                                    // NickServ IDENTIFY for Listener
 	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")                         // IRC hosts to not relay to Discord
 	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")                    // Ignore these Discord users on IRC
 	rawIRCFilter := viper.GetStringSlice("irc_message_filter")                          // Ignore lines containing matched text from IRC
@@ -154,7 +153,6 @@ func main() {
 		DiscordIgnores:             discordIgnores,
 		DiscordFilteredMessages:    discordFilter,
 		PuppetUsername:             puppetUsername,
-		NickServIdentify:           identify,
 		WebIRCPass:                 webIRCPass,
 		NoTLS:                      *notls,
 		InsecureSkipVerify:         *insecure,
