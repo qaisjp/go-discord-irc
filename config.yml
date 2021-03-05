@@ -25,7 +25,6 @@ webirc_pass: abcdef.ghijk.lmnop
 
 show_joinquit: false # displays JOIN, PART, QUIT, KICK on discord
 cooldown_duration: 86400 # optional, default 86400 (24 hours), time in seconds for a discord user to be offline before it's puppet disconnects from irc
-max_nick_length: 30 # Maximum Length of a nick allowed
 
 # You definitely should restart the bridge after changing the following:
 insecure: true

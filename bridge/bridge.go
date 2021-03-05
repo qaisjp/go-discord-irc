@@ -65,9 +65,6 @@ type Config struct {
 	// ShowJoinQuit determines whether or not to show JOIN, QUIT, KICK messages on Discord
 	ShowJoinQuit bool
 
-	// Maximum Nicklength for irc server
-	MaxNickLength int
-
 	Debug         bool
 	DebugPresence bool
 }
