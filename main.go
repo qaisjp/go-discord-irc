@@ -110,8 +110,6 @@ func main() {
 	viper.SetDefault("separator", "~")
 	separator := viper.GetString("separator")
 	//
-	webhookPrefix := viper.GetString("webhook_prefix") // the unique prefix for this bottiful bot
-	//
 	viper.SetDefault("cooldown_duration", int64((time.Hour * 24).Seconds()))
 	cooldownDuration := viper.GetInt64("cooldown_duration")
 	//
@@ -164,7 +162,6 @@ func main() {
 		Separator:                  separator,
 		SimpleMode:                 *simple,
 		ChannelMappings:            channelMappings,
-		WebhookPrefix:              webhookPrefix,
 		CooldownDuration:           time.Second * time.Duration(cooldownDuration),
 		ShowJoinQuit:               showJoinQuit,
 		MaxNickLength:              maxNickLength,
