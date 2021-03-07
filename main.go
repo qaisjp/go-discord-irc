@@ -62,6 +62,11 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
+	if viper.GetString("nickserv_identify") != "" {
+		log.Fatalln("Please see https://github.com/qaisjp/go-discord-irc/blob/master/config.yml for an example config. `nickserv_identify` is deprecated and superseded by `irc_puppet_prejoin_commands`.")
+		return
+	}
+
 	discriminator := viper.GetString("irc_server_name") // unique per IRC network connected to, keeps PMs working
 	if discriminator == "" {
 		log.Fatalln("'irc_server_name' config option is required and cannot be empty")
