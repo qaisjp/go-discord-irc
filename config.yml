@@ -3,7 +3,6 @@ discord_token: abc.def.ghi
 irc_server_name: irc
 irc_server: localhost:6697
 guild_id: 315277951597936640
-nickserv_identify: password123
 
 # default is as below
 # avatar_url: https://ui-avatars.com/api/?name=${USERNAME}
@@ -41,6 +40,7 @@ debug: false
 # are deafened (i.e. puppets do not need to hear anything!)
 irc_puppet_prejoin_commands:
   - "MODE ${NICK} +D" # Note that for inspircd 3.x this should be +d!
+# - "PRIVMSG NickServ IDENTIFY your-password-here" # this is how you can identify to NickServ!
 
 # Uses matching syntax as in https://github.com/gobwas/glob
 # ignored_irc_hostmasks:

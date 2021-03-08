@@ -23,16 +23,15 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer        string
-	Discriminator    string
-	IRCServerPass    string
-	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
-	WebIRCPass       string
-	NickServIdentify string // string: "[account] password"
-	PuppetUsername   string // Username to connect to IRC with
-	IRCIgnores       []glob.Glob
-	DiscordIgnores   map[string]struct{} // Discord user IDs to not bridge
-	ConnectionLimit  int                 // number of IRC connections we can spawn
+	IRCServer       string
+	Discriminator   string
+	IRCServerPass   string
+	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
+	WebIRCPass      string
+	PuppetUsername  string // Username to connect to IRC with
+	IRCIgnores      []glob.Glob
+	DiscordIgnores  map[string]struct{} // Discord user IDs to not bridge
+	ConnectionLimit int                 // number of IRC connections we can spawn
 
 	IRCPuppetPrejoinCommands   []string
 	IRCListenerPrejoinCommands []string
