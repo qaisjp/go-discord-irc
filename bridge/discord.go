@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/42wim/matterbridge/bridge/discord/transmitter"
+	"github.com/qaisjp/go-discord-irc/dstate"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 
 	"github.com/matterbridge/discordgo"
@@ -104,6 +105,22 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		}
 	}
 
+	// HACK: this is before d.ParseText so that the existing <@uid> translation logic can be used
+	if m.MessageReference != nil && m.MessageReference.ChannelID == m.ChannelID {
+		prefix := "[reply]"
+		msg, err := dstate.ChannelMessage(d.Session, m.MessageReference.ChannelID, m.MessageReference.MessageID)
+		if err == nil {
+			if msg.Author.Bot {
+				prefix = msg.Author.Username + ":"
+			} else {
+				prefix = fmt.Sprintf("<@%s>:", msg.Author.ID)
+				// HACK: theoretically could already be there, thereotically not a big problem
+				m.Mentions = append(m.Mentions, msg.Author)
+			}
+		}
+		m.Content = prefix + " " + m.Content
+	}
+
 	content := d.ParseText(m)
 
 	// The content is an action if it matches "_(.+)_"
@@ -122,10 +139,6 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		}
 
 		content = "[edit] " + content
-	}
-
-	if m.MessageReference != nil && m.MessageReference.ChannelID == m.ChannelID {
-		content = "[reply] " + content
 	}
 
 	pmTarget := ""
