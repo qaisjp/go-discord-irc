@@ -331,7 +331,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 				continue
 			}
 
-			if sanitiseNickname(name) == nick {
+			if strings.EqualFold(sanitiseNickname(name), nick) {
 				// log.WithField("member", member).Infoln("nickgen: using fallback because of discord")
 				useFallback = true
 				break
