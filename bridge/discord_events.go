@@ -51,7 +51,7 @@ func (d *discordBot) OnPresenceUpdate(s *discordgo.Session, m *discordgo.Presenc
 func (d *discordBot) OnTypingStart(s *discordgo.Session, m *discordgo.TypingStart) {
 	status := discordgo.StatusOffline
 
-	p, err := d.State.Presence(d.guildID, m.UserID)
+	p, err := d.Session.State.Presence(d.guildID, m.UserID)
 	if err != nil {
 		log.Println(errors.Wrap(err, "get presence from in OnTypingStart failed"))
 		// return
@@ -65,13 +65,13 @@ func (d *discordBot) OnTypingStart(s *discordgo.Session, m *discordgo.TypingStar
 
 func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 	// Fires a GuildMembersChunk event
-	err := d.RequestGuildMembers(d.guildID, "", 0, true)
+	err := d.Session.RequestGuildMembers(d.guildID, "", 0, true)
 	if err != nil {
 		log.Warningln(errors.Wrap(err, "could not request guild members").Error())
 		return
 	}
 
-	emoji, err := d.GuildEmojis(d.guildID)
+	emoji, err := d.Session.GuildEmojis(d.guildID)
 	if err == nil {
 		d.setGuildEmoji(d.guildID, emoji)
 	}
@@ -92,7 +92,7 @@ func (d *discordBot) handleMemberUpdate(m *discordgo.Member, forceOnline bool) {
 	status := discordgo.StatusOnline
 
 	if !forceOnline {
-		presence, err := d.State.Presence(d.guildID, m.User.ID)
+		presence, err := d.Session.State.Presence(d.guildID, m.User.ID)
 		if err != nil {
 			// This error is usually triggered on first run because it represents offline
 			if err != discordgo.ErrStateNotFound {

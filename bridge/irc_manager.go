@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DevMode is a hack
 var DevMode = false
 
 // IRCManager should only be used from one thread.
@@ -309,7 +310,7 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	// }).Infoln("nickgen: fallback?")
 
 	if !useFallback {
-		guild, err := m.bridge.discord.State.Guild(m.bridge.Config.GuildID)
+		guild, err := m.bridge.discord.Session.State.Guild(m.bridge.Config.GuildID)
 		if err != nil {
 			// log.Fatalln("nickgen: guild not found when generating nickname")
 			return ""
