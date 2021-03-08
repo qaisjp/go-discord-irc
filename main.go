@@ -61,6 +61,11 @@ func main() {
 		log.Fatalln(errors.Wrap(err, "could not read config"))
 	}
 
+	if viper.GetString("nickserv_identify") != "" {
+		log.Fatalln("Please see https://github.com/qaisjp/go-discord-irc/blob/master/config.yml for an example config. `nickserv_identify` is deprecated and superseded by `irc_puppet_prejoin_commands`.")
+		return
+	}
+
 	discriminator := viper.GetString("irc_server_name") // unique per IRC network connected to, keeps PMs working
 	if discriminator == "" {
 		log.Fatalln("'irc_server_name' config option is required and cannot be empty")
@@ -73,7 +78,6 @@ func main() {
 	ircListenerPrejoinCommands := viper.GetStringSlice("irc_listener_prejoin_commands") // Commands for each connection to send before joining channels
 	guildID := viper.GetString("guild_id")                                              // Guild to use
 	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
-	identify := viper.GetString("nickserv_identify")                                    // NickServ IDENTIFY for Listener
 	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")                         // IRC hosts to not relay to Discord
 	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")                    // Ignore these Discord users on IRC
 	rawIRCFilter := viper.GetStringSlice("irc_message_filter")                          // Ignore lines containing matched text from IRC
@@ -94,7 +98,7 @@ func main() {
 	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D"})
 	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
 	//
-	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
+	viper.SetDefault("avatar_url", "https://robohash.org/${USERNAME}.png?set=set4")
 	avatarURL := viper.GetString("avatar_url")
 	//
 	viper.SetDefault("irc_listener_name", "~d")
@@ -150,7 +154,6 @@ func main() {
 		DiscordIgnores:             discordIgnores,
 		DiscordFilteredMessages:    discordFilter,
 		PuppetUsername:             puppetUsername,
-		NickServIdentify:           identify,
 		WebIRCPass:                 webIRCPass,
 		NoTLS:                      *notls,
 		InsecureSkipVerify:         *insecure,
