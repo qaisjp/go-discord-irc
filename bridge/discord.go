@@ -106,16 +106,6 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 
 	content := d.ParseText(m)
 
-	// Special Mee6 behaviour
-	if m.Author.ID == "159985870458322944" {
-		content = strings.Replace(
-			content,
-			`CompSoc is the University of Edinburgh's society for anyone interested in tech.`,
-			"",
-			-1,
-		)
-	}
-
 	// The content is an action if it matches "_(.+)_"
 	isAction := len(content) > 2 &&
 		m.Content[0] == '_' &&
