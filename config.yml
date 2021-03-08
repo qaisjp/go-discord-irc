@@ -4,8 +4,8 @@ irc_server_name: irc
 irc_server: localhost:6697
 guild_id: 315277951597936640
 
-# default is as below
-# avatar_url: https://ui-avatars.com/api/?name=${USERNAME}
+# Default is as below
+avatar_url: "https://robohash.org/${USERNAME}.png?set=set4"
 
 # Updating this will automatically add or remove puppets from channels
 channel_mappings:
@@ -27,10 +27,10 @@ cooldown_duration: 86400 # optional, default 86400 (24 hours), time in seconds f
 max_nick_length: 30 # Maximum Length of a nick allowed
 
 # You definitely should restart the bridge after changing the following:
-insecure: true
+insecure: false
 no_tls: false
 debug: false
-# simple: true
+simple: false
 
 # irc_listener_prejoin_commands:
 #   - PART #forced-to-join-test-channel

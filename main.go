@@ -99,7 +99,7 @@ func main() {
 	viper.SetDefault("irc_puppet_prejoin_commands", []string{"MODE ${NICK} +D"})
 	ircPuppetPrejoinCommands := viper.GetStringSlice("irc_puppet_prejoin_commands") // Commands for each connection to send before joining channels
 	//
-	viper.SetDefault("avatar_url", "https://ui-avatars.com/api/?name=${USERNAME}")
+	viper.SetDefault("avatar_url", "https://robohash.org/${USERNAME}.png?set=set4")
 	avatarURL := viper.GetString("avatar_url")
 	//
 	viper.SetDefault("irc_listener_name", "~d")
