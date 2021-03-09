@@ -119,6 +119,10 @@ func main() {
 	viper.SetDefault("show_joinquit", false)
 	showJoinQuit := viper.GetBool("show_joinquit")
 
+	if viper.GetInt("max_nick_length") != 0 {
+		log.Println("This field should be removed from your configuration - go-discord-irc now detects the proper max accepted nick length at runtime.")
+	}
+
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
 	}
