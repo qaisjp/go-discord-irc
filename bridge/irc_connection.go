@@ -106,7 +106,7 @@ func (i *ircConnection) introducePM(nick string) {
 	d := i.manager.bridge.discord
 
 	if i.pmDiscordChannel == "" {
-		c, err := d.UserChannelCreate(i.discord.ID)
+		c, err := d.Session.UserChannelCreate(i.discord.ID)
 		if err != nil {
 			// todo: sentry
 			log.Warnln("Could not create private message room", i.discord, err)
@@ -117,7 +117,7 @@ func (i *ircConnection) introducePM(nick string) {
 
 	if !i.pmNoticed {
 		i.pmNoticed = true
-		_, err := d.ChannelMessageSend(
+		_, err := d.Session.ChannelMessageSend(
 			i.pmDiscordChannel,
 			fmt.Sprintf("To reply type: `%s@%s, your message here`", nick, i.manager.bridge.Config.Discriminator))
 		if err != nil {
@@ -156,7 +156,7 @@ func (i *ircConnection) OnPrivateMessage(e *irc.Event) {
 
 		i.introducePM(e.Nick)
 
-		_, err := d.ChannelMessageSend(i.pmDiscordChannel, msg)
+		_, err := d.Session.ChannelMessageSend(i.pmDiscordChannel, msg)
 		if err != nil {
 			log.Warnln("Could not send PM", i.discord, err)
 			return

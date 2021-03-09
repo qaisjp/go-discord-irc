@@ -215,12 +215,6 @@ func (i *ircListener) SetDebugMode(debug bool) {
 }
 
 func (i *ircListener) OnWelcome(e *irc.Event) {
-	identify := i.bridge.Config.NickServIdentify
-	// identify as listener
-	if identify != "" {
-		i.Privmsgf("nickserv", "identify %s", identify)
-	}
-
 	// Execute prejoin commands
 	for _, com := range i.bridge.Config.IRCListenerPrejoinCommands {
 		i.SendRaw(strings.ReplaceAll(com, "${NICK}", i.GetNick()))

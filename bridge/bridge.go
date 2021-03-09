@@ -23,16 +23,15 @@ type Config struct {
 	// Map from Discord to IRC
 	ChannelMappings map[string]string
 
-	IRCServer        string
-	Discriminator    string
-	IRCServerPass    string
-	IRCListenerName  string // i.e, "DiscordBot", required to listen for messages in all cases
-	WebIRCPass       string
-	NickServIdentify string // string: "[account] password"
-	PuppetUsername   string // Username to connect to IRC with
-	IRCIgnores       []glob.Glob
-	DiscordIgnores   map[string]struct{} // Discord user IDs to not bridge
-	ConnectionLimit  int                 // number of IRC connections we can spawn
+	IRCServer       string
+	Discriminator   string
+	IRCServerPass   string
+	IRCListenerName string // i.e, "DiscordBot", required to listen for messages in all cases
+	WebIRCPass      string
+	PuppetUsername  string // Username to connect to IRC with
+	IRCIgnores      []glob.Glob
+	DiscordIgnores  map[string]struct{} // Discord user IDs to not bridge
+	ConnectionLimit int                 // number of IRC connections we can spawn
 
 	IRCPuppetPrejoinCommands   []string
 	IRCListenerPrejoinCommands []string
@@ -322,6 +321,7 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
+// GetJoinCommand produces a JOIN command based on the provided mappings
 func (b *Bridge) GetJoinCommand(mappings []Mapping) string {
 	var channels, keyedChannels, keys []string
 
@@ -426,7 +426,7 @@ func (b *Bridge) loop() {
 
 			if username == "" {
 				// System messages come straight from the bot
-				if _, err := b.discord.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
+				if _, err := b.discord.Session.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
 					log.WithError(err).WithFields(log.Fields{
 						"msg.channel":  mapping.DiscordChannel,
 						"msg.username": username,
