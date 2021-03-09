@@ -80,6 +80,15 @@ func (d *discordBot) Close() error {
 	return errors.Wrap(d.Session.Close(), "closing discord session")
 }
 
+// Returns `<@uid>` if a discord user or just `name` if a bot
+func userToMention(u *discordgo.User) (mention string) {
+	mention = u.Username
+	if !u.Bot {
+		mention = u.Mention()
+	}
+	return
+}
+
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
 	// Fix crash if these fields don't exist
 	if m.Author == nil || s.State.User == nil {
@@ -110,10 +119,8 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		prefix := "[reply]"
 		msg, err := dstate.ChannelMessage(d.Session, m.MessageReference.ChannelID, m.MessageReference.MessageID)
 		if err == nil {
-			if msg.Author.Bot {
-				prefix = msg.Author.Username + ":"
-			} else {
-				prefix = fmt.Sprintf("<@%s>:", msg.Author.ID)
+			prefix = userToMention(msg.Author) + ":"
+			if !msg.Author.Bot {
 				// HACK: theoretically could already be there, thereotically not a big problem
 				m.Mentions = append(m.Mentions, msg.Author)
 			}
@@ -196,15 +203,21 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
 		GuildID:   r.GuildID,
 	}
 
-	originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
+	originalMessage, err := dstate.ChannelMessage(d.Session, r.ChannelID, r.MessageID)
 	reactionTarget := ""
 	if err == nil {
 		// TODO 1: could add extra logic to figure out what length is needed to disambiguate
 		// TODO 2: length should not cause command to exceed the max command length
-		content, err := originalMessage.ContentWithMoreMentionsReplaced(s)
-		if err == nil {
-			reactionTarget = fmt.Sprintf(" to <%s> %s", originalMessage.Author.Username, TruncateString(40, content))
+
+		// HACK: this is before d.ParseText so that the existing <@uid> translation logic can be used
+		username := userToMention(originalMessage.Author)
+		if !originalMessage.Author.Bot {
+			// HACK: theoretically could already be there, thereotically not a big problem
+			originalMessage.Mentions = append(originalMessage.Mentions, originalMessage.Author)
 		}
+		originalMessage.Content = fmt.Sprintf(" to <%s> %s", username, TruncateString(40, originalMessage.Content))
+
+		reactionTarget = d.ParseText(originalMessage)
 	}
 
 	emoji := r.Emoji.Name
