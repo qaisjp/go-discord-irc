@@ -314,6 +314,7 @@ func (b *Bridge) SetupIRCConnection(con *irc.Connection, hostname, ip string) {
 	}
 }
 
+// GetJoinCommand produces a JOIN command based on the provided mappings
 func (b *Bridge) GetJoinCommand(mappings []Mapping) string {
 	var channels, keyedChannels, keys []string
 
@@ -418,7 +419,7 @@ func (b *Bridge) loop() {
 
 			if username == "" {
 				// System messages come straight from the bot
-				if _, err := b.discord.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
+				if _, err := b.discord.Session.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
 					log.WithError(err).WithFields(log.Fields{
 						"msg.channel":  mapping.DiscordChannel,
 						"msg.username": username,

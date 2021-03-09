@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/42wim/matterbridge/bridge/discord/transmitter"
+	"github.com/qaisjp/go-discord-irc/dstate"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 
 	"github.com/matterbridge/discordgo"
@@ -16,8 +17,8 @@ import (
 )
 
 type discordBot struct {
-	*discordgo.Session
-	bridge *Bridge
+	Session *discordgo.Session
+	bridge  *Bridge
 
 	guildID string
 
@@ -41,19 +42,19 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 	}
 
 	// These events are all fired in separate goroutines
-	discord.AddHandler(discord.OnReady)
-	discord.AddHandler(discord.onMessageCreate)
-	discord.AddHandler(discord.onMessageUpdate)
-	discord.AddHandler(discord.onGuildEmojiUpdate)
+	discord.Session.AddHandler(discord.OnReady)
+	discord.Session.AddHandler(discord.onMessageCreate)
+	discord.Session.AddHandler(discord.onMessageUpdate)
+	discord.Session.AddHandler(discord.onGuildEmojiUpdate)
 
 	if !bridge.Config.SimpleMode {
-		discord.AddHandler(discord.onMemberListChunk)
-		discord.AddHandler(discord.onMemberUpdate)
-		discord.AddHandler(discord.onMemberLeave)
-		discord.AddHandler(discord.OnPresencesReplace)
-		discord.AddHandler(discord.OnPresenceUpdate)
-		discord.AddHandler(discord.OnTypingStart)
-		discord.AddHandler(discord.OnMessageReactionAdd)
+		discord.Session.AddHandler(discord.onMemberListChunk)
+		discord.Session.AddHandler(discord.onMemberUpdate)
+		discord.Session.AddHandler(discord.onMemberLeave)
+		discord.Session.AddHandler(discord.OnPresencesReplace)
+		discord.Session.AddHandler(discord.OnPresenceUpdate)
+		discord.Session.AddHandler(discord.OnTypingStart)
+		discord.Session.AddHandler(discord.OnMessageReactionAdd)
 	}
 
 	return discord, nil
@@ -77,6 +78,15 @@ func (d *discordBot) Open() error {
 
 func (d *discordBot) Close() error {
 	return errors.Wrap(d.Session.Close(), "closing discord session")
+}
+
+// Returns `<@uid>` if a discord user or just `name` if a bot
+func userToMention(u *discordgo.User) (mention string) {
+	mention = u.Username
+	if !u.Bot {
+		mention = u.Mention()
+	}
+	return
 }
 
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
@@ -104,17 +114,21 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		}
 	}
 
-	content := d.ParseText(m)
-
-	// Special Mee6 behaviour
-	if m.Author.ID == "159985870458322944" {
-		content = strings.Replace(
-			content,
-			`CompSoc is the University of Edinburgh's society for anyone interested in tech.`,
-			"",
-			-1,
-		)
+	// HACK: this is before d.ParseText so that the existing <@uid> translation logic can be used
+	if m.MessageReference != nil && m.MessageReference.ChannelID == m.ChannelID {
+		prefix := "[reply]"
+		msg, err := dstate.ChannelMessage(d.Session, m.MessageReference.ChannelID, m.MessageReference.MessageID)
+		if err == nil {
+			prefix = userToMention(msg.Author) + ":"
+			if !msg.Author.Bot {
+				// HACK: theoretically could already be there, thereotically not a big problem
+				m.Mentions = append(m.Mentions, msg.Author)
+			}
+		}
+		m.Content = prefix + " " + m.Content
 	}
+
+	content := d.ParseText(m)
 
 	// The content is an action if it matches "_(.+)_"
 	isAction := len(content) > 2 &&
@@ -134,10 +148,6 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		content = "[edit] " + content
 	}
 
-	if m.MessageReference != nil && m.MessageReference.ChannelID == m.ChannelID {
-		content = "[reply] " + content
-	}
-
 	pmTarget := ""
 	// Blank guild means that it's a PM
 	if m.GuildID == "" {
@@ -145,7 +155,7 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		// if the target could not be deduced. tell them this.
 		switch pmTarget {
 		case "":
-			_, _ = d.ChannelMessageSend(
+			_, _ = d.Session.ChannelMessageSend(
 				m.ChannelID,
 				fmt.Sprintf(
 					"Don't know who that is. Can't PM. Try 'name@%s, message here'",
@@ -193,15 +203,21 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
 		GuildID:   r.GuildID,
 	}
 
-	originalMessage, err := s.ChannelMessage(r.ChannelID, r.MessageID)
+	originalMessage, err := dstate.ChannelMessage(d.Session, r.ChannelID, r.MessageID)
 	reactionTarget := ""
 	if err == nil {
 		// TODO 1: could add extra logic to figure out what length is needed to disambiguate
 		// TODO 2: length should not cause command to exceed the max command length
-		content, err := originalMessage.ContentWithMoreMentionsReplaced(s)
-		if err == nil {
-			reactionTarget = fmt.Sprintf(" to <%s> %s", originalMessage.Author.Username, TruncateString(40, content))
+
+		// HACK: this is before d.ParseText so that the existing <@uid> translation logic can be used
+		username := userToMention(originalMessage.Author)
+		if !originalMessage.Author.Bot {
+			// HACK: theoretically could already be there, thereotically not a big problem
+			originalMessage.Mentions = append(originalMessage.Mentions, originalMessage.Author)
 		}
+		originalMessage.Content = fmt.Sprintf(" to <%s> %s", username, TruncateString(40, originalMessage.Content))
+
+		reactionTarget = d.ParseText(originalMessage)
 	}
 
 	emoji := r.Emoji.Name
@@ -245,7 +261,7 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 			nick := user.Username
 
 			// If we can get their member + nick, set nick to the real nick
-			member, err := d.State.Member(d.guildID, user.ID)
+			member, err := d.Session.State.Member(d.guildID, user.ID)
 			if err == nil && member.Nick != "" {
 				nick = member.Nick
 			}
@@ -280,7 +296,7 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 
 	// Copied from message.go ContentWithMoreMentionsReplaced(s)
 	for _, roleID := range m.MentionRoles {
-		role, err := d.State.Role(d.guildID, roleID)
+		role, err := d.Session.State.Role(d.guildID, roleID)
 		if err != nil || !role.Mentionable {
 			continue
 		}
@@ -290,7 +306,7 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 
 	// Also copied from message.go ContentWithMoreMentionsReplaced(s)
 	content = patternChannels.ReplaceAllStringFunc(content, func(mention string) string {
-		channel, err := d.State.Channel(mention[2 : len(mention)-1])
+		channel, err := d.Session.State.Channel(mention[2 : len(mention)-1])
 		if err != nil || channel.Type == discordgo.ChannelTypeGuildVoice {
 			return mention
 		}
@@ -307,7 +323,7 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 		// Strip enclosing identifiers
 		channelID := str[2 : len(str)-1]
 
-		channel, err := d.State.Channel(channelID)
+		channel, err := d.Session.State.Channel(channelID)
 		if err == nil {
 			return "#" + channel.Name
 		} else if err == discordgo.ErrStateNotFound {
@@ -322,7 +338,7 @@ func (d *discordBot) ParseText(m *discordgo.Message) string {
 		// Strip enclosing identifiers
 		roleID := str[3 : len(str)-1]
 
-		role, err := d.State.Role(d.bridge.Config.GuildID, roleID)
+		role, err := d.Session.State.Role(d.bridge.Config.GuildID, roleID)
 		if err == nil {
 			return "@" + role.Name
 		} else if err == discordgo.ErrStateNotFound {
@@ -356,7 +372,7 @@ func (d *discordBot) handlePresenceUpdate(uid string, status discordgo.Status, f
 	}
 
 	// Otherwise get their GuildMember object...
-	user, err := d.State.Member(d.guildID, uid)
+	user, err := d.Session.State.Member(d.guildID, uid)
 	if err != nil {
 		log.Println(errors.Wrap(err, "get member from state in handlePresenceUpdate failed"))
 		return
@@ -389,7 +405,7 @@ func (d *discordBot) sendUpdateUserChan(user DiscordUser) bool {
 // See https://github.com/reactiflux/discord-irc/pull/230/files#diff-7202bb7fb017faefd425a2af32df2f9dR357
 func (d *discordBot) GetAvatar(guildID, username string) (_ string) {
 	// First get all members
-	guild, err := d.State.Guild(guildID)
+	guild, err := d.Session.State.Guild(guildID)
 	if err != nil {
 		panic(err)
 	}

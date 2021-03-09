@@ -39,7 +39,7 @@ func SnowflakeToIP(base string, snowflake string) string {
 	return base
 }
 
-// Derived from https://github.com/gohugoio/hugo/blob/a03c631c420a03f9d90699abdf9be7e4fca0ff61/tpl/strings/truncate.go#L43
+// TruncateString is derived from https://github.com/gohugoio/hugo/blob/a03c631c420a03f9d90699abdf9be7e4fca0ff61/tpl/strings/truncate.go#L43
 func TruncateString(length int, text string) string {
 	ellipsis := " …"
 
