@@ -333,7 +333,7 @@ func (b *Bridge) GetJoinCommand(mappings []Mapping) string {
 		}
 	}
 
-	// Just append normal channels to the end of keyed channels
+	// Just append normal channels to the end of keyed channelsG
 	keyedChannels = append(keyedChannels, channels...)
 
 	return "JOIN " + strings.Join(keyedChannels, ",") + " " + strings.Join(keys, ",")
@@ -343,7 +343,7 @@ func (b *Bridge) GetJoinCommand(mappings []Mapping) string {
 // Returns nil if a Mapping does not exist.
 func (b *Bridge) GetMappingByIRC(channel string) (Mapping, bool) {
 	for _, mapping := range b.mappings {
-		if mapping.IRCChannel == channel {
+		if strings.EqualFold(mapping.IRCChannel, channel) {
 			return mapping, true
 		}
 	}
