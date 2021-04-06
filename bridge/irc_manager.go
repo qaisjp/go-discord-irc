@@ -37,7 +37,13 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	}
 
 	// Set up varys
-	m.varys = varys.NewMemClient()
+	if conf.VarysServer == "" {
+		m.varys = varys.NewMemClient()
+	} else {
+		log.Infoln("Connecting to varys host:", conf.VarysServer)
+		m.varys = varys.NewNetClient(conf.VarysServer, m.HandleVarysCallback)
+		log.Infoln("Connected to varys!")
+	}
 	err := m.varys.Setup(varys.SetupParams{
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
@@ -99,6 +105,24 @@ func (m *IRCManager) Close() {
 		m.CloseConnection(con)
 		i++
 	}
+}
+
+// HandleVarysCallback responds to callbacks sent by varys
+func (m *IRCManager) HandleVarysCallback(uid string, e *irc.Event) {
+	fmt.Println("[HandleVarysCallback] Pre-lookup")
+	conn, ok := m.ircConnections[uid]
+	// todo: what if a callback comes back after ircManager thinks it's gone?
+	if !ok {
+		panic(fmt.Sprintf("[HandleVarysCallback] uid %#v missing", uid))
+	}
+
+	fmt.Println("[HandleVarysCallback] Post-lookup")
+	if e.Code == "001" {
+		conn.OnWelcome(e)
+	} else if e.Code == "PRIVMSG" {
+		conn.OnPrivateMessage(e)
+	}
+	fmt.Println("[HandleVarysCallback] Post-fanout")
 }
 
 // SetConnectionCooldown renews/starts a timer for expiring a connection.
@@ -240,20 +264,20 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	err := m.varys.Connect(varys.ConnectParams{
-		UID: user.ID,
+	connectParams := varys.ConnectParams{}
+	{
+		connectParams.UID = user.ID
 
-		Nick:     nick,
-		Username: username,
-		RealName: user.Username,
+		connectParams.Nick = nick
+		connectParams.Username = username
+		connectParams.RealName = user.Username
 
-		WebIRCSuffix: fmt.Sprintf("discord %s %s", hostname, ip),
+		connectParams.WebIRCSuffix = fmt.Sprintf("discord %s %s", hostname, ip)
 
-		Callbacks: map[string]func(*irc.Event){
-			"001":     con.OnWelcome,
-			"PRIVMSG": con.OnPrivateMessage,
-		},
-	})
+		connectParams.Callbacks = []string{"001", "PRIVMSG"}
+	}
+
+	err := m.varys.Connect(connectParams)
 	if err != nil {
 		log.WithError(err).Errorln("error opening irc connection")
 		return

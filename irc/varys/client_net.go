@@ -1,26 +1,46 @@
 package varys
 
 import (
-	"log"
-	"net/rpc"
+	"net"
+
+	irc "github.com/qaisjp/go-ircevent"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/cenkalti/rpc2"
 )
 
 type netClient struct {
-	client *rpc.Client
+	client   *rpc2.Client
+	callback func(string, *irc.Event)
 }
 
-func NewNetClient() Client {
-	client, err := rpc.DialHTTP("tcp", "localhost:1234")
+func NewNetClient(host string, callback func(uid string, e *irc.Event)) Client {
+	conn, err := net.Dial("tcp", host)
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
+	client := &netClient{
+		client:   rpc2.NewClient(conn),
+		callback: callback,
+	}
 
-	return &netClient{client: client}
+	client.client.Handle("Varys.Callback", func(_ *rpc2.Client, e *Event, _ *struct{}) error {
+		log.Printf("Callback received on the client: %#v\n", e)
+		callback(e.VarysUID, e.toReal())
+		return nil
+	})
+
+	go client.client.Run()
+
+	return client
 }
 
 func (c *netClient) Setup(params SetupParams) error {
 	var reply struct{}
-	return c.client.Call("Varys.Setup", params, &reply)
+	// fmt.Println("setup called")
+	err := c.client.Call("Varys.Setup", params, &reply)
+	// fmt.Println("setup returned", err)
+	return err
 }
 
 func (c *netClient) GetUIDToNicks() (result map[string]string, err error) {
@@ -29,6 +49,8 @@ func (c *netClient) GetUIDToNicks() (result map[string]string, err error) {
 }
 
 func (c *netClient) Connect(params ConnectParams) error {
+	// fmt.Println("connect called")
+
 	var reply struct{}
 	return c.client.Call("Varys.Connect", params, &reply)
 }
@@ -54,6 +76,6 @@ func (c *netClient) GetNick(uid string) (result string, err error) {
 }
 
 func (c *netClient) Connected(uid string) (result bool, err error) {
-	err = c.client.Call("Varys.GetNick", uid, &result)
+	err = c.client.Call("Varys.Connected", uid, &result)
 	return
 }

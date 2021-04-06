@@ -10,36 +10,36 @@ func NewMemClient() Client {
 }
 
 func (c *memClient) Setup(params SetupParams) error {
-	return c.varys.Setup(params, nil)
+	return c.varys.Setup(nil, params, nil)
 }
 
 func (c *memClient) GetUIDToNicks() (result map[string]string, err error) {
-	err = c.varys.GetUIDToNicks(struct{}{}, &result)
+	err = c.varys.GetUIDToNicks(nil, struct{}{}, &result)
 	return
 }
 
 func (c *memClient) Connect(params ConnectParams) error {
-	return c.varys.Connect(params, nil)
+	return c.varys.Connect(nil, params, nil)
 }
 
 func (c *memClient) QuitIfConnected(uid string, quitMessage string) error {
-	return c.varys.QuitIfConnected(QuitParams{uid, quitMessage}, nil)
+	return c.varys.QuitIfConnected(nil, QuitParams{uid, quitMessage}, nil)
 }
 
 func (c *memClient) SendRaw(uid string, params InterpolationParams, messages ...string) error {
-	return c.varys.SendRaw(SendRawParams{uid, messages, params}, nil)
+	return c.varys.SendRaw(nil, SendRawParams{uid, messages, params}, nil)
 }
 
 func (c *memClient) Nick(uid string, nick string) error {
-	return c.varys.Nick(NickParams{uid, nick}, nil)
+	return c.varys.Nick(nil, NickParams{uid, nick}, nil)
 }
 
 func (c *memClient) GetNick(uid string) (result string, err error) {
-	err = c.varys.GetNick(uid, &result)
+	err = c.varys.GetNick(nil, uid, &result)
 	return
 }
 
 func (c *memClient) Connected(uid string) (result bool, err error) {
-	err = c.varys.Connected(uid, &result)
+	err = c.varys.Connected(nil, uid, &result)
 	return
 }

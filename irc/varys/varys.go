@@ -7,8 +7,10 @@ package varys
 import (
 	"crypto/tls"
 	"fmt"
+	"log"
 	"strings"
 
+	"github.com/cenkalti/rpc2"
 	irc "github.com/qaisjp/go-ircevent"
 )
 
@@ -58,12 +60,12 @@ type SetupParams struct {
 	WebIRCPassword string
 }
 
-func (v *Varys) Setup(params SetupParams, _ *struct{}) error {
+func (v *Varys) Setup(client *rpc2.Client, params SetupParams, _ *struct{}) error {
 	v.connConfig = params
 	return nil
 }
 
-func (v *Varys) GetUIDToNicks(_ struct{}, result *map[string]string) error {
+func (v *Varys) GetUIDToNicks(client *rpc2.Client, _ struct{}, result *map[string]string) error {
 	conns := v.uidToConns
 	m := make(map[string]string, len(conns))
 	for uid, conn := range conns {
@@ -82,11 +84,11 @@ type ConnectParams struct {
 
 	WebIRCSuffix string
 
-	// TODO(qaisjp): does not support net/rpc!!!!
-	Callbacks map[string]func(*irc.Event)
+	// Event codes to subscribe and send to the master callback
+	Callbacks []string
 }
 
-func (v *Varys) Connect(params ConnectParams, _ *struct{}) error {
+func (v *Varys) Connect(client *rpc2.Client, params ConnectParams, _ *struct{}) error {
 	conn := irc.IRC(params.Nick, params.Username)
 	// conn.Debug = true
 	conn.RealName = params.RealName
@@ -112,8 +114,16 @@ func (v *Varys) Connect(params ConnectParams, _ *struct{}) error {
 		}
 	})
 
-	for eventcode, callback := range params.Callbacks {
-		conn.AddCallback(eventcode, callback)
+	for _, eventcode := range params.Callbacks {
+		conn.AddCallback(eventcode, func(e *irc.Event) {
+			varysEvent := eventFomReal(params.UID, e)
+			log.Println("Running callback for uid", params.UID, *varysEvent)
+
+			var reply struct{}
+			if err := client.Call("Varys.Callback", varysEvent, &reply); err != nil {
+				log.Fatalln("Failed to call Varys.Callback:", err.Error())
+			}
+		})
 	}
 
 	err := conn.Connect(v.connConfig.Server)
@@ -131,7 +141,7 @@ type QuitParams struct {
 	QuitMessage string
 }
 
-func (v *Varys) QuitIfConnected(params QuitParams, _ *struct{}) error {
+func (v *Varys) QuitIfConnected(client *rpc2.Client, params QuitParams, _ *struct{}) error {
 	if conn, ok := v.uidToConns[params.UID]; ok {
 		if conn.Connected() {
 			conn.QuitMessage = params.QuitMessage
@@ -152,7 +162,7 @@ type SendRawParams struct {
 	Interpolation InterpolationParams
 }
 
-func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
+func (v *Varys) SendRaw(client *rpc2.Client, params SendRawParams, _ *struct{}) error {
 	v.connCall(params.UID, func(c *irc.Connection) {
 		for _, msg := range params.Messages {
 			if params.Interpolation.Nick {
@@ -164,14 +174,14 @@ func (v *Varys) SendRaw(params SendRawParams, _ *struct{}) error {
 	return nil
 }
 
-func (v *Varys) GetNick(uid string, result *string) error {
+func (v *Varys) GetNick(client *rpc2.Client, uid string, result *string) error {
 	if conn, ok := v.uidToConns[uid]; ok {
 		*result = conn.GetNick()
 	}
 	return nil
 }
 
-func (v *Varys) Connected(uid string, result *bool) error {
+func (v *Varys) Connected(client *rpc2.Client, uid string, result *bool) error {
 	if conn, ok := v.uidToConns[uid]; ok {
 		*result = conn.Connected()
 	}
@@ -184,7 +194,7 @@ type NickParams struct {
 	Nick string
 }
 
-func (v *Varys) Nick(params NickParams, _ *struct{}) error {
+func (v *Varys) Nick(client *rpc2.Client, params NickParams, _ *struct{}) error {
 	if conn, ok := v.uidToConns[params.UID]; ok {
 		conn.Nick(params.Nick)
 	}

@@ -69,6 +69,9 @@ type Config struct {
 
 	Debug         bool
 	DebugPresence bool
+
+	// Url to varys server
+	VarysServer string
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
