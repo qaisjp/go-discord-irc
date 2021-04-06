@@ -14,11 +14,7 @@ type netClient struct {
 	callback func(string, *irc.Event)
 }
 
-func NewNetClient(host string, callback func(uid string, e *irc.Event)) Client {
-	conn, err := net.Dial("tcp", host)
-	if err != nil {
-		log.Fatal("dialing:", err)
-	}
+func NewClient(conn net.Conn, callback func(uid string, e *irc.Event)) Client {
 	client := &netClient{
 		client:   rpc2.NewClient(conn),
 		callback: callback,

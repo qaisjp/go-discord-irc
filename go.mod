@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/42wim/matterbridge v1.22.0
+	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/cenkalti/hub v1.0.1 // indirect
 	github.com/cenkalti/rpc2 v0.0.0-20210220005819-4a29bc83afe1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9

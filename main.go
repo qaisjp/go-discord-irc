@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -38,7 +39,12 @@ func main() {
 
 	if *runVarysServer {
 		log.Infoln("Running varys instead")
-		varys.NewServer()
+
+		lis, err := net.Listen("tcp", "localhost:1234")
+		if err != nil {
+			log.WithError(err).Fatalln("Failed to listen")
+		}
+		varys.NewServer(lis)
 		return
 	}
 

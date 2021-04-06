@@ -117,7 +117,6 @@ func (v *Varys) Connect(client *rpc2.Client, params ConnectParams, _ *struct{}) 
 	for _, eventcode := range params.Callbacks {
 		conn.AddCallback(eventcode, func(e *irc.Event) {
 			varysEvent := eventFomReal(params.UID, e)
-			log.Println("Running callback for uid", params.UID, *varysEvent)
 
 			var reply struct{}
 			if err := client.Call("Varys.Callback", varysEvent, &reply); err != nil {

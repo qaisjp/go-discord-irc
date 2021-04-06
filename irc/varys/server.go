@@ -6,7 +6,7 @@ import (
 	"github.com/cenkalti/rpc2"
 )
 
-func NewServer() {
+func NewServer(ln net.Listener) {
 	varys := NewVarys()
 
 	srv := rpc2.NewServer()
@@ -19,6 +19,5 @@ func NewServer() {
 	srv.Handle("Varys.GetNick", varys.GetNick)
 	srv.Handle("Varys.Connected", varys.Connected)
 
-	lis, _ := net.Listen("tcp", "localhost:1234")
-	srv.Accept(lis)
+	srv.Accept(ln)
 }

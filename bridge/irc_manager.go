@@ -2,10 +2,12 @@ package bridge
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/akutz/memconn"
 	"github.com/mozillazg/go-unidecode"
 	"github.com/pkg/errors"
 
@@ -37,13 +39,39 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	}
 
 	// Set up varys
-	if conf.VarysServer == "" {
-		m.varys = varys.NewMemClient()
-	} else {
-		log.Infoln("Connecting to varys host:", conf.VarysServer)
-		m.varys = varys.NewNetClient(conf.VarysServer, m.HandleVarysCallback)
+	{
+		var conn net.Conn
+		var err error
+
+		if conf.VarysServer == "" {
+			log.Infoln("Creating in-memory varys connection")
+			lis, err := memconn.Listen("memb", "varys")
+			if err != nil {
+				log.WithError(err).Fatalln("failed to create in-memory connection")
+			}
+
+			log.Infoln("Creating in-memory varys server")
+			go varys.NewServer(lis)
+
+			log.Infoln("Connecting to in-memory varys server")
+			conn, err = memconn.Dial("memb", "varys")
+
+		} else {
+			log.Infoln("Connecting to varys server:", conf.VarysServer)
+			conn, err = net.Dial("tcp", conf.VarysServer)
+			if err != nil {
+				log.Fatal("dialing net:", err)
+			}
+		}
+
+		if err != nil {
+			log.WithError(err).Fatal("failed to connect")
+		}
+
+		m.varys = varys.NewClient(conn, m.HandleVarysCallback)
 		log.Infoln("Connected to varys!")
 	}
+
 	err := m.varys.Setup(varys.SetupParams{
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
@@ -109,20 +137,17 @@ func (m *IRCManager) Close() {
 
 // HandleVarysCallback responds to callbacks sent by varys
 func (m *IRCManager) HandleVarysCallback(uid string, e *irc.Event) {
-	fmt.Println("[HandleVarysCallback] Pre-lookup")
-	conn, ok := m.ircConnections[uid]
 	// todo: what if a callback comes back after ircManager thinks it's gone?
+	conn, ok := m.ircConnections[uid]
 	if !ok {
 		panic(fmt.Sprintf("[HandleVarysCallback] uid %#v missing", uid))
 	}
 
-	fmt.Println("[HandleVarysCallback] Post-lookup")
 	if e.Code == "001" {
 		conn.OnWelcome(e)
 	} else if e.Code == "PRIVMSG" {
 		conn.OnPrivateMessage(e)
 	}
-	fmt.Println("[HandleVarysCallback] Post-fanout")
 }
 
 // SetConnectionCooldown renews/starts a timer for expiring a connection.
