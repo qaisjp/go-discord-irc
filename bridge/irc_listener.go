@@ -262,7 +262,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		msg = "_" + msg + "_"
 	}
 
-	msg = ircf.BlocksToMarkdown(ircf.Parse(ircf.StripColor(msg)))
+	msg = ircf.BlocksToMarkdown(ircf.Parse(msg))
 
 	go func(e *irc.Event) {
 		i.bridge.discordMessagesChan <- IRCMessage{
