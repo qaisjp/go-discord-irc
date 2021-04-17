@@ -484,7 +484,12 @@ func (b *Bridge) loop() {
 		case <-b.done:
 			b.discord.Close()
 			b.ircListener.Quit()
-			b.ircManager.Close()
+
+			// Only close ircManager if an inmemory varys
+			if b.Config.VarysServer == "" {
+				b.ircManager.Close()
+			}
+
 			close(b.done)
 
 			return
