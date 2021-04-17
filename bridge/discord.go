@@ -89,6 +89,10 @@ func userToMention(u *discordgo.User) (mention string) {
 	return
 }
 
+// For spoiler colouring:
+var spoilerPattern = regexp.MustCompile(`\|\|(.*?)\|\|`)
+var colorCode = string(rune(3))
+
 func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, wasEdit bool) {
 	// Fix crash if these fields don't exist
 	if m.Author == nil || s.State.User == nil {
@@ -146,6 +150,10 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 		}
 
 		content = "[edit] " + content
+	}
+
+	if strings.Count(content, "||") >= 2 {
+		content = spoilerPattern.ReplaceAllString(content, colorCode+"1,1$1"+colorCode)
 	}
 
 	pmTarget := ""
