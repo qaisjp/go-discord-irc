@@ -46,7 +46,7 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 		if conf.VarysServer == "" {
 			var lis net.Listener
 			log.Infoln("Creating in-memory varys connection")
-			lis, err = memconn.Listen("memb", "varys")
+			lis, err = memconn.Listen("memu", "varys")
 			if err != nil {
 				log.WithError(err).Fatalln("failed to create in-memory connection")
 			}
@@ -55,7 +55,7 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 			go varys.NewServer(lis)
 
 			log.Infoln("Connecting to in-memory varys server")
-			conn, err = memconn.Dial("memb", "varys")
+			conn, err = memconn.Dial("memu", "varys")
 
 		} else {
 			log.Infoln("Connecting to varys server:", conf.VarysServer)
