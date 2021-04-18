@@ -89,6 +89,11 @@ type ConnectParams struct {
 }
 
 func (v *Varys) Connect(client *rpc2.Client, params ConnectParams, _ *struct{}) error {
+	// Checking if that client is already connected
+	if _, ok := v.uidToConns[params.UID]; ok {
+		return fmt.Errorf("uid %#v is already connected. are you in a bad state?", params.UID)
+	}
+
 	conn := irc.IRC(params.Nick, params.Username)
 	// conn.Debug = true
 	conn.RealName = params.RealName
