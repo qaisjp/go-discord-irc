@@ -25,11 +25,16 @@ using it!
 
 (not a full list)
 
+- Every Discord user in your server will join your channel. Messages come from those "puppets", not from a single chat bridge user.
+- Saying the puppet username will @ that person on Discord.
 - When a Discord user's presence is "offline" or "idle", their irc puppet will
   have their AWAY status set.
 - A Discord user offline for will disconnect from IRC after 24 hours (or
   whatever `cooldown_duration` you set).
-- Join/Quit/Part/Kick messages are sent to Discord (configurable)
+- Join/Quit/Part/Kick messages are sent to Discord (configurable!)
+- Replying to someone on Discord will prefix that someone's name, e.g. replying to Alex with "yes that's fine" will show up as `<you> Alex: yes, that's fine` on IRC.
+- IRC users can send (custom!) emoji to Discord, just do `:somename:`. Discord emoji shows up like that on IRC.
+- Reacting to a Discord message will send a CTCP ACTION (`/me`) on IRC.
 
 ## Gotchas
 
