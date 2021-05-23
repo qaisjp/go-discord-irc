@@ -12,10 +12,6 @@ channel_mappings:
   "#bottest chanKey": 316038111811600387
   "#bottest2": 318327329044561920
 
-# Prevent MEE6 from appearing on IRC
-# ignored_discord_ids:
-#  - 159985870458322944
-
 suffix: "_d2"
 separator: "_"
 irc_listener_name: "_d2"
@@ -49,3 +45,11 @@ irc_puppet_prejoin_commands:
 
 # This limits to 2 connections (a listener, and one puppet, the rest relayed in simple mode)
 # connection_limit: 2
+
+# Prevent MEE6 from appearing on IRC
+# ignored_discord_ids:
+#  - 159985870458322944
+
+# Only allow specific Discord users to appear on IRC
+# allowed_discord_ids:
+#  - 159985870458322944 # Only allow Mee6!

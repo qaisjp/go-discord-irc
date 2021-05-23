@@ -81,9 +81,10 @@ func main() {
 	webIRCPass := viper.GetString("webirc_pass")                                        // Password for WEBIRC
 	ircIgnores := viper.GetStringSlice("ignored_irc_hostmasks")                         // IRC hosts to not relay to Discord
 	rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")                    // Ignore these Discord users on IRC
-	rawIRCFilter := viper.GetStringSlice("irc_message_filter")                          // Ignore lines containing matched text from IRC
-	rawDiscordFilter := viper.GetStringSlice("discord_message_filter")                  // Ignore lines containing matched text from Discord
-	connectionLimit := viper.GetInt("connection_limit")                                 // Limiter on how many IRC Connections we can spawn
+	rawDiscordAllowed := viper.GetStringSlice("allowed_discord_ids")
+	rawIRCFilter := viper.GetStringSlice("irc_message_filter")         // Ignore lines containing matched text from IRC
+	rawDiscordFilter := viper.GetStringSlice("discord_message_filter") // Ignore lines containing matched text from Discord
+	connectionLimit := viper.GetInt("connection_limit")                // Limiter on how many IRC Connections we can spawn
 	//
 	if !*debugMode {
 		*debugMode = viper.GetBool("debug")
@@ -137,9 +138,11 @@ func main() {
 	ircFilter := setupFilter(rawIRCFilter)
 	SetLogDebug(*debugMode)
 
-	discordIgnores := make(map[string]struct{}, len(rawDiscordIgnores))
-	for _, nick := range rawDiscordIgnores {
-		discordIgnores[nick] = struct{}{}
+	// Check for nil, as nil means we don't use this list
+	var discordAllowed map[string]struct{}
+	if rawDiscordAllowed != nil {
+		log.Println("allowed_discord_ids is set, so only specific Discord users will be bridged")
+		discordAllowed = stringSliceToMap(rawDiscordAllowed)
 	}
 
 	dib, err := bridge.New(&bridge.Config{
@@ -155,7 +158,8 @@ func main() {
 		ConnectionLimit:            connectionLimit,
 		IRCIgnores:                 matchers,
 		IRCFilteredMessages:        ircFilter,
-		DiscordIgnores:             discordIgnores,
+		DiscordIgnores:             stringSliceToMap(rawDiscordIgnores),
+		DiscordAllowed:             discordAllowed,
 		DiscordFilteredMessages:    discordFilter,
 		PuppetUsername:             puppetUsername,
 		WebIRCPass:                 webIRCPass,
@@ -224,11 +228,14 @@ func main() {
 		}
 
 		rawDiscordIgnores := viper.GetStringSlice("ignored_discord_ids")
-		discordIgnores := make(map[string]struct{}, len(rawDiscordIgnores))
-		for _, nick := range rawDiscordIgnores {
-			discordIgnores[nick] = struct{}{}
+		dib.Config.DiscordIgnores = stringSliceToMap(rawDiscordIgnores)
+
+		rawDiscordAllowed := viper.GetStringSlice("allowed_discord_ids")
+		if rawDiscordAllowed == nil {
+			dib.Config.DiscordAllowed = nil
+		} else {
+			dib.Config.DiscordAllowed = stringSliceToMap(rawDiscordAllowed)
 		}
-		dib.Config.DiscordIgnores = discordIgnores
 
 		chans := viper.GetStringMapString("channel_mappings")
 		equalChans := reflect.DeepEqual(chans, channelMappings)
@@ -253,6 +260,14 @@ func main() {
 
 	// Cleanly close down the bridge.
 	dib.Close()
+}
+
+func stringSliceToMap(list []string) map[string]struct{} {
+	m := make(map[string]struct{}, len(list))
+	for _, v := range list {
+		m[v] = struct{}{}
+	}
+	return m
 }
 
 func setupHostmaskMatchers(hostmasks []string) []glob.Glob {

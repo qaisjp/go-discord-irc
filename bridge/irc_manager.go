@@ -142,6 +142,15 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 	if m.ircIgnoredDiscord(user.ID) {
 		return
 	}
+
+	// If we have an allowed list of users at all
+	if allowed := m.bridge.Config.DiscordAllowed; allowed != nil {
+		// Short-circuit if they aren't in the list
+		if _, ok := allowed[user.ID]; !ok {
+			return
+		}
+	}
+
 	// Does the user exist on the IRC side?
 	if con, ok := m.ircConnections[user.ID]; ok {
 		// Close the connection if they are not
