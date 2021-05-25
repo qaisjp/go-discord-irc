@@ -70,6 +70,9 @@ type Config struct {
 
 	Debug         bool
 	DebugPresence bool
+
+	// Url to varys server
+	VarysServer string
 }
 
 // A Bridge represents a bridging between an IRC server and channels in a Discord server
@@ -482,7 +485,12 @@ func (b *Bridge) loop() {
 		case <-b.done:
 			b.discord.Close()
 			b.ircListener.Quit()
-			b.ircManager.Close()
+
+			// Only close ircManager if an inmemory varys
+			if b.Config.VarysServer == "" {
+				b.ircManager.Close()
+			}
+
 			close(b.done)
 
 			return

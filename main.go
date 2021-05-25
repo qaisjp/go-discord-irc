@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
+	"github.com/qaisjp/go-discord-irc/irc/varys"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -29,9 +31,22 @@ func main() {
 	// Secret devmode
 	devMode := flag.Bool("dev", false, "")
 	debugPresence := flag.Bool("debug-presence", false, "Include presence in debug output")
+	runVarysServer := flag.Bool("dev-varys-server", false, "Start varys server instead (this feature is in development)")
+	varysServerHost := flag.String("dev-varys-client", "", "Connect to provided varys server instead of in-memory variant (this feature is in development)")
 
 	flag.Parse()
 	bridge.DevMode = *devMode
+
+	if *runVarysServer {
+		log.Infoln("Running varys instead")
+
+		lis, err := net.Listen("tcp", "localhost:1234")
+		if err != nil {
+			log.WithError(err).Fatalln("Failed to listen")
+		}
+		varys.NewServer(lis)
+		return
+	}
 
 	if *config == "" {
 		log.Fatalln("--config argument is required!")
@@ -175,6 +190,8 @@ func main() {
 
 		Debug:         *debugMode,
 		DebugPresence: *debugPresence,
+
+		VarysServer: *varysServerHost,
 	})
 
 	if err != nil {
