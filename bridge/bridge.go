@@ -41,6 +41,10 @@ type Config struct {
 	IRCFilteredMessages     []glob.Glob
 	DiscordFilteredMessages []glob.Glob
 
+	// formatters
+	DiscordFormat map[string]string // formatting for non-PRIVMSG relays from IRC to Discord
+	IRCFormat     string            // format for messages relayed in simple mode
+
 	// NoTLS constrols whether to use TLS at all when connecting to the IRC server
 	NoTLS bool
 

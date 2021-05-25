@@ -1,7 +1,6 @@
 package bridge
 
 import (
-	"fmt"
 	"strings"
 
 	ircf "github.com/qaisjp/go-discord-irc/irc/format"
@@ -67,12 +66,17 @@ func (i *ircListener) OnNickRelayToDiscord(event *irc.Event) {
 		return
 	}
 
-	oldNick := event.Nick
 	newNick := event.Message()
+	message := i.bridge.ircManager.formatDiscordMessage("NICK", event, newNick, "")
+
+	// if the message is empty...
+	if message == "" {
+		return // do nothing, Discord doesn't like empty messages anyway
+	}
 
 	msg := IRCMessage{
 		Username: "",
-		Message:  fmt.Sprintf("_%s changed their nick to %s_", oldNick, newNick),
+		Message:  message,
 	}
 
 	for _, m := range i.bridge.mappings {
@@ -136,29 +140,33 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 		return
 	}
 
-	who := event.Nick
-	message := event.Nick
-	id := " (" + event.User + "@" + event.Host + ") "
+	message := ""
+	content := ""
+	target := ""
+	manager := i.bridge.ircManager
 
 	switch event.Code {
 	case "STJOIN":
-		message += " joined" + id
+		message = manager.formatDiscordMessage("JOIN", event, "", "")
 	case "STPART":
-		message += " left" + id
 		if len(event.Arguments) > 1 {
-			message += ": " + event.Arguments[1]
+			content = event.Arguments[1]
 		}
+		message = manager.formatDiscordMessage("PART", event, content, "")
 	case "STQUIT":
-		message += " quit" + id
-
-		reason := event.Nick
+		content := event.Nick
 		if len(event.Arguments) == 1 {
-			reason = event.Arguments[0]
+			content = event.Arguments[0]
 		}
-		message += "Quit: " + reason
+		message = manager.formatDiscordMessage("QUIT", event, content, "")
 	case "KICK":
-		who = event.Arguments[1]
-		message = event.Arguments[1] + " was kicked by " + event.Nick + ": " + event.Arguments[2]
+		target, content = event.Arguments[1], event.Arguments[2]
+		message = manager.formatDiscordMessage("KICK", event, content, target)
+	}
+
+	// if the message is empty...
+	if message == "" {
+		return // do nothing, Discord doesn't like empty messages anyway
 	}
 
 	msg := IRCMessage{
@@ -173,10 +181,10 @@ func (i *ircListener) OnJoinQuitCallback(event *irc.Event) {
 			channel := m.IRCChannel
 			channelObj, ok := i.Connection.GetChannel(channel)
 			if !ok {
-				log.WithField("channel", channel).WithField("who", who).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
+				log.WithField("channel", channel).WithField("who", event.Nick).Warnln("Trying to process QUIT. Channel not found in irc listener cache.")
 				continue
 			}
-			if _, ok := channelObj.GetUser(who); !ok {
+			if _, ok := channelObj.GetUser(event.Nick); !ok {
 				continue
 			}
 			msg.IRCChannel = channel
