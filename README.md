@@ -120,6 +120,12 @@ Make sure you also give the bot application these intents too:
 
 ![](https://user-images.githubusercontent.com/923242/97645553-23c34f00-1a45-11eb-95f0-76130261f0ab.png)
 
+**NEW IN 2022**
+
+Make sure you give the message content intent too:
+
+![](https://user-images.githubusercontent.com/923242/161871952-e8e4a1c0-2751-4d42-9f30-64666ce87120.png)
+
 ## Docker
 
 First edit `config.yml` file to your needs.
