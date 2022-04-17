@@ -2,10 +2,12 @@ package bridge
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/akutz/memconn"
 	"github.com/mozillazg/go-unidecode"
 	"github.com/pkg/errors"
 
@@ -37,7 +39,40 @@ func newIRCManager(bridge *Bridge) (*IRCManager, error) {
 	}
 
 	// Set up varys
-	m.varys = varys.NewMemClient()
+	{
+		var conn net.Conn
+		var err error
+
+		if conf.VarysServer == "" {
+			var lis net.Listener
+			log.Infoln("Creating in-memory varys connection")
+			lis, err = memconn.Listen("memu", "varys")
+			if err != nil {
+				log.WithError(err).Fatalln("failed to create in-memory connection")
+			}
+
+			log.Infoln("Creating in-memory varys server")
+			go varys.NewServer(lis)
+
+			log.Infoln("Connecting to in-memory varys server")
+			conn, err = memconn.Dial("memu", "varys")
+
+		} else {
+			log.Infoln("Connecting to varys server:", conf.VarysServer)
+			conn, err = net.Dial("tcp", conf.VarysServer)
+			if err != nil {
+				log.Fatal("dialing net:", err)
+			}
+		}
+
+		if err != nil {
+			log.WithError(err).Fatal("failed to connect")
+		}
+
+		m.varys = varys.NewClient(conn, m.HandleVarysCallback)
+		log.Infoln("Connected to varys!")
+	}
+
 	err := m.varys.Setup(varys.SetupParams{
 		UseTLS:             !conf.NoTLS,
 		InsecureSkipVerify: conf.InsecureSkipVerify,
@@ -98,6 +133,21 @@ func (m *IRCManager) Close() {
 	for _, con := range m.ircConnections {
 		m.CloseConnection(con)
 		i++
+	}
+}
+
+// HandleVarysCallback responds to callbacks sent by varys
+func (m *IRCManager) HandleVarysCallback(uid string, e *irc.Event) {
+	// todo: what if a callback comes back after ircManager thinks it's gone?
+	conn, ok := m.ircConnections[uid]
+	if !ok {
+		panic(fmt.Sprintf("[HandleVarysCallback] uid %#v missing", uid))
+	}
+
+	if e.Code == "001" {
+		conn.OnWelcome(e)
+	} else if e.Code == "PRIVMSG" {
+		conn.OnPrivateMessage(e)
 	}
 }
 
@@ -249,20 +299,20 @@ func (m *IRCManager) HandleUser(user DiscordUser) {
 		fmt.Println("Incrementing total connections. It's now", len(m.ircConnections))
 	}
 
-	err := m.varys.Connect(varys.ConnectParams{
-		UID: user.ID,
+	connectParams := varys.ConnectParams{}
+	{
+		connectParams.UID = user.ID
 
-		Nick:     nick,
-		Username: username,
-		RealName: user.Username,
+		connectParams.Nick = nick
+		connectParams.Username = username
+		connectParams.RealName = user.Username
 
-		WebIRCSuffix: fmt.Sprintf("discord %s %s", hostname, ip),
+		connectParams.WebIRCSuffix = fmt.Sprintf("discord %s %s", hostname, ip)
 
-		Callbacks: map[string]func(*irc.Event){
-			"001":     con.OnWelcome,
-			"PRIVMSG": con.OnPrivateMessage,
-		},
-	})
+		connectParams.Callbacks = []string{"001", "PRIVMSG"}
+	}
+
+	err := m.varys.Connect(connectParams)
 	if err != nil {
 		log.WithError(err).Errorln("error opening irc connection")
 		return
