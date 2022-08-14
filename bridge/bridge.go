@@ -417,10 +417,6 @@ func (b *Bridge) loop() {
 				return "<" + emoji + ">"
 			})
 
-			// Replace everyone and here - https://git.io/Je1yi
-			content = strings.ReplaceAll(content, "@everyone", "@\u200beveryone")
-			content = strings.ReplaceAll(content, "@here", "@\u200bhere")
-
 			if username == "" {
 				// System messages come straight from the bot
 				if _, err := b.discord.Session.ChannelMessageSend(mapping.DiscordChannel, content); err != nil {
@@ -435,9 +431,16 @@ func (b *Bridge) loop() {
 					_, err := b.discord.transmitter.Send(
 						mapping.DiscordChannel,
 						&discordgo.WebhookParams{
-							Username:  username,
-							AvatarURL: avatar,
-							Content:   content,
+							Username:        username,
+							AvatarURL:       avatar,
+							Content:         content,
+							AllowedMentions: &discordgo.MessageAllowedMentions{
+								// Allow user and role mentions, but not everyone or here mentions
+								Parse: []discordgo.AllowedMentionType{
+									discordgo.AllowedMentionTypeRoles,
+									discordgo.AllowedMentionTypeUsers,
+								},
+							},
 						},
 					)
 
