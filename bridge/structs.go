@@ -1,7 +1,7 @@
 package bridge
 
 import (
-	"github.com/matterbridge/discordgo"
+	"github.com/bwmarrin/discordgo"
 )
 
 // DiscordMessage is a chat message sent to IRC (from Discord)

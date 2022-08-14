@@ -3,7 +3,7 @@ package bridge
 import (
 	"strings"
 
-	"github.com/matterbridge/discordgo"
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -65,7 +65,7 @@ func (d *discordBot) OnTypingStart(s *discordgo.Session, m *discordgo.TypingStar
 
 func (d *discordBot) OnReady(s *discordgo.Session, m *discordgo.Ready) {
 	// Fires a GuildMembersChunk event
-	err := d.Session.RequestGuildMembers(d.guildID, "", 0, true)
+	err := d.Session.RequestGuildMembers(d.guildID, "", 0, "", true)
 	if err != nil {
 		log.Warningln(errors.Wrap(err, "could not request guild members").Error())
 		return

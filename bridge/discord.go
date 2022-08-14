@@ -10,7 +10,7 @@ import (
 	"github.com/qaisjp/go-discord-irc/dstate"
 	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 
-	"github.com/matterbridge/discordgo"
+	"github.com/bwmarrin/discordgo"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
