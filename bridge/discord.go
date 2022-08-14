@@ -223,7 +223,15 @@ func (d *discordBot) publishReaction(s *discordgo.Session, r *discordgo.MessageR
 			// HACK: theoretically could already be there, thereotically not a big problem
 			originalMessage.Mentions = append(originalMessage.Mentions, originalMessage.Author)
 		}
-		originalMessage.Content = fmt.Sprintf(" to <%s> %s", username, TruncateString(40, originalMessage.Content))
+		originalMessage.Content = fmt.Sprintf(
+			" to <%s> %s",
+			username,
+			// Truncate messages to just 40 characters so reactions to long messages
+			// don't pollute the IRC log. Similarly, replace newlines with spaces
+			// so that any reactions to messages with a newline within the first 40
+			// characters don't cause multiple IRC messages to be sent.
+			strings.ReplaceAll(TruncateString(40, originalMessage.Content), "\n", " "),
+		)
 
 		reactionTarget = d.ParseText(originalMessage)
 	}
