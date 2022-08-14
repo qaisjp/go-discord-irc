@@ -397,9 +397,12 @@ func (b *Bridge) loop() {
 
 			content := msg.Message
 
-			// No content = zero width space
-			if content == "" {
-				content = "\u200B"
+			// If the message contains content or only whitespace, surround that with
+			// zero width spaces so that Discord displays them as intended. E.g. 3
+			// space characters sent from IRC should render on Discord as 3 space
+			// characters too.
+			if strings.TrimSpace(content) == "" {
+				content = "\u200B" + content + "\u200B"
 			}
 
 			// Convert any emoji ye?
