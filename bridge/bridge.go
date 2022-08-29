@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
 	"github.com/bwmarrin/discordgo"
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/irc/varys"
 	irc "github.com/qaisjp/go-ircevent"
@@ -402,7 +402,7 @@ func (b *Bridge) loop() {
 			// rather than ignoring it. We surround the content with zero-width spaces
 			// to achieve this. For example, 3 space characters sent from IRC should
 			// render on Discord as 3 space characters too.
-			if strings.TrimSpace(content) != content {
+			if content == "" || strings.TrimSpace(content) != content {
 				content = "\u200B" + content + "\u200B"
 			}
 
@@ -435,9 +435,9 @@ func (b *Bridge) loop() {
 					_, err := b.discord.transmitter.Send(
 						mapping.DiscordChannel,
 						&discordgo.WebhookParams{
-							Username:        username,
-							AvatarURL:       avatar,
-							Content:         content,
+							Username:  username,
+							AvatarURL: avatar,
+							Content:   content,
 							AllowedMentions: &discordgo.MessageAllowedMentions{
 								// Allow user and role mentions, but not everyone or here mentions
 								Parse: []discordgo.AllowedMentionType{
