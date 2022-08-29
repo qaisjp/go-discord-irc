@@ -397,11 +397,12 @@ func (b *Bridge) loop() {
 
 			content := msg.Message
 
-			// If the message contains content or only whitespace, surround that with
-			// zero width spaces so that Discord displays them as intended. E.g. 3
-			// space characters sent from IRC should render on Discord as 3 space
-			// characters too.
-			if strings.TrimSpace(content) == "" {
+			// If the message has leading or trailing spaces, or if the message consists
+			// entirely of whitespace, we want Discord to display them as intended,
+			// rather than ignoring it. We surround the content with zero-width spaces
+			// to achieve this. For example, 3 space characters sent from IRC should
+			// render on Discord as 3 space characters too.
+			if strings.TrimSpace(content) != content {
 				content = "\u200B" + content + "\u200B"
 			}
 
