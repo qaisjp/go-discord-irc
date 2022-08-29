@@ -242,8 +242,7 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		return
 	}
 
-	if strings.TrimSpace(e.Message()) == "" || // Discord doesn't accept an empty message
-		i.isPuppetNick(e.Nick) || // ignore msg's from our puppets
+	if i.isPuppetNick(e.Nick) || // ignore msg's from our puppets
 		i.bridge.ircManager.isIgnoredHostmask(e.Source) || //ignored hostmasks
 		i.bridge.ircManager.isFilteredIRCMessage(e.Message()) { // filtered
 		return
