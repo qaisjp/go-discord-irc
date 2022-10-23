@@ -61,7 +61,7 @@ func newDiscord(bridge *Bridge, botToken, guildID string) (*discordBot, error) {
 }
 
 func (d *discordBot) Open() error {
-	d.transmitter = transmitter.New(d.Session, d.guildID, "go-discord-irc", true)
+	d.transmitter = transmitter.New(d.Session, d.guildID, "go-diѕcord-irc", true)
 	d.transmitter.Log = logrus.NewEntry(logrus.StandardLogger())
 	if err := d.transmitter.RefreshGuildWebhooks(nil); err != nil {
 		return fmt.Errorf("failed to refresh guild webhooks: %w", err)
