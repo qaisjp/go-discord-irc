@@ -24,7 +24,7 @@ release: $(RELEASE_ZIP) ## Package release artifact
 
 $(BINARY): dep
 	@echo "🍳 Building $(BINARY)"
-	go build -i -v -o $(BINARY) -ldflags "-X main.version=$(GIT_TAG)-$(GIT_BRANCH).$(GIT_COMMIT)" $(BINARY_PKG_BUILD)
+	go build -v -o $(BINARY) -ldflags "-X main.version=$(GIT_TAG)-$(GIT_BRANCH).$(GIT_COMMIT)" $(BINARY_PKG_BUILD)
 
 $(RELEASE_ZIP): $(BINARY)
 	@echo "🍳 Building $(RELEASE_ZIP)"
