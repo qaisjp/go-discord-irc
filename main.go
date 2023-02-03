@@ -14,7 +14,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	"github.com/qaisjp/go-discord-irc/bridge"
-	ircnick "github.com/qaisjp/go-discord-irc/irc/nick"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -120,9 +119,10 @@ func main() {
 	//
 	viper.SetDefault("show_joinquit", false)
 	showJoinQuit := viper.GetBool("show_joinquit")
-	// Maximum length of user nicks aloud
-	viper.SetDefault("max_nick_length", ircnick.MAXLENGTH)
-	maxNickLength := viper.GetInt("max_nick_length")
+
+	if viper.GetInt("max_nick_length") != 0 {
+		log.Println("This field should be removed from your configuration - go-discord-irc now detects the proper max accepted nick length at runtime.")
+	}
 
 	if webIRCPass == "" {
 		log.Warnln("webirc_pass is empty")
@@ -171,7 +171,6 @@ func main() {
 		ChannelMappings:            channelMappings,
 		CooldownDuration:           time.Second * time.Duration(cooldownDuration),
 		ShowJoinQuit:               showJoinQuit,
-		MaxNickLength:              maxNickLength,
 
 		Debug:         *debugMode,
 		DebugPresence: *debugPresence,
