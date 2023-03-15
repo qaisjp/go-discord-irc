@@ -136,12 +136,12 @@ func (d *discordBot) publishMessage(s *discordgo.Session, m *discordgo.Message, 
 
 	// The content is an action if it matches "_(.+)_"
 	isAction := len(content) > 2 &&
-		m.Content[0] == '_' &&
-		m.Content[len(content)-1] == '_'
+		content[0] == '_' &&
+		content[len(content)-1] == '_'
 
 	// If it is an action, remove the enclosing underscores
 	if isAction {
-		content = content[1 : len(m.Content)-1]
+		content = content[1 : len(content)-1]
 	}
 
 	if wasEdit {
@@ -262,6 +262,28 @@ var emoteRegex = regexp.MustCompile(`<a?(:\w+:)\d+>`)
 func (d *discordBot) ParseText(m *discordgo.Message) string {
 	// Replace @user mentions with name~d mentions
 	content := m.Content
+
+	// Convert embeds to plaintext
+	for _, embed := range m.Embeds {
+		if embed.Title != "" {
+			content += fmt.Sprintf("--- %s\n", embed.Title)
+		}
+		if embed.Description != "" {
+			content += fmt.Sprintf("%s\n", embed.Description)
+		}
+		if embed.Footer != nil && embed.Footer.Text != "" {
+			content += fmt.Sprintf("%s\n", embed.Footer.Text)
+		}
+		if embed.Author != nil && embed.Author.Name != "" {
+			content += fmt.Sprintf("Author: %s\n", embed.Author.Name)
+		}
+		if embed.URL != "" {
+			content += fmt.Sprintf("URL: %s\n", embed.URL)
+		}
+		if embed.Timestamp != "" {
+			content += fmt.Sprintf("Timestamp: %s\n", embed.Timestamp)
+		}
+	}
 
 	for _, user := range m.Mentions {
 		// Find the irc username with the discord ID in irc connections
