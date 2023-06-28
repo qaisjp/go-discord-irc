@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"math"
 
 	"github.com/mozillazg/go-unidecode"
 	"github.com/pkg/errors"
@@ -378,6 +379,23 @@ func (m *IRCManager) generateNickname(discord DiscordUser) string {
 	return newNick
 }
 
+// Split a message
+func splitByWidthMake(str string, size int) []string {
+	strLength := len(str)
+	splitedLength := int(math.Ceil(float64(strLength) / float64(size)))
+	splited := make([]string, splitedLength)
+	var start, stop int
+	for i := 0; i < splitedLength; i += 1 {
+		start = i * size
+		stop = start + size
+		if stop > strLength {
+			stop = strLength
+		}
+		splited[i] = str[start : stop]
+	}
+	return splited
+}
+
 // SendMessage sends a broken down Discord Message to a particular IRC channel.
 func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	if m.ircIgnoredDiscord(msg.Author.ID) {
@@ -394,12 +412,15 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	if !ok {
 		length := len(msg.Author.Username)
 		for _, line := range strings.Split(content, "\n") {
-			m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
-				"<%s#%s> %s",
-				msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
-				msg.Author.Discriminator,
-				line,
-			))
+			chunks := splitByWidthMake(line, 400)
+			for _, s := range chunks {
+				m.bridge.ircListener.Privmsg(channel, fmt.Sprintf(
+					"<%s#%s> %s",
+					msg.Author.Username[:1]+"\u200B"+msg.Author.Username[1:length],
+					msg.Author.Discriminator,
+					s,
+				))
+			}
 		}
 		return
 	}
@@ -410,29 +431,32 @@ func (m *IRCManager) SendMessage(channel string, msg *DiscordMessage) {
 	}
 
 	for _, line := range strings.Split(content, "\n") {
-		ircMessage := IRCMessage{
-			IRCChannel: channel,
-			Message:    line,
-			IsAction:   msg.IsAction,
-		}
+		chunks := splitByWidthMake(line, 400)
+		for _, s := range chunks {
+			ircMessage := IRCMessage{
+				IRCChannel: channel,
+				Message:    s,
+				IsAction:   msg.IsAction,
+			}
 
-		if strings.HasPrefix(line, "/me ") && len(line) > 4 {
-			ircMessage.IsAction = true
-			ircMessage.Message = line[4:]
-		}
+			if strings.HasPrefix(line, "/me ") && len(line) > 4 {
+				ircMessage.IsAction = true
+				ircMessage.Message = line[4:]
+			}
 
-		if m.isFilteredDiscordMessage(line) {
-			continue
-		}
+			if m.isFilteredDiscordMessage(line) {
+				continue
+			}
 
-		select {
-		// Try to send the message immediately
-		case con.messages <- ircMessage:
-		// If it can't after 5ms, do it in a separate goroutine
-		case <-time.After(time.Millisecond * 5):
-			go func() {
-				con.messages <- ircMessage
-			}()
+			select {
+				// Try to send the message immediately
+				case con.messages <- ircMessage:
+				// If it can't after 5ms, do it in a separate goroutine
+				case <-time.After(time.Millisecond * 5):
+					go func() {
+						con.messages <- ircMessage
+					}()
+			}
 		}
 	}
 }
