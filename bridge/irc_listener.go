@@ -257,10 +257,14 @@ func (i *ircListener) OnPrivateMessage(e *irc.Event) {
 		replacements...,
 	).Replace(e.Message())
 
-	if e.Code == "CTCP_ACTION" {
+
+	// Italicize the /me action so it appears like Discord's /me functionality.
+	// We don't do it for empty messages, since Discord will show two literal underscores.
+	// Sending empty messages onto the discordMessagesChan is fine, since the sender will
+	// take care of inserting ZWBs if necessary. 
+	if e.Code == "CTCP_ACTION" && msg != "" {
 		msg = "_" + msg + "_"
 	}
-
 	msg = ircf.BlocksToMarkdown(ircf.Parse(msg))
 
 	go func(e *irc.Event) {
