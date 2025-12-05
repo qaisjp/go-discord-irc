@@ -10,7 +10,7 @@ require (
 	github.com/mozillazg/go-unidecode v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/qaisjp/go-ircevent v0.0.0-20210224154625-07452bfb05b5
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.8.3
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.2
 )
